@@ -64,7 +64,8 @@ public class GeracaoTransacoesDoPeriodoService {
 
         switch (freq) {
             case DIARIO -> {
-                LocalDate current = periodoInicio;
+                // Start from the later of periodoInicio and recorrenteInicio to avoid unnecessary iteration
+                LocalDate current = recorrenteInicio.isAfter(periodoInicio) ? recorrenteInicio : periodoInicio;
                 int parcelas = 0;
                 while (!current.isAfter(periodoFim)) {
                     if (dentroDaJanela(current, recorrenteInicio, recorrenteFim)
@@ -76,7 +77,15 @@ public class GeracaoTransacoesDoPeriodoService {
                 }
             }
             case SEMANAL -> {
-                LocalDate current = periodoInicio;
+                // Align weekly cadence with recorrenteInicio's day of week;
+                // find the first occurrence on or after periodoInicio
+                LocalDate firstOccurrence = recorrenteInicio;
+                if (firstOccurrence.isBefore(periodoInicio)) {
+                    long daysDiff = java.time.temporal.ChronoUnit.DAYS.between(firstOccurrence, periodoInicio);
+                    long weeksToAdd = (daysDiff + 6) / 7;
+                    firstOccurrence = recorrenteInicio.plusWeeks(weeksToAdd);
+                }
+                LocalDate current = firstOccurrence;
                 int parcelas = 0;
                 while (!current.isAfter(periodoFim)) {
                     if (dentroDaJanela(current, recorrenteInicio, recorrenteFim)

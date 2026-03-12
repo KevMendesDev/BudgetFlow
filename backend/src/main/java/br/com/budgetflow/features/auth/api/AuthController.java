@@ -2,6 +2,7 @@ package br.com.budgetflow.features.auth.api;
 
 import br.com.budgetflow.features.auth.dto.LoginRequest;
 import br.com.budgetflow.features.auth.dto.MeResponse;
+import br.com.budgetflow.common.exceptions.UnauthorizedException;
 import br.com.budgetflow.features.auth.dto.RegisterRequest;
 import br.com.budgetflow.features.auth.service.AuthService;
 import br.com.budgetflow.features.users.domain.User;
@@ -66,7 +67,7 @@ public class AuthController {
 
         Long userId = Long.valueOf(authentication.getName());
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new UnauthorizedException("Sessão inválida"));
 
         List<String> roles = user.getRoles() == null || user.getRoles().isBlank()
                 ? List.of("USER")
