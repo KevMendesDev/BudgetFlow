@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: budgetflow
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/budgetflow}
+    username: ${DB_USERNAME:budgetflow}
+    password: ${DB_PASSWORD:budgetflow}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:CHANGE_ME_USE_A_STRONG_SECRET_OF_AT_LEAST_32_BYTES}
+    access-token-minutes: 15
+    refresh-token-days: 30
+  cookies:
+    secure: false
+    same-site: LAX
+    domain: localhost
