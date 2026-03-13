@@ -1,0 +1,52 @@
+{
+  "name": "BudgetFlow DevContainer",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/BudgetFlow",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
+  },
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "forwardPorts": [8080, 4200, 5432],
+  "portsAttributes": {
+    "8080": {
+      "label": "BudgetFlow API (Spring Boot)",
+      "onAutoForward": "notify"
+    },
+    "4200": {
+      "label": "Angular Dev Server",
+      "onAutoForward": "openPreview"
+    },
+    "5432": {
+      "label": "PostgreSQL (Docker Compose)",
+      "onAutoForward": "silent"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-maven",
+        "redhat.java",
+        "vmware.vscode-spring-boot",
+        "ms-azuretools.vscode-docker",
+        "Angular.ng-template",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "java.configuration.updateBuildConfiguration": "interactive",
+        "java.compile.nullAnalysis.mode": "automatic",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "postCreateCommand": "bash -lc 'npm install -g @angular/cli@latest && cd backend && ./mvnw -q -DskipTests dependency:go-offline || true'"
+}
