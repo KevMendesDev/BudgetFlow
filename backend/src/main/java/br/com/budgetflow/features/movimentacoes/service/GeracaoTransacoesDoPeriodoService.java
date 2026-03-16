@@ -37,7 +37,7 @@ public class GeracaoTransacoesDoPeriodoService {
             for (LocalDate data : datas) {
                 if (!transacaoRepository.existsByTransacaoRecorrenteIdAndData(recorrente.getId(), data)) {
                     Transacao transacao = new Transacao();
-                    transacao.setUsuario(recorrente.getUsuario());
+                    transacao.setUser(recorrente.getUser());
                     transacao.setCategoria(recorrente.getCategoria());
                     transacao.setPeriodo(periodo);
                     transacao.setTransacaoRecorrente(recorrente);

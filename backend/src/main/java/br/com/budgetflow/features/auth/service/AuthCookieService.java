@@ -12,9 +12,9 @@ public class AuthCookieService {
     private final String domain;
 
     public AuthCookieService(
-            @Value("${security.cookies.secure}") boolean secure,
-            @Value("${security.cookies.same-site}") String sameSite,
-            @Value("${security.cookies.domain}") String domain) {
+            @Value("${app.security.cookies.secure}") boolean secure,
+            @Value("${app.security.cookies.same-site}") String sameSite,
+            @Value("${app.security.cookies.domain}") String domain) {
         this.secure = secure;
         this.sameSite = sameSite;
         this.domain = domain;

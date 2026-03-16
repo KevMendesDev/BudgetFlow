@@ -5,6 +5,10 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
+    <changeSet id="0001-01-create-sequence" author="kevin">
+        <createSequence sequenceName="sequence_generator" startValue="1050" incrementBy="50"/>
+    </changeSet>
+
     <!-- USERS -->
     <changeSet id="0001-01-create-users" author="kevin">
         <createTable tableName="users">
@@ -26,6 +30,12 @@
             </column>
             <column name="roles" type="VARCHAR(255)">
                 <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false" updatable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="true" updatable="true"/>
             </column>
         </createTable>
 
@@ -54,6 +64,12 @@
             </column>
             <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false" updatable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="true" updatable="true"/>
             </column>
         </createTable>
 
@@ -89,6 +105,12 @@
             <column name="data_fim" type="DATE">
                 <constraints nullable="false"/>
             </column>
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false" updatable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="true" updatable="true"/>
+            </column>
         </createTable>
 
         <addForeignKeyConstraint
@@ -118,6 +140,12 @@
             </column>
             <column name="valor_planejado" type="NUMERIC(19,2)">
                 <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false" updatable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="true" updatable="true"/>
             </column>
         </createTable>
 
@@ -171,6 +199,12 @@
             </column>
             <column name="data_fim" type="DATE"/>
             <column name="total_parcelas" type="INTEGER"/>
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false" updatable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="true" updatable="true"/>
+            </column>
         </createTable>
 
         <addForeignKeyConstraint
@@ -223,6 +257,12 @@
             </column>
             <column name="data" type="DATE">
                 <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false" updatable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="true" updatable="true"/>
             </column>
         </createTable>
 

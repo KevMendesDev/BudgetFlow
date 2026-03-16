@@ -12,4 +12,7 @@ RUN rm -f /etc/apt/sources.list.d/yarn.list /etc/apt/sources.list.d/yarn.list.sa
         unzip \
     && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /home/vscode/.m2 \
+    && chown -R vscode:vscode /home/vscode/.m2
+
 WORKDIR /workspaces/BudgetFlow

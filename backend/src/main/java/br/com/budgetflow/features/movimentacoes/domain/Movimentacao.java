@@ -10,6 +10,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Getter
 @Setter
@@ -18,8 +22,8 @@ import java.math.BigDecimal;
 public abstract class Movimentacao {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", nullable = false)
-    private User usuario;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id", nullable = false)
@@ -38,4 +42,12 @@ public abstract class Movimentacao {
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_pagamento", nullable = false, length = 50)
     private TipoPagamento tipoPagamento;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    protected LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    protected LocalDateTime updatedAt;
 }

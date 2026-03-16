@@ -22,6 +22,12 @@
             <column name="revoked" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
+            <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false" updatable="false"/>
+            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="true" updatable="true"/>
+            </column>
         </createTable>
 
         <addUniqueConstraint tableName="refresh_tokens" columnNames="token_hash" constraintName="uk_refresh_tokens_hash"/>

@@ -21,7 +21,8 @@
     "MAVEN_OPTS": "--enable-native-access=ALL-UNNAMED"
   },
   "mounts": [
-    "source=${localEnv:HOME}/.m2,target=/home/vscode/.m2,type=bind"
+    // "source=${localEnv:HOME}/.m2,target=/home/vscode/.m2,type=bind"
+    "source=maven-cache-v2,target=/home/vscode/.m2,type=volume"
   ],
   "forwardPorts": [8080, 4200, 5432],
   "portsAttributes": {
@@ -62,5 +63,6 @@
       }
     }
   },
-  "postCreateCommand": "bash -lc 'npm install -g @angular/cli@latest && npm install -g npm@11.11.1 && cd backend && ./mvnw -q -DskipTests dependency:go-offline || true'"
+  "postCreateCommand": "bash -lc 'set -e; mkdir -p /home/vscode/.m2/wrapper; test -w /home/vscode/.m2; npm install -g @angular/cli@latest; npm install -g npm@11.11.1'",
+  "postStartCommand": "bash -lc 'cd /workspaces/BudgetFlow/backend && ./mvnw -q -DskipTests dependency:go-offline || echo \"Falha ao baixar dependencias Maven\"'"
 }

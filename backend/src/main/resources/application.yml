@@ -2,9 +2,9 @@ spring:
   application:
     name: budgetflow
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/budgetflow}
-    username: ${DB_USERNAME:budgetflow}
-    password: ${DB_PASSWORD:budgetflow}
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/budgetflow}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -12,17 +12,22 @@ spring:
     show-sql: false
     open-in-view: false
   liquibase:
-    change-log: classpath:db/changelog/db.changelog-master.xml
+    change-log: classpath:db/changelog/master.xml
   docker:
     compose:
       enabled: false
+server:
+  address: 0.0.0.0
+  port: 8080
 
-security:
-  jwt:
-    secret: ${JWT_SECRET:CHANGE_ME_USE_A_STRONG_SECRET_OF_AT_LEAST_32_BYTES}
-    access-token-minutes: 15
-    refresh-token-days: 30
-  cookies:
-    secure: false
-    same-site: LAX
-    domain: localhost
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:CHANGE_ME_USE_A_STRONG_SECRET_OF_AT_LEAST_32_BYTES}
+      access-token-minutes: 15
+      refresh-token-days: 30
+    cookies:
+      secure: false
+      same-site: LAX
+      domain: localhost
+

@@ -2,7 +2,6 @@ package br.com.budgetflow.features.auth.service;
 
 import br.com.budgetflow.common.exceptions.UnauthorizedException;
 import br.com.budgetflow.features.auth.domain.RefreshToken;
-import br.com.budgetflow.features.auth.dto.LoginRequest;
 import br.com.budgetflow.features.auth.dto.MeResponse;
 import br.com.budgetflow.features.auth.dto.RegisterRequest;
 import br.com.budgetflow.features.auth.repository.RefreshTokenRepository;
@@ -38,7 +37,7 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             AuthCookieService cookieService,
-            @Value("${security.jwt.refresh-token-days}") long refreshTokenDays) {
+            @Value("${app.security.jwt.refresh-token-days}") long refreshTokenDays) {
         this.userRepo = userRepo;
         this.refreshTokenRepo = refreshTokenRepo;
         this.passwordEncoder = passwordEncoder;
