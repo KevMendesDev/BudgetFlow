@@ -33,6 +33,15 @@
 #   MAVEN_SKIP_RC - flag to disable loading of mavenrc files
 # ----------------------------------------------------------------------------
 
+# Carrega variáveis do .env automaticamente (se existir)
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . "$SCRIPT_DIR/.env"
+  set +a
+fi
+
 if [ -z "$MAVEN_SKIP_RC" ]; then
 
   if [ -f /usr/local/etc/mavenrc ]; then

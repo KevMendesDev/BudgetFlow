@@ -11,8 +11,17 @@
       "version": "lts"
     }
   },
+  "remoteEnv": {
+    "HTTP_PROXY": "${localEnv:http_proxy}",
+    "HTTPS_PROXY": "${localEnv:https_proxy}",
+    "NO_PROXY": "${localEnv:NO_PROXY}",
+    "http_proxy": "${localEnv:http_proxy}",
+    "https_proxy": "${localEnv:https_proxy}",
+    "no_proxy": "${localEnv:no_proxy}",
+    "MAVEN_OPTS": "--enable-native-access=ALL-UNNAMED"
+  },
   "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    "source=${localEnv:HOME}/.m2,target=/home/vscode/.m2,type=bind"
   ],
   "forwardPorts": [8080, 4200, 5432],
   "portsAttributes": {
@@ -44,9 +53,14 @@
       "settings": {
         "java.configuration.updateBuildConfiguration": "interactive",
         "java.compile.nullAnalysis.mode": "automatic",
-        "terminal.integrated.defaultProfile.linux": "bash"
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "java.configuration.maven.userSettings": "/home/vscode/.m2/settings.xml",
+        "http.proxy": "${localEnv:http_proxy}",
+        "http.proxySupport": "override",
+        "http.systemCertificates": true,
+        "http.proxyStrictSSL": false
       }
     }
   },
-  "postCreateCommand": "bash -lc 'npm install -g @angular/cli@latest && cd backend && ./mvnw -q -DskipTests dependency:go-offline || true'"
+  "postCreateCommand": "bash -lc 'npm install -g @angular/cli@latest && npm install -g npm@11.11.1 && cd backend && ./mvnw -q -DskipTests dependency:go-offline || true'"
 }

@@ -6,9 +6,9 @@
             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <!-- USERS -->
-    <changeSet id="0001-01-create-users" author="copilot">
+    <changeSet id="0001-01-create-users" author="kevin">
         <createTable tableName="users">
-            <column name="id" type="BIGSERIAL">
+            <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_users" nullable="false"/>
             </column>
             <column name="nome" type="VARCHAR(255)">
@@ -41,9 +41,9 @@
     </changeSet>
 
     <!-- CATEGORIAS -->
-    <changeSet id="0001-02-create-categorias" author="copilot">
+    <changeSet id="0001-02-create-categorias" author="kevin">
         <createTable tableName="categorias">
-            <column name="id" type="BIGSERIAL">
+            <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_categorias" nullable="false"/>
             </column>
             <column name="descricao" type="VARCHAR(255)">
@@ -52,18 +52,29 @@
             <column name="classificacao" type="VARCHAR(50)">
                 <constraints nullable="false"/>
             </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="categorias"
+            baseColumnNames="user_id"
+            referencedTableName="users"
+            referencedColumnNames="id"
+            constraintName="fk_categorias_user"
+            onDelete="CASCADE"/>
 
         <addUniqueConstraint tableName="categorias" columnNames="descricao" constraintName="uk_categorias_descricao"/>
     </changeSet>
 
     <!-- PERIODOS_FINANCEIROS -->
-    <changeSet id="0001-03-create-periodos-financeiros" author="copilot">
+    <changeSet id="0001-03-create-periodos-financeiros" author="kevin">
         <createTable tableName="periodos_financeiros">
-            <column name="id" type="BIGSERIAL">
+            <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_periodos_financeiros" nullable="false"/>
             </column>
-            <column name="usuario_id" type="BIGINT">
+            <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
             <column name="mes" type="INTEGER">
@@ -82,21 +93,21 @@
 
         <addForeignKeyConstraint
                 baseTableName="periodos_financeiros"
-                baseColumnNames="usuario_id"
+                baseColumnNames="user_id"
                 referencedTableName="users"
                 referencedColumnNames="id"
-                constraintName="fk_periodos_usuario"
+                constraintName="fk_periodos_user"
                 onDelete="CASCADE"/>
 
-        <createIndex tableName="periodos_financeiros" indexName="ix_periodos_usuario_id">
-            <column name="usuario_id"/>
+        <createIndex tableName="periodos_financeiros" indexName="ix_periodos_user_id">
+            <column name="user_id"/>
         </createIndex>
     </changeSet>
 
     <!-- PLANEJAMENTOS -->
-    <changeSet id="0001-04-create-planejamentos" author="copilot">
+    <changeSet id="0001-04-create-planejamentos" author="kevin">
         <createTable tableName="planejamentos">
-            <column name="id" type="BIGSERIAL">
+            <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_planejamentos" nullable="false"/>
             </column>
             <column name="periodo_id" type="BIGINT">
@@ -129,12 +140,12 @@
     </changeSet>
 
     <!-- TRANSACOES_RECORRENTES -->
-    <changeSet id="0001-05-create-transacoes-recorrentes" author="copilot">
+    <changeSet id="0001-05-create-transacoes-recorrentes" author="kevin">
         <createTable tableName="transacoes_recorrentes">
-            <column name="id" type="BIGSERIAL">
+            <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_transacoes_recorrentes" nullable="false"/>
             </column>
-            <column name="usuario_id" type="BIGINT">
+            <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
             <column name="categoria_id" type="BIGINT">
@@ -164,10 +175,10 @@
 
         <addForeignKeyConstraint
                 baseTableName="transacoes_recorrentes"
-                baseColumnNames="usuario_id"
+                baseColumnNames="user_id"
                 referencedTableName="users"
                 referencedColumnNames="id"
-                constraintName="fk_transacoes_recorrentes_usuario"
+                constraintName="fk_transacoes_recorrentes_user"
                 onDelete="CASCADE"/>
 
         <addForeignKeyConstraint
@@ -177,18 +188,18 @@
                 referencedColumnNames="id"
                 constraintName="fk_transacoes_recorrentes_categoria"/>
 
-        <createIndex tableName="transacoes_recorrentes" indexName="ix_transacoes_recorrentes_usuario_id">
-            <column name="usuario_id"/>
+        <createIndex tableName="transacoes_recorrentes" indexName="ix_transacoes_recorrentes_user_id">
+            <column name="user_id"/>
         </createIndex>
     </changeSet>
 
     <!-- TRANSACOES -->
-    <changeSet id="0001-06-create-transacoes" author="copilot">
+    <changeSet id="0001-06-create-transacoes" author="kevin">
         <createTable tableName="transacoes">
-            <column name="id" type="BIGSERIAL">
+            <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_transacoes" nullable="false"/>
             </column>
-            <column name="usuario_id" type="BIGINT">
+            <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
             <column name="categoria_id" type="BIGINT">
@@ -217,10 +228,10 @@
 
         <addForeignKeyConstraint
                 baseTableName="transacoes"
-                baseColumnNames="usuario_id"
+                baseColumnNames="user_id"
                 referencedTableName="users"
                 referencedColumnNames="id"
-                constraintName="fk_transacoes_usuario"
+                constraintName="fk_transacoes_user"
                 onDelete="CASCADE"/>
 
         <addForeignKeyConstraint
@@ -245,8 +256,8 @@
                 referencedColumnNames="id"
                 constraintName="fk_transacoes_recorrente"/>
 
-        <createIndex tableName="transacoes" indexName="ix_transacoes_usuario_id">
-            <column name="usuario_id"/>
+        <createIndex tableName="transacoes" indexName="ix_transacoes_user_id">
+            <column name="user_id"/>
         </createIndex>
         <createIndex tableName="transacoes" indexName="ix_transacoes_periodo_id">
             <column name="periodo_id"/>
