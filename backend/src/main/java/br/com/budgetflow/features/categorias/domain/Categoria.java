@@ -19,7 +19,10 @@ import lombok.Setter;
 @Table(
         name = "categorias",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_categorias_descricao", columnNames = "descricao")
+                @UniqueConstraint(
+                        name = "uk_categorias_nome_user_classificacao",
+                        columnNames = {"nome", "user_id", "classificacao"}
+                )
         }
 )
 public class Categoria {
