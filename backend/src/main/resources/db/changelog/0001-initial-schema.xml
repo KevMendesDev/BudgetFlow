@@ -32,10 +32,10 @@
                 <constraints nullable="false"/>
             </column>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="false" updatable="false"/>
+                <constraints nullable="false"/>
             </column>
             <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="true" updatable="true"/>
+                <constraints nullable="true"/>
             </column>
         </createTable>
 
@@ -66,10 +66,10 @@
                 <constraints nullable="false"/>
             </column>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="false" updatable="false"/>
+                <constraints nullable="false"/>
             </column>
             <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="true" updatable="true"/>
+                <constraints nullable="true"/>
             </column>
         </createTable>
 
@@ -80,8 +80,11 @@
             referencedColumnNames="id"
             constraintName="fk_categorias_user"
             onDelete="CASCADE"/>
-
-        <addUniqueConstraint tableName="categorias" columnNames="descricao" constraintName="uk_categorias_descricao"/>
+        
+        <addUniqueConstraint 
+            tableName="categorias" 
+            columnNames="nome, user_id, classificacao" 
+            constraintName="uk_categorias_nome_user_classificacao"/>
     </changeSet>
 
     <!-- PERIODOS_FINANCEIROS -->
@@ -106,10 +109,10 @@
                 <constraints nullable="false"/>
             </column>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="false" updatable="false"/>
+                <constraints nullable="false"/>
             </column>
             <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="true" updatable="true"/>
+                <constraints nullable="true"/>
             </column>
         </createTable>
 
@@ -142,10 +145,10 @@
                 <constraints nullable="false"/>
             </column>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="false" updatable="false"/>
+                <constraints nullable="false"/>
             </column>
             <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="true" updatable="true"/>
+                <constraints nullable="true"/>
             </column>
         </createTable>
 
@@ -200,10 +203,10 @@
             <column name="data_fim" type="DATE"/>
             <column name="total_parcelas" type="INTEGER"/>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="false" updatable="false"/>
+                <constraints nullable="false"/>
             </column>
             <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="true" updatable="true"/>
+                <constraints nullable="true"/>
             </column>
         </createTable>
 
@@ -259,10 +262,10 @@
                 <constraints nullable="false"/>
             </column>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="false" updatable="false"/>
+                <constraints nullable="false"/>
             </column>
             <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="true" updatable="true"/>
+                <constraints nullable="true"/>
             </column>
         </createTable>
 
