@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.features.users.domain.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -18,7 +19,10 @@ import lombok.Setter;
 @Table(
         name = "categorias",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_categorias_descricao", columnNames = "descricao")
+                @UniqueConstraint(
+                        name = "uk_categorias_nome_user_classificacao",
+                        columnNames = {"nome", "user_id", "classificacao"}
+                )
         }
 )
 public class Categoria {
@@ -28,8 +32,8 @@ public class Categoria {
     @SequenceGenerator(name = "sequenceGenerator")
     private Long id;
 
-    @Column(nullable = false)
-    private String descricao;
+    @Column(nullable = false, length = 100)
+    private String nome;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
@@ -74,7 +78,7 @@ public class Categoria {
 
     @Override
     public String toString() {
-        return "Categoria [id=" + id + ", descricao=" + descricao + ", classificacao=" + classificacao + ", createdAt="
+        return "Categoria [id=" + id + ", nome=" + nome + ", classificacao=" + classificacao + ", createdAt="
                 + createdAt + ", updatedAt=" + updatedAt + "]";
     }
 }

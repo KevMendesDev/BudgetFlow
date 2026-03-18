@@ -33,10 +33,6 @@
     "4200": {
       "label": "Angular Dev Server",
       "onAutoForward": "openPreview"
-    },
-    "5432": {
-      "label": "PostgreSQL (Docker Compose)",
-      "onAutoForward": "silent"
     }
   },
   "customizations": {
