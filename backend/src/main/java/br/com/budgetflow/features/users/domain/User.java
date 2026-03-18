@@ -57,6 +57,14 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    public User(String nome, String email, String cpf, String telefone, String senha) {
+        this.nome = nome;
+        this.email = email;
+        this.cpf = cpf;
+        this.telefone = telefone;
+        this.senha = senha;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;

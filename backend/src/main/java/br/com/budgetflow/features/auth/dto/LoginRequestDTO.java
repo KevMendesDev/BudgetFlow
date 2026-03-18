@@ -2,7 +2,7 @@ package br.com.budgetflow.features.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record LoginRequest(
+public record LoginRequestDTO(
         @NotBlank(message = "CPF é obrigatório")
         String cpf,
 
