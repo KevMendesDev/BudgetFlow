@@ -1,8 +1,16 @@
 package br.com.budgetflow.features.users.service;
 
-import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.budgetflow.features.users.domain.Role;
 import br.com.budgetflow.features.users.domain.User;
+import br.com.budgetflow.features.users.dto.UserResponseDTO;
 import br.com.budgetflow.features.users.repository.UserRepository;
 
 @Service
@@ -14,8 +22,31 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    @Transactional(readOnly = true)
+    public Page<UserResponseDTO> findAll(Pageable pageable) {
+        Page<User> users = this.userRepository.findAll(pageable);
+        return users.map(UserResponseDTO::new);
+    }
+
+    @Transactional(readOnly = true)
     public User findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+    }
+
+    @Transactional
+    public UserResponseDTO updateUserRoles(Long userId, List<Role> roles) {
+        User user = this.findById(userId);
+        user.getRoles().clear();
+        
+        for (Role role : roles) {
+            if (!user.getRoles().contains(role)) {
+                user.getRoles().add(role);
+            } else {
+                user.getRoles().remove(role);
+            }
+        }
+        //TODO arrumar lógica para adicionar e excluir roles pois está errada
+        return new UserResponseDTO(this.userRepository.save(user));
     }
 }
