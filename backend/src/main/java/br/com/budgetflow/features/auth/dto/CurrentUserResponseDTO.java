@@ -2,7 +2,7 @@ package br.com.budgetflow.features.auth.dto;
 
 import java.util.List;
 
-public record MeResponse(
+public record CurrentUserResponseDTO(
         Long id,
         String nome,
         String email,
