@@ -22,5 +22,4 @@ public interface CategoriaMapper {
 
 	@Mapping(source = "user.id", target = "userId")
 	CategoriaResponseDTO toResponseDTO(Categoria categoria);
-
 }

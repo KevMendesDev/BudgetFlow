@@ -1,6 +1,8 @@
 package br.com.budgetflow.features.users.domain;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -46,8 +48,11 @@ public class User {
     @Column(nullable = false)
     private String senha;
 
-    @Column(nullable = false)
-    private String roles = "USER";
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role")
+    private Set<Role> roles = new HashSet<>(Set.of(Role.USER));
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -63,6 +68,10 @@ public class User {
         this.cpf = cpf;
         this.telefone = telefone;
         this.senha = senha;
+    }
+
+    public User(Set<Role> roles){
+        this.roles = roles;
     }
 
     @Override

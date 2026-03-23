@@ -5,6 +5,7 @@ import br.com.budgetflow.features.auth.domain.RefreshToken;
 import br.com.budgetflow.features.auth.dto.CurrentUserResponseDTO;
 import br.com.budgetflow.features.auth.dto.RegisterRequestDTO;
 import br.com.budgetflow.features.auth.repository.RefreshTokenRepository;
+import br.com.budgetflow.features.users.domain.Role;
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,6 +20,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -120,9 +122,7 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("Usuário não encontrado"));
 
-        List<String> roles = user.getRoles() == null || user.getRoles().isBlank()
-                ? List.of("USER")
-                : List.of(user.getRoles().split("\\s*,\\s*"));
+        List<String> roles = rolesToStrings(user.getRoles());
 
         return new CurrentUserResponseDTO(user.getId(), user.getNome(), user.getEmail(), user.getCpf(), roles);
     }
@@ -151,11 +151,19 @@ public class AuthService {
         cookieService.setAccessTokenCookie(response, accessToken, accessMaxAge);
         cookieService.setRefreshTokenCookie(response, rawRefreshToken, refreshMaxAge);
 
-        List<String> roles = user.getRoles() == null || user.getRoles().isBlank()
-                ? List.of("USER")
-                : List.of(user.getRoles().split("\\s*,\\s*"));
+        List<String> roles = rolesToStrings(user.getRoles());
 
         return new CurrentUserResponseDTO(user.getId(), user.getNome(), user.getEmail(), user.getCpf(), roles);
+    }
+
+    private List<String> rolesToStrings(Set<Role> roles) {
+        if (roles == null || roles.isEmpty()) {
+            return List.of(Role.USER.name());
+        }
+
+        return roles.stream()
+                .map(Role::name)
+                .toList();
     }
 
     private String hashToken(String token) {
