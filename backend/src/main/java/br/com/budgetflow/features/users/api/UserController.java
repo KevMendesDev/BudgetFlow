@@ -36,8 +36,9 @@ public class UserController {
 
     @PatchMapping("/{id}/roles")
     @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<UserResponseDTO> updateRoles(@PathVariable Long id, @RequestBody List<Role> roles) {
+    public ResponseEntity<String> updateRoles(@PathVariable Long id, @RequestBody List<Role> roles) {
         UserResponseDTO updatedUser = this.userService.updateUserRoles(id, roles);
-        return ResponseEntity.ok(updatedUser);
+        return ResponseEntity.ok()
+            .body("Usuário atualizado com sucesso com as roles: " + updatedUser.roles());
     }
 }

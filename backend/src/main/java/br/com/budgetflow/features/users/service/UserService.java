@@ -1,6 +1,5 @@
 package br.com.budgetflow.features.users.service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -38,15 +37,7 @@ public class UserService {
     public UserResponseDTO updateUserRoles(Long userId, List<Role> roles) {
         User user = this.findById(userId);
         user.getRoles().clear();
-        
-        for (Role role : roles) {
-            if (!user.getRoles().contains(role)) {
-                user.getRoles().add(role);
-            } else {
-                user.getRoles().remove(role);
-            }
-        }
-        //TODO arrumar lógica para adicionar e excluir roles pois está errada
+        user.getRoles().addAll(roles);
         return new UserResponseDTO(this.userRepository.save(user));
     }
 }
