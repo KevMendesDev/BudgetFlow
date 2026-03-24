@@ -33,12 +33,6 @@ public class PeriodoFinanceiro {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
-    private Integer mes;
-
-    @Column(nullable = false)
-    private Integer ano;
-
     @Column(name = "data_inicio", nullable = false)
     private LocalDate dataInicio;
 
@@ -52,6 +46,15 @@ public class PeriodoFinanceiro {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    
+    public Integer getMes() {
+        return dataInicio.getMonthValue();
+    }
+
+    public Integer getAno() {
+        return dataInicio.getYear();
+    }
 
     @Override
     public int hashCode() {
@@ -80,7 +83,7 @@ public class PeriodoFinanceiro {
 
     @Override
     public String toString() {
-        return "PeriodoFinanceiro [id=" + id + ", mes=" + mes + ", ano=" + ano + ", dataInicio="
+        return "PeriodoFinanceiro [id=" + id + ", mes=" + getMes() + ", ano=" + getAno() + ", dataInicio="
                 + dataInicio + ", dataFim=" + dataFim + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
     }
 }
