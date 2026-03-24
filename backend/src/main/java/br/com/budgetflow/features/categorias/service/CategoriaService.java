@@ -6,12 +6,14 @@ import br.com.budgetflow.features.categorias.dto.CategoriaRequestDTO;
 import br.com.budgetflow.features.categorias.dto.CategoriaResponseDTO;
 import br.com.budgetflow.features.categorias.mapper.CategoriaMapper;
 import br.com.budgetflow.features.categorias.repository.CategoriaRepository;
+import br.com.budgetflow.features.categorias.repository.specification.CategoriaSpecification;
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.service.UserService;
 import br.com.budgetflow.security.SecurityUtils;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,10 +46,20 @@ public class CategoriaService {
 	}
 
 	@Transactional(readOnly = true)
-	public Page<CategoriaResponseDTO> findAll(Pageable pageable) {
+	public Page<CategoriaResponseDTO> findAll(
+			ClassificacaoCategoria classificacao,
+			String nomeUsuario,
+			String search,
+			Pageable pageable
+	) {
         Long userId = SecurityUtils.currentUserId();
+		Specification<Categoria> specification = Specification
+				.where(CategoriaSpecification.hasUserId(userId))
+				.and(CategoriaSpecification.hasClassificacao(classificacao))
+				.and(CategoriaSpecification.hasNomeUsuario(nomeUsuario))
+				.and(CategoriaSpecification.hasSearchTerm(search));
 
-		return categoriaRepository.findAllByUserId(userId, pageable)
+		return categoriaRepository.findAll(specification, pageable)
 				.map(categoriaMapper::toResponseDTO);
 	}
 
