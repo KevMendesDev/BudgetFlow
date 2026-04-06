@@ -1,16 +1,15 @@
 package br.com.budgetflow.features.movimentacoes.service;
 
-import br.com.budgetflow.common.enums.Frequencia;
 import br.com.budgetflow.features.movimentacoes.domain.Transacao;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRepository;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
+import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.MonthDay;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,13 +28,14 @@ public class GeracaoTransacoesDoPeriodoService {
 
     @Transactional
     public List<Transacao> gerarParaPeriodo(PeriodoFinanceiro periodo) {
-        List<TransacaoRecorrente> recorrentes = recorrenteRepository.findAll();
+        Long userId = periodo.getUser().getId();
+        List<TransacaoRecorrente> recorrentes = recorrenteRepository.findAllByUserId(userId);
         List<Transacao> geradas = new ArrayList<>();
 
         for (TransacaoRecorrente recorrente : recorrentes) {
             List<LocalDate> datas = calcularDatas(recorrente, periodo);
             for (LocalDate data : datas) {
-                if (!transacaoRepository.existsByTransacaoRecorrenteIdAndData(recorrente.getId(), data)) {
+                if (!transacaoRepository.existsByTransacaoRecorrenteIdAndDataAndUserId(recorrente.getId(), data, userId)) {
                     Transacao transacao = new Transacao();
                     transacao.setUser(recorrente.getUser());
                     transacao.setCategoria(recorrente.getCategoria());
@@ -60,77 +60,31 @@ public class GeracaoTransacoesDoPeriodoService {
         LocalDate recorrenteInicio = recorrente.getDataInicio();
         LocalDate recorrenteFim = recorrente.getDataFim();
 
-        Frequencia freq = recorrente.getFrequencia();
+        long indiceInicial = 0;
+        long parcelasJaGeradas = transacaoRepository.countByTransacaoRecorrenteId(recorrente.getId());
+        if (parcelasJaGeradas > 0) {
+            indiceInicial = parcelasJaGeradas;
+        }
 
-        switch (freq) {
-            case DIARIO -> {
-                // Start from the later of periodoInicio and recorrenteInicio to avoid unnecessary iteration
-                LocalDate current = recorrenteInicio.isAfter(periodoInicio) ? recorrenteInicio : periodoInicio;
-                int parcelas = 0;
-                while (!current.isAfter(periodoFim)) {
-                    if (dentroDaJanela(current, recorrenteInicio, recorrenteFim)
-                            && dentroDoLimiteParcelas(recorrente, parcelas)) {
-                        datas.add(current);
-                        parcelas++;
-                    }
-                    current = current.plusDays(1);
-                }
+        Integer totalParcelas = recorrente.getTotalParcelas();
+        long limiteOcorrencias = totalParcelas == null ? Long.MAX_VALUE : totalParcelas;
+
+        for (long i = indiceInicial; i < limiteOcorrencias; i++) {
+            LocalDate dataOcorrencia = RecorrenciaUtils.calcularDataOcorrencia(recorrenteInicio, recorrente.getFrequencia(), i);
+
+            if (recorrenteFim != null && dataOcorrencia.isAfter(recorrenteFim)) {
+                break;
             }
-            case SEMANAL -> {
-                // Align weekly cadence with recorrenteInicio's day of week;
-                // find the first occurrence on or after periodoInicio
-                LocalDate firstOccurrence = recorrenteInicio;
-                if (firstOccurrence.isBefore(periodoInicio)) {
-                    long daysDiff = java.time.temporal.ChronoUnit.DAYS.between(firstOccurrence, periodoInicio);
-                    long weeksToAdd = (daysDiff + 6) / 7;
-                    firstOccurrence = recorrenteInicio.plusWeeks(weeksToAdd);
-                }
-                LocalDate current = firstOccurrence;
-                int parcelas = 0;
-                while (!current.isAfter(periodoFim)) {
-                    if (dentroDaJanela(current, recorrenteInicio, recorrenteFim)
-                            && dentroDoLimiteParcelas(recorrente, parcelas)) {
-                        datas.add(current);
-                        parcelas++;
-                    }
-                    current = current.plusWeeks(1);
-                }
+
+            if (dataOcorrencia.isAfter(periodoFim)) {
+                break;
             }
-            case MENSAL -> {
-                LocalDate firstDay = periodoInicio;
-                if (dentroDaJanela(firstDay, recorrenteInicio, recorrenteFim)
-                        && dentroDoLimiteParcelas(recorrente, 0)) {
-                    datas.add(firstDay);
-                }
-            }
-            case ANUAL -> {
-                MonthDay recorrenteMonthDay = MonthDay.of(recorrenteInicio.getMonth(), recorrenteInicio.getDayOfMonth());
-                int ano = periodoInicio.getYear();
-                LocalDate candidata;
-                try {
-                    candidata = recorrenteMonthDay.atYear(ano);
-                } catch (Exception e) {
-                    // Feb 29 in non-leap year -> Feb 28
-                    candidata = LocalDate.of(ano, recorrenteInicio.getMonth(), 28);
-                }
-                if (!candidata.isBefore(periodoInicio) && !candidata.isAfter(periodoFim)
-                        && dentroDaJanela(candidata, recorrenteInicio, recorrenteFim)
-                        && dentroDoLimiteParcelas(recorrente, 0)) {
-                    datas.add(candidata);
-                }
+
+            if (!dataOcorrencia.isBefore(periodoInicio) && !dataOcorrencia.isBefore(recorrenteInicio)) {
+                datas.add(dataOcorrencia);
             }
         }
+
         return datas;
-    }
-
-    private boolean dentroDaJanela(LocalDate data, LocalDate inicio, LocalDate fim) {
-        if (data.isBefore(inicio)) return false;
-        if (fim != null && data.isAfter(fim)) return false;
-        return true;
-    }
-
-    private boolean dentroDoLimiteParcelas(TransacaoRecorrente recorrente, int parcelasJaGeradas) {
-        if (recorrente.getTotalParcelas() == null) return true;
-        return parcelasJaGeradas < recorrente.getTotalParcelas();
     }
 }
