@@ -2,6 +2,7 @@ package br.com.budgetflow.features.periodos.api;
 
 import br.com.budgetflow.features.periodos.dto.PeriodoFinanceiroRequestDTO;
 import br.com.budgetflow.features.periodos.dto.PeriodoFinanceiroResponseDTO;
+import br.com.budgetflow.features.periodos.mapper.PeriodoFinanceiroMapper;
 import br.com.budgetflow.features.periodos.service.PeriodoFinanceiroService;
 import jakarta.validation.Valid;
 
@@ -27,9 +28,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/periodos-financeiros")
 public class PeriodoFinanceiroController {
 	private final PeriodoFinanceiroService periodoFinanceiroService;
+	private final PeriodoFinanceiroMapper periodoFinanceiroMapper;
 
-	public PeriodoFinanceiroController(PeriodoFinanceiroService periodoFinanceiroService) {
+	public PeriodoFinanceiroController(PeriodoFinanceiroService periodoFinanceiroService, PeriodoFinanceiroMapper periodoFinanceiroMapper) {
 		this.periodoFinanceiroService = periodoFinanceiroService;
+		this.periodoFinanceiroMapper = periodoFinanceiroMapper;
 	}
 
 	@PostMapping
@@ -57,7 +60,9 @@ public class PeriodoFinanceiroController {
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAnyRole('USER')")
 	public ResponseEntity<PeriodoFinanceiroResponseDTO> findById(@PathVariable Long id) {
-		PeriodoFinanceiroResponseDTO periodo = periodoFinanceiroService.findById(id);
+		PeriodoFinanceiroResponseDTO periodo = periodoFinanceiroMapper
+			.toResponseDTO(periodoFinanceiroService.findById(id));
+
 		return ResponseEntity.ok(periodo);
 	}
 

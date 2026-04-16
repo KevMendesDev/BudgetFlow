@@ -71,10 +71,10 @@ public class PeriodoFinanceiroService {
     }
 
     @Transactional(readOnly = true)
-    public PeriodoFinanceiroResponseDTO findById(Long id) {
+    public PeriodoFinanceiro findById(Long id) {
         PeriodoFinanceiro periodo = periodoFinanceiroRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Período financeiro não encontrado"));
-        return periodoFinanceiroMapper.toResponseDTO(periodo);
+        return periodo;
     }
 
     @Transactional
@@ -98,6 +98,33 @@ public class PeriodoFinanceiroService {
             throw new IllegalArgumentException("Período financeiro não encontrado");
         }
         periodoFinanceiroRepository.deleteById(id);
+    }
+
+    public PeriodoFinanceiro resolvePeriodoToTransacao(Long periodoId, Long userId) {
+        if (periodoId == null) {
+            return periodoFinanceiroRepository
+                    .findFirstByUserIdAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(userId, LocalDate.now(), LocalDate.now())
+                    .orElseThrow(() -> new IllegalArgumentException("Nenhum período financeiro atual encontrado para o usuário"));
+        }
+
+        PeriodoFinanceiro periodo = this.findById(periodoId);
+
+        if (!periodo.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Período financeiro não encontrado");
+        }
+
+        return periodo;
+    }
+
+    public Long resolvePeriodoIdForFilterToTransacao(Long userId, Long periodoId) {
+        if (periodoId != null) {
+            return this.resolvePeriodoToTransacao(periodoId, userId).getId();
+        }
+
+        return periodoFinanceiroRepository
+                .findFirstByUserIdAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(userId, LocalDate.now(), LocalDate.now())
+                .map(PeriodoFinanceiro::getId)
+                .orElse(null);
     }
 
     private void validateDates(PeriodoFinanceiroRequestDTO periodoDTO) {

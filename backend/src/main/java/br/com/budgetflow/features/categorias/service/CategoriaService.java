@@ -64,10 +64,10 @@ public class CategoriaService {
 	}
 
 	@Transactional(readOnly = true)
-	public CategoriaResponseDTO findById(Long id) {
+	public Categoria findById(Long id) {
 		Categoria categoria = categoriaRepository.findById(id)
 				.orElseThrow(() -> new IllegalArgumentException("Categoria não encontrada"));
-		return categoriaMapper.toResponseDTO(categoria);
+		return categoria;
 	}
 
 	@Transactional
