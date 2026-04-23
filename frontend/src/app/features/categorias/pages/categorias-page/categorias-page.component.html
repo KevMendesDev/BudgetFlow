@@ -1,0 +1,129 @@
+<main class="crud-wrap">
+  <div class="crud-container">
+    <header>
+      <p class="eyebrow">CRUD</p>
+      <h1>Categorias</h1>
+      <p class="muted">Gerencie suas categorias com criacao, edicao, listagem e exclusao.</p>
+    </header>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    <section class="bf-panel filters">
+      <form [formGroup]="filtersForm" (ngSubmit)="applyFilters()" class="filters-grid" novalidate>
+        <label class="bf-label">
+          Busca
+          <input class="bf-input" type="text" formControlName="q" placeholder="Nome da categoria" />
+        </label>
+
+        <label class="bf-label">
+          Classificacao
+          <select class="bf-input" formControlName="classificacao">
+            <option value="">Todas</option>
+            @for (item of classificacoes; track item.value) {
+              <option [value]="item.value">{{ item.label }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="filters-actions">
+          <button class="bf-btn-primary" type="submit" [disabled]="loading()">Filtrar</button>
+          <button class="btn-secondary" type="button" (click)="clearFilters()" [disabled]="loading()">Limpar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="bf-panel list">
+      <div class="list-header">
+        <h2>Lista de categorias</h2>
+        <button class="bf-btn-primary" type="button" (click)="openCreateModal()">Criar categoria</button>
+      </div>
+
+      @if (loading()) {
+        <div class="skeleton-list" aria-label="Carregando categorias">
+          @for (row of [1, 2, 3, 4, 5]; track row) {
+            <p class="bf-skeleton-line h-11 w-full"></p>
+          }
+        </div>
+      } @else if (categorias().length === 0) {
+        <p class="muted">Nenhuma categoria encontrada com os filtros atuais.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Classificacao</th>
+                <th class="actions-col">Acoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (categoria of categorias(); track categoria.id) {
+                <tr>
+                  <td>{{ categoria.nome }}</td>
+                  <td>{{ classificacaoLabel(categoria.classificacao) }}</td>
+                  <td class="actions-col">
+                    <button type="button" class="btn-secondary" (click)="startEdit(categoria)">Editar</button>
+                    <button
+                      type="button"
+                      class="btn-danger"
+                      (click)="deleteCategoria(categoria)"
+                      [disabled]="deletingId() === categoria.id"
+                    >
+                      {{ deletingId() === categoria.id ? 'Excluindo...' : 'Excluir' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+
+  @if (modalOpen()) {
+    <section class="modal-backdrop" (click)="closeModal()" aria-label="Fechar popup">
+      <div class="modal-card bf-panel" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h2>{{ editingId() ? 'Editar categoria' : 'Criar categoria' }}</h2>
+          <button class="btn-secondary" type="button" (click)="closeModal()" [disabled]="submitting()">Fechar</button>
+        </div>
+
+        @if (modalErrorMessage()) {
+          <p class="error modal-error">{{ modalErrorMessage() }}</p>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" class="modal-form" novalidate>
+          <label class="bf-label">
+            Nome
+            <input class="bf-input" type="text" maxlength="100" formControlName="nome" placeholder="Ex: Alimentacao" />
+            @if (fieldError(form.controls.nome, 'Nome')) {
+              <small class="bf-error">{{ fieldError(form.controls.nome, 'Nome') }}</small>
+            }
+          </label>
+
+          <label class="bf-label">
+            Classificacao
+            <select class="bf-input" formControlName="classificacao">
+              <option value="">Selecione</option>
+              @for (item of classificacoes; track item.value) {
+                <option [value]="item.value">{{ item.label }}</option>
+              }
+            </select>
+            @if (fieldError(form.controls.classificacao, 'Classificacao')) {
+              <small class="bf-error">{{ fieldError(form.controls.classificacao, 'Classificacao') }}</small>
+            }
+          </label>
+
+          <div class="modal-actions">
+            <button class="bf-btn-primary" type="submit" [disabled]="submitting() || loading()">
+              {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alteracoes' : 'Criar categoria' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  }
+</main>

@@ -9,7 +9,34 @@ import java.time.YearMonth;
 
 public final class RecorrenciaUtils {
 
+    private static final String MSG_DATA_ANTES_INICIO = "A data da transação não pode ser anterior ao início da recorrência";
+    private static final String MSG_DATA_APOS_FIM = "A data da transação não pode ultrapassar a data final da recorrência";
+    private static final String MSG_DUPLICADA_PERIODO = "Esta transação recorrente já foi usada neste período";
+    private static final String MSG_LIMITE_PARCELAS = "Não é possível lançar mais parcelas para esta transação recorrente";
+
     private RecorrenciaUtils() {
+    }
+
+    public static void validarDataTransacaoNaRecorrencia(LocalDate dataTransacao, LocalDate dataInicio, LocalDate dataFim) {
+        if (dataTransacao.isBefore(dataInicio)) {
+            throw new IllegalArgumentException(MSG_DATA_ANTES_INICIO);
+        }
+
+        if (dataFim != null && dataTransacao.isAfter(dataFim)) {
+            throw new IllegalArgumentException(MSG_DATA_APOS_FIM);
+        }
+    }
+
+    public static void validarRecorrenciaUnicaNoPeriodo(boolean jaExisteNoPeriodo) {
+        if (jaExisteNoPeriodo) {
+            throw new IllegalArgumentException(MSG_DUPLICADA_PERIODO);
+        }
+    }
+
+    public static void validarLimiteParcelas(Integer totalParcelas, long parcelasLancadas) {
+        if (totalParcelas != null && parcelasLancadas >= totalParcelas) {
+            throw new IllegalArgumentException(MSG_LIMITE_PARCELAS);
+        }
     }
 
     public static LocalDate calcularDataFim(LocalDate dataInicio, Frequencia frequencia, Integer totalParcelas) {

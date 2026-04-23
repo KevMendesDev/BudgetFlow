@@ -1,0 +1,217 @@
+<main class="crud-wrap">
+  <div class="crud-container">
+    <header>
+      <p class="eyebrow">CRUD</p>
+      <h1>Transacoes recorrentes</h1>
+      <p class="muted">Gerencie recorrencias com criacao, edicao, listagem e exclusao.</p>
+    </header>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    <section class="bf-panel filters">
+      <form [formGroup]="filtersForm" (ngSubmit)="applyFilters()" class="filters-grid" novalidate>
+        <label class="bf-label">
+          Busca
+          <input class="bf-input" type="text" formControlName="query" placeholder="Descricao ou categoria" />
+        </label>
+
+        <label class="bf-label">
+          Frequencia
+          <select class="bf-input" formControlName="frequencia">
+            <option value="">Todas</option>
+            @for (item of frequencias; track item.value) {
+              <option [value]="item.value">{{ item.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="bf-label">
+          Tipo
+          <select class="bf-input" formControlName="tipoMovimentacao">
+            <option value="">Todos</option>
+            @for (item of tiposMovimentacao; track item.value) {
+              <option [value]="item.value">{{ item.label }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="filters-actions">
+          <button class="bf-btn-primary" type="submit" [disabled]="loading()">Filtrar</button>
+          <button class="btn-secondary" type="button" (click)="clearFilters()" [disabled]="loading()">Limpar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="bf-panel list">
+      <div class="list-header">
+        <h2>Lista de recorrencias</h2>
+        <button class="bf-btn-primary" type="button" (click)="openCreateModal()" [disabled]="loadingCategorias()">
+          Criar recorrencia
+        </button>
+      </div>
+
+      @if (loading()) {
+        <div class="skeleton-list" aria-label="Carregando recorrencias">
+          @for (row of [1, 2, 3, 4, 5]; track row) {
+            <p class="bf-skeleton-line h-11 w-full"></p>
+          }
+        </div>
+      } @else if (recorrencias().length === 0) {
+        <p class="muted">Nenhuma recorrencia encontrada com os filtros atuais.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Descricao</th>
+                <th>Categoria</th>
+                <th>Valor</th>
+                <th>Frequencia</th>
+                <th>Inicio</th>
+                <th>Fim</th>
+                <th class="actions-col">Acoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of recorrencias(); track item.id) {
+                <tr>
+                  <td>{{ item.descricao }}</td>
+                  <td>{{ item.categoriaNome }}</td>
+                  <td>{{ formatMoney(item.valorParcela) }}</td>
+                  <td>{{ frequenciaLabel(item.frequencia) }}</td>
+                  <td>{{ formatDate(item.dataInicio) }}</td>
+                  <td>{{ formatDate(item.dataFim) }}</td>
+                  <td class="actions-col">
+                    <button type="button" class="btn-secondary" (click)="startEdit(item)">Editar</button>
+                    <button
+                      type="button"
+                      class="btn-danger"
+                      (click)="deleteRecorrencia(item)"
+                      [disabled]="deletingId() === item.id"
+                    >
+                      {{ deletingId() === item.id ? 'Excluindo...' : 'Excluir' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+
+  @if (modalOpen()) {
+    <section class="modal-backdrop" (click)="closeModal()" aria-label="Fechar popup">
+      <div class="modal-card modal-wide bf-panel" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h2>{{ editingId() ? 'Editar recorrencia' : 'Criar recorrencia' }}</h2>
+          <button class="btn-secondary" type="button" (click)="closeModal()" [disabled]="submitting()">Fechar</button>
+        </div>
+
+        @if (modalErrorMessage()) {
+          <p class="error modal-error">{{ modalErrorMessage() }}</p>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" class="modal-form modal-grid" novalidate>
+          <label class="bf-label">
+            Categoria
+            <select class="bf-input" formControlName="categoriaId">
+              <option value="">Selecione</option>
+              @for (categoria of categorias(); track categoria.id) {
+                <option [value]="categoria.id">{{ categoria.nome }}</option>
+              }
+            </select>
+            @if (fieldError(form.controls.categoriaId, 'Categoria')) {
+              <small class="bf-error">{{ fieldError(form.controls.categoriaId, 'Categoria') }}</small>
+            }
+          </label>
+
+          <label class="bf-label full-width">
+            Descricao
+            <input class="bf-input" type="text" maxlength="255" formControlName="descricao" placeholder="Ex: Assinatura streaming" />
+            @if (fieldError(form.controls.descricao, 'Descricao')) {
+              <small class="bf-error">{{ fieldError(form.controls.descricao, 'Descricao') }}</small>
+            }
+          </label>
+
+          <label class="bf-label">
+            Valor da parcela
+            <input class="bf-input" type="number" min="0.01" step="0.01" formControlName="valorParcela" placeholder="0.00" />
+            @if (fieldError(form.controls.valorParcela, 'Valor')) {
+              <small class="bf-error">{{ fieldError(form.controls.valorParcela, 'Valor') }}</small>
+            }
+          </label>
+
+          <label class="bf-label">
+            Tipo de movimentacao
+            <select class="bf-input" formControlName="tipoMovimentacao">
+              <option value="">Selecione</option>
+              @for (item of tiposMovimentacao; track item.value) {
+                <option [value]="item.value">{{ item.label }}</option>
+              }
+            </select>
+            @if (fieldError(form.controls.tipoMovimentacao, 'Tipo de movimentacao')) {
+              <small class="bf-error">{{ fieldError(form.controls.tipoMovimentacao, 'Tipo de movimentacao') }}</small>
+            }
+          </label>
+
+          <label class="bf-label">
+            Tipo de pagamento
+            <select class="bf-input" formControlName="tipoPagamento">
+              <option value="">Selecione</option>
+              @for (item of tiposPagamento; track item.value) {
+                <option [value]="item.value">{{ item.label }}</option>
+              }
+            </select>
+            @if (fieldError(form.controls.tipoPagamento, 'Tipo de pagamento')) {
+              <small class="bf-error">{{ fieldError(form.controls.tipoPagamento, 'Tipo de pagamento') }}</small>
+            }
+          </label>
+
+          <label class="bf-label">
+            Frequencia
+            <select class="bf-input" formControlName="frequencia">
+              <option value="">Selecione</option>
+              @for (item of frequencias; track item.value) {
+                <option [value]="item.value">{{ item.label }}</option>
+              }
+            </select>
+            @if (fieldError(form.controls.frequencia, 'Frequencia')) {
+              <small class="bf-error">{{ fieldError(form.controls.frequencia, 'Frequencia') }}</small>
+            }
+          </label>
+
+          <label class="bf-label">
+            Data de inicio
+            <input class="bf-input" type="date" formControlName="dataInicio" />
+            @if (fieldError(form.controls.dataInicio, 'Data de inicio')) {
+              <small class="bf-error">{{ fieldError(form.controls.dataInicio, 'Data de inicio') }}</small>
+            }
+          </label>
+
+          <label class="bf-label">
+            Data de fim (opcional)
+            <input class="bf-input" type="date" formControlName="dataFim" />
+          </label>
+
+          <label class="bf-label">
+            Total de parcelas (opcional)
+            <input class="bf-input" type="number" min="1" step="1" formControlName="totalParcelas" placeholder="Ex: 12" />
+            @if (fieldError(form.controls.totalParcelas, 'Total de parcelas')) {
+              <small class="bf-error">{{ fieldError(form.controls.totalParcelas, 'Total de parcelas') }}</small>
+            }
+          </label>
+
+          <div class="modal-actions full-width">
+            <button class="bf-btn-primary" type="submit" [disabled]="submitting() || loadingCategorias()">
+              {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alteracoes' : 'Criar recorrencia' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  }
+</main>

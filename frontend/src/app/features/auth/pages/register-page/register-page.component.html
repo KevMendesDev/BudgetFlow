@@ -1,0 +1,76 @@
+<div class="bf-auth-card">
+  <p class="m-0 text-[0.78rem] uppercase tracking-[0.08em] text-[var(--brand-amber)]">Cadastro</p>
+  <h2 class="mt-1 font-[var(--font-display)] text-3xl">Criar tua conta</h2>
+  <p class="mt-2 text-[var(--muted-text)]">Ao cadastrar, a sessao ja nasce ativa.</p>
+
+  @if (errorMessage()) {
+    <p class="mt-3 text-sm text-red-300">{{ errorMessage() }}</p>
+  }
+
+  <form class="bf-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label class="bf-label">
+      Nome
+      <input class="bf-input" type="text" formControlName="nome" placeholder="Seu nome" />
+      @if (fieldError(form.controls.nome, 'Nome')) {
+        <small class="bf-error">{{ fieldError(form.controls.nome, 'Nome') }}</small>
+      }
+    </label>
+
+    <label class="bf-label">
+      Email
+      <input class="bf-input" type="email" formControlName="email" placeholder="voce@email.com" />
+      @if (fieldError(form.controls.email, 'Email')) {
+        <small class="bf-error">{{ fieldError(form.controls.email, 'Email') }}</small>
+      }
+    </label>
+
+    <label class="bf-label">
+      CPF
+      <input
+        class="bf-input"
+        type="text"
+        formControlName="cpf"
+        placeholder="000.000.000-00"
+        inputmode="numeric"
+        maxlength="14"
+        (input)="onCpfInput()"
+      />
+      @if (fieldError(form.controls.cpf, 'CPF')) {
+        <small class="bf-error">{{ fieldError(form.controls.cpf, 'CPF') }}</small>
+      }
+    </label>
+
+    <label class="bf-label">
+      Telefone (opcional)
+      <input
+        class="bf-input"
+        type="text"
+        formControlName="telefone"
+        placeholder="(11) 99999-9999"
+        inputmode="numeric"
+        maxlength="15"
+        (input)="onPhoneInput()"
+      />
+      @if (fieldError(form.controls.telefone, 'Telefone')) {
+        <small class="bf-error">{{ fieldError(form.controls.telefone, 'Telefone') }}</small>
+      }
+    </label>
+
+    <label class="bf-label">
+      Senha
+      <input class="bf-input" type="password" formControlName="senha" placeholder="minimo 8 chars" />
+      @if (fieldError(form.controls.senha, 'Senha')) {
+        <small class="bf-error">{{ fieldError(form.controls.senha, 'Senha') }}</small>
+      }
+    </label>
+
+    <button class="bf-btn-primary" type="submit" [disabled]="loading()">
+      {{ loading() ? 'Criando...' : 'Criar conta' }}
+    </button>
+  </form>
+
+  <p class="mt-4 text-sm text-[var(--muted-text)]">
+    Já tem conta?
+    <a class="bf-link" routerLink="/login">Entrar</a>
+  </p>
+</div>

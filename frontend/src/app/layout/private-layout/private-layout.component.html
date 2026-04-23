@@ -1,0 +1,43 @@
+<main class="private-wrap">
+  <div class="private-shell" [class.collapsed]="collapsed()">
+    <aside class="sidebar" [class.collapsed]="collapsed()">
+      <header class="brand">
+        <div class="brand-main">
+          <span class="logo">BF</span>
+          <div class="brand-text">
+            <p>BudgetFlow</p>
+            <small>{{ user()?.nome }}</small>
+          </div>
+        </div>
+        <button class="collapse-btn" (click)="toggleSidebar()" type="button" [attr.aria-label]="collapsed() ? 'Expandir menu' : 'Retrair menu'">
+          {{ collapsed() ? '>>' : '<<' }}
+        </button>
+      </header>
+
+      <nav class="menu" aria-label="Menu principal">
+        <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          <span class="item-icon">D</span>
+          <span class="item-label">Dashboard</span>
+        </a>
+        <a routerLink="/categorias" routerLinkActive="active">
+          <span class="item-icon">C</span>
+          <span class="item-label">Categorias</span>
+        </a>
+        <a routerLink="/transacoes-recorrentes" routerLinkActive="active">
+          <span class="item-icon">R</span>
+          <span class="item-label">Transacoes recorrentes</span>
+        </a>
+        <a routerLink="/periodos-financeiros" routerLinkActive="active">
+          <span class="item-icon">P</span>
+          <span class="item-label">Periodos financeiros</span>
+        </a>
+      </nav>
+
+      <button class="logout" (click)="logout()" type="button">Sair</button>
+    </aside>
+
+    <section class="content">
+      <router-outlet></router-outlet>
+    </section>
+  </div>
+</main>

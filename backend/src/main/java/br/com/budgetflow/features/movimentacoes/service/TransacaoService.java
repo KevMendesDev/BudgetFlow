@@ -10,6 +10,7 @@ import br.com.budgetflow.features.movimentacoes.dto.TransacaoResponseDTO;
 import br.com.budgetflow.features.movimentacoes.mapper.TransacaoMapper;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRepository;
 import br.com.budgetflow.features.movimentacoes.repository.specification.TransacaoSpecification;
+import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.periodos.service.PeriodoFinanceiroService;
 import br.com.budgetflow.features.users.domain.User;
@@ -59,7 +60,7 @@ public class TransacaoService {
         transacao.setUser(user);
         transacao.setPeriodo(periodo);
 
-        this.fillTransacaoData(transacao, requestDTO, userId);
+        this.fillTransacaoData(transacao, requestDTO, userId, null);
 
         return transacaoMapper.toResponseDTO(transacaoRepository.save(transacao));
     }
@@ -99,7 +100,7 @@ public class TransacaoService {
         transacaoMapper.updateFromDto(requestDTO, transacao);
         transacao.setPeriodo(periodo);
 
-        this.fillTransacaoData(transacao, requestDTO, userId);
+        this.fillTransacaoData(transacao, requestDTO, userId, id);
 
         return transacaoMapper.toResponseDTO(transacaoRepository.save(transacao));
     }
@@ -111,9 +112,10 @@ public class TransacaoService {
         transacaoRepository.delete(transacao);
     }
 
-    private void fillTransacaoData(Transacao transacao, TransacaoRequestDTO requestDTO, Long userId) {
+    private void fillTransacaoData(Transacao transacao, TransacaoRequestDTO requestDTO, Long userId, Long currentTransacaoId) {
         if (requestDTO.transacaoRecorrenteId() != null) {
             TransacaoRecorrente transacaoRecorrente = transacaoRecorrenteService.findEntityByIdAndUser(requestDTO.transacaoRecorrenteId(), userId);
+            validateTransacaoRecorrenteConstraints(transacaoRecorrente, transacao, userId, currentTransacaoId);
             transacao.setTransacaoRecorrente(transacaoRecorrente);
             transacao.setCategoria(transacaoRecorrente.getCategoria());
             transacao.setDescricao(transacaoRecorrente.getDescricao());
@@ -138,6 +140,34 @@ public class TransacaoService {
         transacao.setValor(requestDTO.valor());
         transacao.setTipoMovimentacao(requestDTO.tipoMovimentacao());
         transacao.setTipoPagamento(requestDTO.tipoPagamento());
+    }
+
+    private void validateTransacaoRecorrenteConstraints(
+            TransacaoRecorrente transacaoRecorrente,
+            Transacao transacao,
+            Long userId,
+            Long currentTransacaoId
+    ) {
+        RecorrenciaUtils.validarDataTransacaoNaRecorrencia(
+                transacao.getData(),
+                transacaoRecorrente.getDataInicio(),
+                transacaoRecorrente.getDataFim()
+        );
+
+        Long recorrenteId = transacaoRecorrente.getId();
+        Long periodoId = transacao.getPeriodo().getId();
+
+        boolean jaExisteNoPeriodo = currentTransacaoId == null
+                ? transacaoRepository.existsByTransacaoRecorrenteIdAndPeriodoIdAndUserId(recorrenteId, periodoId, userId)
+                : transacaoRepository.existsByTransacaoRecorrenteIdAndPeriodoIdAndUserIdAndIdNot(recorrenteId, periodoId, userId, currentTransacaoId);
+
+        RecorrenciaUtils.validarRecorrenciaUnicaNoPeriodo(jaExisteNoPeriodo);
+
+        long parcelasLancadas = currentTransacaoId == null
+                ? transacaoRepository.countByTransacaoRecorrenteIdAndUserId(recorrenteId, userId)
+                : transacaoRepository.countByTransacaoRecorrenteIdAndUserIdAndIdNot(recorrenteId, userId, currentTransacaoId);
+
+        RecorrenciaUtils.validarLimiteParcelas(transacaoRecorrente.getTotalParcelas(), parcelasLancadas);
     }
 
     private void validateManualTransacaoRequest(TransacaoRequestDTO requestDTO) {

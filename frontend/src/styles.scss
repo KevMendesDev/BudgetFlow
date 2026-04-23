@@ -1,0 +1,72 @@
+@use 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap');
+
+:root {
+	--bg: #070a11;
+	--text: #f5f7fc;
+	--muted-text: #9ea8bb;
+	--line: rgba(174, 185, 210, 0.22);
+	--brand-green: #12c978;
+	--brand-amber: #f4a327;
+	--font-display: 'Space Grotesk', sans-serif;
+	--font-base: 'Sora', sans-serif;
+	--content-width-desktop: 80%;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	min-height: 100%;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-base);
+}
+
+button,
+input,
+textarea,
+select {
+	font: inherit;
+}
+
+@layer components {
+	.bf-panel {
+		@apply rounded-2xl border border-[var(--line)] bg-white/5;
+	}
+
+	.bf-auth-card {
+		@apply mx-auto w-full max-w-[28rem] rounded-2xl border border-[var(--line)] bg-gradient-to-b from-white/10 to-white/5 p-7 backdrop-blur;
+	}
+
+	.bf-form {
+		@apply mt-5 grid gap-3;
+	}
+
+	.bf-label {
+		@apply grid gap-1.5 text-sm text-[var(--muted-text)];
+	}
+
+	.bf-input {
+		@apply w-full rounded-xl border border-[var(--line)] bg-[rgba(10,13,20,0.9)] px-4 py-3 text-[var(--text)] outline-none focus:border-[var(--brand-green)] focus:ring-3 focus:ring-[rgba(18,201,120,0.14)];
+	}
+
+	.bf-error {
+		@apply text-xs text-red-300;
+	}
+
+	.bf-btn-primary {
+		@apply mt-1 rounded-xl bg-gradient-to-br from-[var(--brand-green)] to-[#6af0b2] px-4 py-3 font-semibold text-[#06130c] disabled:cursor-not-allowed disabled:opacity-65;
+	}
+
+	.bf-link {
+		@apply text-[var(--brand-green)] no-underline;
+	}
+
+	.bf-skeleton-line {
+		@apply animate-pulse rounded-full bg-white/10;
+	}
+}

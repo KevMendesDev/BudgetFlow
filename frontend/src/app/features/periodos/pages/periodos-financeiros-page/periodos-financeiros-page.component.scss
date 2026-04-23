@@ -1,0 +1,11 @@
+@use '../../../categorias/pages/categorias-page/categorias-page.component.scss';
+
+.filters-grid {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) minmax(0, 12rem) auto;
+}
+
+@media (max-width: 960px) {
+	.filters-grid {
+		grid-template-columns: 1fr;
+	}
+}

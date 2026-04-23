@@ -1,0 +1,126 @@
+<main class="crud-wrap">
+  <div class="crud-container">
+    <header>
+      <p class="eyebrow">CRUD</p>
+      <h1>Periodos financeiros</h1>
+      <p class="muted">Gerencie periodos com criacao, edicao, listagem e exclusao.</p>
+    </header>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    <section class="bf-panel filters">
+      <form [formGroup]="filtersForm" (ngSubmit)="applyFilters()" class="filters-grid" novalidate>
+        <label class="bf-label">
+          Busca
+          <input class="bf-input" type="text" formControlName="q" placeholder="Ex: 2026-01" />
+        </label>
+
+        <label class="bf-label">
+          Data inicio
+          <input class="bf-input" type="date" formControlName="dataInicio" />
+        </label>
+
+        <label class="bf-label">
+          Data fim
+          <input class="bf-input" type="date" formControlName="dataFim" />
+        </label>
+
+        <div class="filters-actions">
+          <button class="bf-btn-primary" type="submit" [disabled]="loading()">Filtrar</button>
+          <button class="btn-secondary" type="button" (click)="clearFilters()" [disabled]="loading()">Limpar</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="bf-panel list">
+      <div class="list-header">
+        <h2>Lista de periodos</h2>
+        <button class="bf-btn-primary" type="button" (click)="openCreateModal()">Criar periodo</button>
+      </div>
+
+      @if (loading()) {
+        <div class="skeleton-list" aria-label="Carregando periodos">
+          @for (row of [1, 2, 3, 4, 5]; track row) {
+            <p class="bf-skeleton-line h-11 w-full"></p>
+          }
+        </div>
+      } @else if (periodos().length === 0) {
+        <p class="muted">Nenhum periodo encontrado com os filtros atuais.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Inicio</th>
+                <th>Fim</th>
+                <th>Criado em</th>
+                <th class="actions-col">Acoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (periodo of periodos(); track periodo.id) {
+                <tr>
+                  <td>{{ formatDate(periodo.dataInicio) }}</td>
+                  <td>{{ formatDate(periodo.dataFim) }}</td>
+                  <td>{{ formatDate(periodo.createdAt.slice(0, 10)) }}</td>
+                  <td class="actions-col">
+                    <button type="button" class="btn-secondary" (click)="startEdit(periodo)">Editar</button>
+                    <button
+                      type="button"
+                      class="btn-danger"
+                      (click)="deletePeriodo(periodo)"
+                      [disabled]="deletingId() === periodo.id"
+                    >
+                      {{ deletingId() === periodo.id ? 'Excluindo...' : 'Excluir' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+
+  @if (modalOpen()) {
+    <section class="modal-backdrop" (click)="closeModal()" aria-label="Fechar popup">
+      <div class="modal-card bf-panel" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h2>{{ editingId() ? 'Editar periodo' : 'Criar periodo' }}</h2>
+          <button class="btn-secondary" type="button" (click)="closeModal()" [disabled]="submitting()">Fechar</button>
+        </div>
+
+        @if (modalErrorMessage()) {
+          <p class="error modal-error">{{ modalErrorMessage() }}</p>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" class="modal-form" novalidate>
+          <label class="bf-label">
+            Data de inicio
+            <input class="bf-input" type="date" formControlName="dataInicio" />
+            @if (fieldError(form.controls.dataInicio, 'Data de inicio')) {
+              <small class="bf-error">{{ fieldError(form.controls.dataInicio, 'Data de inicio') }}</small>
+            }
+          </label>
+
+          <label class="bf-label">
+            Data de fim
+            <input class="bf-input" type="date" formControlName="dataFim" />
+            @if (fieldError(form.controls.dataFim, 'Data de fim')) {
+              <small class="bf-error">{{ fieldError(form.controls.dataFim, 'Data de fim') }}</small>
+            }
+          </label>
+
+          <div class="modal-actions">
+            <button class="bf-btn-primary" type="submit" [disabled]="submitting() || loading()">
+              {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alteracoes' : 'Criar periodo' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  }
+</main>

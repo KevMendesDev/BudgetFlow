@@ -13,7 +13,15 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long>, Jpa
 
     boolean existsByTransacaoRecorrenteIdAndDataAndUserId(Long transacaoRecorrenteId, LocalDate data, Long userId);
 
+    boolean existsByTransacaoRecorrenteIdAndPeriodoIdAndUserId(Long transacaoRecorrenteId, Long periodoId, Long userId);
+
+    boolean existsByTransacaoRecorrenteIdAndPeriodoIdAndUserIdAndIdNot(Long transacaoRecorrenteId, Long periodoId, Long userId, Long id);
+
     long countByTransacaoRecorrenteId(Long transacaoRecorrenteId);
+
+    long countByTransacaoRecorrenteIdAndUserId(Long transacaoRecorrenteId, Long userId);
+
+    long countByTransacaoRecorrenteIdAndUserIdAndIdNot(Long transacaoRecorrenteId, Long userId, Long id);
 
     Optional<Transacao> findByIdAndUserId(Long id, Long userId);
 }

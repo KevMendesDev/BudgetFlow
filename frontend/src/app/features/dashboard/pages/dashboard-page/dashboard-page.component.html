@@ -1,0 +1,199 @@
+<main class="dashboard-wrap">
+  <div class="dashboard-container">
+    <header class="topbar">
+      <div>
+        <p class="muted">Sessao ativa</p>
+        <h1>Ola, {{ user()?.nome }}</h1>
+      </div>
+      <div class="topbar-actions">
+        <button type="button" class="btn-create" (click)="openCreateModal()" [disabled]="!selectedPeriodo()">
+          Cadastrar transacao
+        </button>
+        <label class="periodo-field" for="periodoSelect">
+          Periodo
+          <select
+            id="periodoSelect"
+            [value]="selectedPeriodoId() ?? ''"
+            [disabled]="loadingPeriodos() || periodos().length === 0"
+            (change)="onPeriodoChange($any($event.target).value)"
+          >
+            @for (periodo of periodos(); track periodo.id) {
+              <option [value]="periodo.id">{{ formatPeriodo(periodo) }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    </header>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    @if (loading()) {
+      <section class="cards" aria-label="Carregando cards de resumo">
+        @for (item of skeletonCards; track item) {
+          <article class="card">
+            <p class="bf-skeleton-line h-3 w-28"></p>
+            <strong class="bf-skeleton-line mt-3 block h-6 w-36"></strong>
+          </article>
+        }
+      </section>
+
+      <section class="recentes" aria-label="Carregando lista de transacoes">
+        <h2 class="bf-skeleton-line h-4 w-36"></h2>
+        <ul>
+          @for (row of skeletonRows; track row) {
+            <li>
+              <div>
+                <p class="bf-skeleton-line h-4 w-40"></p>
+                <small class="bf-skeleton-line mt-2 block h-3 w-28"></small>
+              </div>
+              <span class="bf-skeleton-line h-3 w-16"></span>
+            </li>
+          }
+        </ul>
+      </section>
+    } @else {
+      @if (!selectedPeriodo()) {
+        <p class="muted loading">Nao achei periodo financeiro para mostrar.</p>
+      }
+
+      <section class="cards">
+        <article class="card saldo">
+          <p>Saldo do periodo</p>
+          <strong>{{ formatMoney(resumo().saldo) }}</strong>
+        </article>
+        <article class="card receita">
+          <p>Receitas</p>
+          <strong>{{ formatMoney(resumo().receitas) }}</strong>
+        </article>
+        <article class="card despesa">
+          <p>Despesas</p>
+          <strong>{{ formatMoney(resumo().despesas) }}</strong>
+        </article>
+      </section>
+
+      <section class="recentes">
+        <h2>Transacoes do periodo</h2>
+
+        @if (transacoesRecentes().length === 0) {
+          <p class="muted">Sem transacoes no periodo atual.</p>
+        } @else {
+          <ul>
+            @for (tx of transacoesRecentes(); track tx.id) {
+              <li>
+                <div>
+                  <strong>{{ tx.descricao || 'Sem descricao' }}</strong>
+                  <small>
+                    {{ tx.categoriaNome }} • {{ formatDate(tx.data) }}
+                    @if (parcelaInfo(tx)) {
+                      • Parcela {{ parcelaInfo(tx) }}
+                    }
+                  </small>
+                </div>
+                <div class="tx-actions">
+                  <span [class.receita]="tx.tipoMovimentacao === 'RECEITA'" [class.despesa]="tx.tipoMovimentacao === 'DESPESA'">
+                    {{ tx.tipoMovimentacao === 'DESPESA' ? '-' : '+' }} {{ formatMoney(tx.valor) }}
+                  </span>
+                  <div class="row-buttons">
+                    <button type="button" class="btn-inline" (click)="startEdit(tx)">Editar</button>
+                    <button type="button" class="btn-inline danger" (click)="deleteTransacao(tx)" [disabled]="deletingId() === tx.id">
+                      {{ deletingId() === tx.id ? 'Excluindo...' : 'Excluir' }}
+                    </button>
+                  </div>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  </div>
+
+  @if (modalOpen()) {
+    <section class="modal-backdrop" (click)="closeModal()" aria-label="Fechar popup">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-head">
+          <h2>{{ editingId() ? 'Editar transacao' : 'Cadastrar transacao' }}</h2>
+          <button type="button" class="btn-inline" (click)="closeModal()" [disabled]="submitting()">Fechar</button>
+        </div>
+
+        @if (modalErrorMessage()) {
+          <p class="error">{{ modalErrorMessage() }}</p>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submitTransacao()" class="tx-form" novalidate>
+          <label class="periodo-field">
+            Transacao recorrente (opcional)
+            <select formControlName="transacaoRecorrenteId" (change)="onRecorrenteChange($any($event.target).value)">
+              <option value="">Manual</option>
+              @for (rec of recorrentesDisponiveis(); track rec.id) {
+                <option [value]="rec.id">{{ rec.descricao }} • {{ rec.categoriaNome }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="periodo-field">
+            Categoria
+            <select formControlName="categoriaId" [disabled]="!isManualMode()">
+              <option value="">Selecione</option>
+              @for (categoria of categorias(); track categoria.id) {
+                <option [value]="categoria.id">{{ categoria.nome }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="periodo-field full-width">
+            Descricao
+            <input type="text" formControlName="descricao" [disabled]="!isManualMode()" placeholder="Ex: Mercado" />
+            @if (fieldError(form.controls.descricao, 'Descricao')) {
+              <small class="error">{{ fieldError(form.controls.descricao, 'Descricao') }}</small>
+            }
+          </label>
+
+          <label class="periodo-field">
+            Valor
+            <input type="number" min="0.01" step="0.01" formControlName="valor" [disabled]="!isManualMode()" />
+            @if (fieldError(form.controls.valor, 'Valor')) {
+              <small class="error">{{ fieldError(form.controls.valor, 'Valor') }}</small>
+            }
+          </label>
+
+          <label class="periodo-field">
+            Tipo movimentacao
+            <select formControlName="tipoMovimentacao" [disabled]="!isManualMode()">
+              <option value="">Selecione</option>
+              @for (tipo of tiposMovimentacao; track tipo.value) {
+                <option [value]="tipo.value">{{ tipo.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="periodo-field">
+            Tipo pagamento
+            <select formControlName="tipoPagamento" [disabled]="!isManualMode()">
+              <option value="">Selecione</option>
+              @for (tipo of tiposPagamento; track tipo.value) {
+                <option [value]="tipo.value">{{ tipo.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="periodo-field">
+            Data
+            <input type="date" formControlName="data" />
+            @if (fieldError(form.controls.data, 'Data')) {
+              <small class="error">{{ fieldError(form.controls.data, 'Data') }}</small>
+            }
+          </label>
+
+          <div class="modal-actions">
+            <button class="btn-create" type="submit" [disabled]="submitting()">
+              {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alteracoes' : 'Salvar transacao' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  }
+</main>

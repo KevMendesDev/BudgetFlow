@@ -1,0 +1,13 @@
+@if (message()) {
+  <aside
+    [class]="
+      'fixed right-4 top-4 z-50 flex min-w-64 max-w-96 items-start justify-between gap-3 rounded-xl border bg-[rgba(13,18,28,0.96)] p-3 shadow-[0_12px_30px_rgba(0,0,0,0.35)] ' +
+      (message()?.type === 'error' ? 'border-red-300/80 text-red-200' : '') +
+      (message()?.type === 'success' ? ' border-emerald-300/80 text-emerald-200' : '') +
+      (message()?.type === 'info' ? ' border-sky-300/80 text-sky-200' : '')
+    "
+  >
+    <p class="m-0 text-sm">{{ message()?.text }}</p>
+    <button class="cursor-pointer bg-transparent p-0 opacity-80" (click)="close()" type="button" aria-label="Fechar aviso">x</button>
+  </aside>
+}
