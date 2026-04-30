@@ -1,5 +1,6 @@
 package br.com.budgetflow.features.auth.service;
 
+import br.com.budgetflow.common.exceptions.ConflictException;
 import br.com.budgetflow.common.exceptions.UnauthorizedException;
 import br.com.budgetflow.features.auth.domain.RefreshToken;
 import br.com.budgetflow.features.auth.dto.CurrentUserResponseDTO;
@@ -31,6 +32,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthCookieService cookieService;
+    private final long accessTokenMinutes;
     private final long refreshTokenDays;
 
     public AuthService(
@@ -39,12 +41,14 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             AuthCookieService cookieService,
+            @Value("${app.security.jwt.access-token-minutes}") long accessTokenMinutes,
             @Value("${app.security.jwt.refresh-token-days}") long refreshTokenDays) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.cookieService = cookieService;
+        this.accessTokenMinutes = accessTokenMinutes;
         this.refreshTokenDays = refreshTokenDays;
     }
 
@@ -54,10 +58,10 @@ public class AuthService {
         String normalizedEmail = request.email().trim().toLowerCase();
 
         if (userRepository.existsByCpf(cpf)) {
-            throw new IllegalArgumentException("CPF já cadastrado");
+            throw new ConflictException("CPF ou e-mail já cadastrado(s)");
         }
         if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new IllegalArgumentException("E-mail já cadastrado");
+            throw new ConflictException("CPF ou e-mail já cadastrado(s)");
         }
 
         User user = new User(
@@ -118,6 +122,7 @@ public class AuthService {
         cookieService.clearCookies(response);
     }
 
+    @Transactional(readOnly = true)
     public CurrentUserResponseDTO me(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("Usuário não encontrado"));
@@ -145,7 +150,7 @@ public class AuthService {
         refreshToken.setRevoked(false);
         refreshTokenRepository.save(refreshToken);
 
-        int accessMaxAge = 15 * 60;
+        int accessMaxAge = (int) (accessTokenMinutes * 60);
         int refreshMaxAge = (int) (refreshTokenDays * 24 * 60 * 60);
 
         cookieService.setAccessTokenCookie(response, accessToken, accessMaxAge);

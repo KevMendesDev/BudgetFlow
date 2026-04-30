@@ -17,7 +17,7 @@ public final class TransacaoRecorrenteSpecification {
     private TransacaoRecorrenteSpecification() {
     }
 
-    public static Specification<TransacaoRecorrente> createSpecification(TransacaoRecorrenteFilterCriteria criteria, Long userId, Long effectivePeriodoId) {
+    public static Specification<TransacaoRecorrente> createSpecification(TransacaoRecorrenteFilterCriteria criteria, Long userId) {
         Specification<TransacaoRecorrente> specification = Specification
             .where(TransacaoRecorrenteSpecification.hasUserId(userId))
             .and(TransacaoRecorrenteSpecification.hasDataInicioFrom(criteria.getDataInicio()))

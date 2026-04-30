@@ -1,32 +1,38 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { CategoriaResponse } from '../../../../core/models/categoria.models';
 import { PeriodoFinanceiro } from '../../../../core/models/periodo.models';
 import { TransacaoRecorrenteResponse } from '../../../../core/models/transacao-recorrente.models';
 import { SessionService } from '../../../../core/services/session.service';
-import { TipoMovimentacao, TipoPagamento, TransacaoResponse } from '../../../../core/models/transacao.models';
+import { TransacaoResponse } from '../../../../core/models/transacao.models';
 import { CategoriasApiService } from '../../../../core/services/categorias-api.service';
 import { PeriodosApiService } from '../../../../core/services/periodos-api.service';
 import { TransacoesApiService } from '../../../../core/services/transacoes-api.service';
 import { TransacoesRecorrentesApiService } from '../../../../core/services/transacoes-recorrentes-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
+import { formatDate, toIsoDate } from '../../../../shared/utils/format.util';
+import { TransacaoModalComponent } from '../../components/transacao-modal/transacao-modal.component';
+import { Frequencia } from '../../../../core/models/transacao-recorrente.models';
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [ReactiveFormsModule],
+  imports: [CurrencyBRLPipe, TransacaoModalComponent],
   templateUrl: './dashboard-page.component.html',
   styleUrl: './dashboard-page.component.scss',
 })
 export class DashboardPageComponent implements OnInit {
-  private readonly formBuilder = inject(FormBuilder);
   private readonly categoriasApi = inject(CategoriasApiService);
   private readonly periodosApi = inject(PeriodosApiService);
   private readonly session = inject(SessionService);
   private readonly toast = inject(ToastService);
   private readonly transacoesApi = inject(TransacoesApiService);
   private readonly transacoesRecorrentesApi = inject(TransacoesRecorrentesApiService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly user = computed(() => this.session.user());
   readonly loadingPeriodos = signal(true);
@@ -34,41 +40,18 @@ export class DashboardPageComponent implements OnInit {
   readonly loadingRecorrentes = signal(true);
   readonly loadingCategorias = signal(true);
   readonly loading = computed(() => this.loadingPeriodos() || this.loadingResumo());
-  readonly submitting = signal(false);
   readonly deletingId = signal<number | null>(null);
   readonly modalOpen = signal(false);
-  readonly editingId = signal<number | null>(null);
+  readonly editingTransacao = signal<TransacaoResponse | null>(null);
   readonly errorMessage = signal('');
-  readonly modalErrorMessage = signal('');
   readonly periodos = signal<PeriodoFinanceiro[]>([]);
   readonly categorias = signal<CategoriaResponse[]>([]);
   readonly recorrentes = signal<TransacaoRecorrenteResponse[]>([]);
   readonly selectedPeriodoId = signal<number | null>(null);
   readonly transacoes = signal<TransacaoResponse[]>([]);
+
   readonly skeletonCards = [1, 2, 3];
   readonly skeletonRows = [1, 2, 3, 4, 5, 6];
-  readonly tiposMovimentacao: Array<{ value: TipoMovimentacao; label: string }> = [
-    { value: 'RECEITA', label: 'Receita' },
-    { value: 'DESPESA', label: 'Despesa' },
-  ];
-  readonly tiposPagamento: Array<{ value: TipoPagamento; label: string }> = [
-    { value: 'DINHEIRO', label: 'Dinheiro' },
-    { value: 'CARTAO_CREDITO', label: 'Cartao de credito' },
-    { value: 'CARTAO_DEBITO', label: 'Cartao de debito' },
-    { value: 'PIX', label: 'Pix' },
-    { value: 'TRANSFERENCIA', label: 'Transferencia' },
-    { value: 'BOLETO', label: 'Boleto' },
-  ];
-
-  readonly form = this.formBuilder.nonNullable.group({
-    transacaoRecorrenteId: [''],
-    categoriaId: [''],
-    descricao: ['', [Validators.maxLength(255)]],
-    valor: ['', [Validators.min(0.01)]],
-    tipoMovimentacao: ['' as '' | TipoMovimentacao],
-    tipoPagamento: ['' as '' | TipoPagamento],
-    data: ['', [Validators.required]],
-  });
 
   readonly selectedPeriodo = computed(() => {
     const id = this.selectedPeriodoId();
@@ -84,29 +67,7 @@ export class DashboardPageComponent implements OnInit {
       .filter((tx) => tx.tipoMovimentacao === 'DESPESA')
       .reduce((sum, tx) => sum + Number(tx.valor), 0);
 
-    return {
-      receitas,
-      despesas,
-      saldo: receitas - despesas,
-    };
-  });
-
-  readonly transacoesRecentes = computed(() => this.transacoes());
-
-  readonly recorrentesDisponiveis = computed(() => {
-    const selectedRecorrenteId = Number(this.form.controls.transacaoRecorrenteId.value || 0);
-    const idsUsados = new Set(
-      this.transacoes()
-        .filter((tx) => tx.transacaoRecorrenteId)
-        .map((tx) => tx.transacaoRecorrenteId as number)
-    );
-
-    return this.recorrentes().filter((recorrente) => {
-      if (selectedRecorrenteId === recorrente.id) {
-        return true;
-      }
-      return !idsUsados.has(recorrente.id);
-    });
+    return { receitas, despesas, saldo: receitas - despesas };
   });
 
   ngOnInit(): void {
@@ -115,20 +76,10 @@ export class DashboardPageComponent implements OnInit {
     this.carregarPeriodos();
   }
 
-  formatMoney(value: number): string {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 2,
-    }).format(value);
-  }
-
-  formatDate(value: string): string {
-    return new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR');
-  }
+  formatDate = formatDate;
 
   formatPeriodo(periodo: PeriodoFinanceiro): string {
-    return `${this.formatDate(periodo.dataInicio)} ate ${this.formatDate(periodo.dataFim)}`;
+    return `${formatDate(periodo.dataInicio)} até ${formatDate(periodo.dataFim)}`;
   }
 
   onPeriodoChange(rawPeriodoId: string): void {
@@ -146,167 +97,52 @@ export class DashboardPageComponent implements OnInit {
   }
 
   openCreateModal(): void {
+    this.editingTransacao.set(null);
     this.modalOpen.set(true);
-    this.resetForm();
-
-    const periodo = this.selectedPeriodo();
-    if (periodo) {
-      this.form.controls.data.setValue(this.clampDateToPeriodo(this.toIsoDate(new Date()), periodo));
-    }
   }
 
   startEdit(tx: TransacaoResponse): void {
+    this.editingTransacao.set(tx);
     this.modalOpen.set(true);
-    this.editingId.set(tx.id);
-    this.form.setValue({
-      transacaoRecorrenteId: tx.transacaoRecorrenteId ? String(tx.transacaoRecorrenteId) : '',
-      categoriaId: String(tx.categoriaId),
-      descricao: tx.descricao,
-      valor: String(tx.valor),
-      tipoMovimentacao: tx.tipoMovimentacao,
-      tipoPagamento: tx.tipoPagamento,
-      data: tx.data,
-    });
-    this.modalErrorMessage.set('');
   }
 
   closeModal(): void {
     this.modalOpen.set(false);
-    this.resetForm();
   }
 
-  onRecorrenteChange(rawId: string): void {
-    const recorrenteId = Number(rawId);
-    if (!Number.isFinite(recorrenteId) || recorrenteId < 1) {
-      return;
-    }
-
-    const recorrente = this.recorrentes().find((item) => item.id === recorrenteId);
-    if (!recorrente) {
-      return;
-    }
-
-    const periodo = this.selectedPeriodo();
-    const dataPadrao = periodo
-      ? this.clampDateToPeriodo(recorrente.dataInicio, periodo)
-      : recorrente.dataInicio;
-
-    this.form.patchValue({
-      categoriaId: String(recorrente.categoriaId),
-      descricao: recorrente.descricao,
-      valor: String(recorrente.valorParcela),
-      tipoMovimentacao: recorrente.tipoMovimentacao,
-      tipoPagamento: recorrente.tipoPagamento,
-      data: dataPadrao,
-    });
+  onTransacaoSaved(): void {
+    this.modalOpen.set(false);
+    this.reloadSelectedPeriodo();
   }
 
-  isManualMode(): boolean {
-    return !this.form.controls.transacaoRecorrenteId.value;
-  }
-
-  fieldError(control: AbstractControl | null, label: string): string {
-    if (!control || !control.touched) {
-      return '';
-    }
-
-    if (control.hasError('required')) {
-      return `${label} obrigatorio`;
-    }
-
-    if (control.hasError('maxlength')) {
-      return `${label} deve ter no maximo 255 caracteres`;
-    }
-
-    if (control.hasError('min')) {
-      return `${label} deve ser maior que zero`;
-    }
-
-    return '';
-  }
-
-  submitTransacao(): void {
-    if (this.submitting()) {
-      return;
-    }
-
-    const periodo = this.selectedPeriodo();
-    if (!periodo) {
-      this.modalErrorMessage.set('Selecione um periodo valido para lancar a transacao.');
-      return;
-    }
-
-    if (this.form.controls.data.invalid) {
-      this.form.controls.data.markAsTouched();
-      return;
-    }
-
-    const raw = this.form.getRawValue();
-    const recorrenteId = raw.transacaoRecorrenteId ? Number(raw.transacaoRecorrenteId) : null;
-
-    if (!recorrenteId) {
-      if (!raw.categoriaId || !raw.descricao.trim() || !raw.valor || !raw.tipoMovimentacao || !raw.tipoPagamento) {
-        this.modalErrorMessage.set('Preencha categoria, descricao, valor, tipo de movimentacao e tipo de pagamento.');
-        return;
-      }
-    }
-
-    this.modalErrorMessage.set('');
-    this.submitting.set(true);
-
-    const payload = {
-      categoriaId: recorrenteId ? null : Number(raw.categoriaId),
-      descricao: recorrenteId ? null : raw.descricao.trim(),
-      valor: recorrenteId ? null : Number(raw.valor),
-      tipoMovimentacao: recorrenteId ? null : (raw.tipoMovimentacao as TipoMovimentacao),
-      tipoPagamento: recorrenteId ? null : (raw.tipoPagamento as TipoPagamento),
-      periodoId: periodo.id,
-      transacaoRecorrenteId: recorrenteId,
-      data: raw.data,
-    };
-
-    const editingId = this.editingId();
-    const request$ = editingId
-      ? this.transacoesApi.update(editingId, payload)
-      : this.transacoesApi.create(payload);
-
-    request$.subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.toast.show(editingId ? 'Transacao atualizada.' : 'Transacao criada.', 'success');
-        this.closeModal();
-        this.reloadSelectedPeriodo();
-      },
-      error: (err) => {
-        this.modalErrorMessage.set(mapApiError(err));
-        this.submitting.set(false);
-      },
-    });
-  }
-
-  deleteTransacao(tx: TransacaoResponse): void {
+  async deleteTransacao(tx: TransacaoResponse): Promise<void> {
     if (this.deletingId()) {
       return;
     }
 
-    const confirmDelete = window.confirm(`Excluir a transacao "${tx.descricao || 'Sem descricao'}"?`);
-    if (!confirmDelete) {
+    const confirmed = await this.confirmDialog.confirm(
+      `Excluir a transação "${tx.descricao || 'Sem descrição'}"?`
+    );
+    if (!confirmed) {
       return;
     }
 
     this.deletingId.set(tx.id);
 
-    this.transacoesApi.delete(tx.id).subscribe({
-      next: () => {
-        this.deletingId.set(null);
-        this.toast.show('Transacao excluida.', 'success');
-        this.reloadSelectedPeriodo();
-      },
-      error: (err) => {
-        this.deletingId.set(null);
-        this.toast.show(mapApiError(err), 'error');
-      },
-    });
+    this.transacoesApi
+      .delete(tx.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.deletingId.set(null);
+          this.toast.show('Transação excluída.', 'success');
+          this.reloadSelectedPeriodo();
+        },
+        error: (err) => {
+          this.deletingId.set(null);
+          this.toast.show(mapApiError(err), 'error');
+        },
+      });
   }
 
   parcelaInfo(tx: TransacaoResponse): string {
@@ -336,75 +172,87 @@ export class DashboardPageComponent implements OnInit {
     this.loadingPeriodos.set(true);
     this.errorMessage.set('');
 
-    this.periodosApi.listAll().subscribe({
-      next: (page) => {
-        const periodos = page.content;
-        this.periodos.set(periodos);
-        this.loadingPeriodos.set(false);
+    this.periodosApi
+      .listAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          const periodos = page.content;
+          this.periodos.set(periodos);
+          this.loadingPeriodos.set(false);
 
-        const periodoPadrao = this.findPeriodoAtual(periodos) ?? periodos[0] ?? null;
+          const periodoPadrao = this.findPeriodoAtual(periodos) ?? periodos[0] ?? null;
 
-        if (!periodoPadrao) {
+          if (!periodoPadrao) {
+            this.loadingResumo.set(false);
+            this.transacoes.set([]);
+            return;
+          }
+
+          this.selectedPeriodoId.set(periodoPadrao.id);
+          this.carregarResumoPorPeriodo(periodoPadrao);
+        },
+        error: (err) => {
+          this.errorMessage.set(mapApiError(err));
+          this.loadingPeriodos.set(false);
           this.loadingResumo.set(false);
-          this.transacoes.set([]);
-          return;
-        }
-
-        this.selectedPeriodoId.set(periodoPadrao.id);
-        this.carregarResumoPorPeriodo(periodoPadrao);
-      },
-      error: (err) => {
-        this.errorMessage.set(mapApiError(err));
-        this.loadingPeriodos.set(false);
-        this.loadingResumo.set(false);
-      },
-    });
+        },
+      });
   }
 
   private carregarResumoPorPeriodo(periodo: PeriodoFinanceiro): void {
     this.loadingResumo.set(true);
     this.errorMessage.set('');
 
-    this.transacoesApi.listByPeriodo(periodo.id, periodo.dataInicio, periodo.dataFim).subscribe({
-      next: (page) => {
-        this.transacoes.set(page.content);
-        this.loadingResumo.set(false);
-      },
-      error: (err) => {
-        this.errorMessage.set(mapApiError(err));
-        this.loadingResumo.set(false);
-      },
-    });
+    this.transacoesApi
+      .listByPeriodo(periodo.id, periodo.dataInicio, periodo.dataFim)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          this.transacoes.set(page.content);
+          this.loadingResumo.set(false);
+        },
+        error: (err) => {
+          this.errorMessage.set(mapApiError(err));
+          this.loadingResumo.set(false);
+        },
+      });
   }
 
   private carregarCategorias(): void {
     this.loadingCategorias.set(true);
 
-    this.categoriasApi.listAll().subscribe({
-      next: (page) => {
-        this.categorias.set(page.content);
-        this.loadingCategorias.set(false);
-      },
-      error: (err) => {
-        this.errorMessage.set(mapApiError(err));
-        this.loadingCategorias.set(false);
-      },
-    });
+    this.categoriasApi
+      .listAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          this.categorias.set(page.content);
+          this.loadingCategorias.set(false);
+        },
+        error: (err) => {
+          this.errorMessage.set(mapApiError(err));
+          this.loadingCategorias.set(false);
+        },
+      });
   }
 
   private carregarRecorrentes(): void {
     this.loadingRecorrentes.set(true);
 
-    this.transacoesRecorrentesApi.listAll().subscribe({
-      next: (page) => {
-        this.recorrentes.set(page.content);
-        this.loadingRecorrentes.set(false);
-      },
-      error: (err) => {
-        this.errorMessage.set(mapApiError(err));
-        this.loadingRecorrentes.set(false);
-      },
-    });
+    this.transacoesRecorrentesApi
+      .listAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          this.recorrentes.set(page.content);
+          this.loadingRecorrentes.set(false);
+        },
+        error: (err) => {
+          this.errorMessage.set(mapApiError(err));
+          this.loadingRecorrentes.set(false);
+        },
+      });
   }
 
   private reloadSelectedPeriodo(): void {
@@ -414,17 +262,17 @@ export class DashboardPageComponent implements OnInit {
     }
   }
 
-  private clampDateToPeriodo(value: string, periodo: PeriodoFinanceiro): string {
-    if (value < periodo.dataInicio) {
-      return periodo.dataInicio;
-    }
-    if (value > periodo.dataFim) {
-      return periodo.dataFim;
-    }
-    return value;
+  private findPeriodoAtual(periodos: PeriodoFinanceiro[]): PeriodoFinanceiro | null {
+    const nowIso = toIsoDate(new Date());
+    return (
+      periodos.find((periodo) => nowIso >= periodo.dataInicio && nowIso <= periodo.dataFim) ?? null
+    );
   }
 
-  private calcularNumeroParcela(recorrente: TransacaoRecorrenteResponse, data: string): number | null {
+  private calcularNumeroParcela(
+    recorrente: TransacaoRecorrenteResponse,
+    data: string
+  ): number | null {
     let atual = recorrente.dataInicio;
     let indice = 1;
     let guard = 0;
@@ -433,7 +281,6 @@ export class DashboardPageComponent implements OnInit {
       if (atual === data) {
         return indice;
       }
-
       atual = this.proximaData(atual, recorrente.frequencia);
       indice += 1;
       guard += 1;
@@ -460,7 +307,7 @@ export class DashboardPageComponent implements OnInit {
     return total || null;
   }
 
-  private proximaData(dataIso: string, frequencia: TransacaoRecorrenteResponse['frequencia']): string {
+  private proximaData(dataIso: string, frequencia: Frequencia): string {
     const date = new Date(`${dataIso}T00:00:00`);
 
     if (frequencia === 'DIARIO') {
@@ -474,47 +321,15 @@ export class DashboardPageComponent implements OnInit {
       next.setMonth(next.getMonth() + 1);
       const maxDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
       next.setDate(Math.min(day, maxDay));
-      return this.toIsoDate(next);
+      return toIsoDate(next);
     } else {
       const day = date.getDate();
       const month = date.getMonth();
       const year = date.getFullYear() + 1;
       const maxDay = new Date(year, month + 1, 0).getDate();
-      return this.toIsoDate(new Date(year, month, Math.min(day, maxDay)));
+      return toIsoDate(new Date(year, month, Math.min(day, maxDay)));
     }
 
-    return this.toIsoDate(date);
+    return toIsoDate(date);
   }
-
-  private findPeriodoAtual(periodos: PeriodoFinanceiro[]): PeriodoFinanceiro | null {
-    const nowIso = this.toIsoDate(new Date());
-
-    return periodos.find((periodo) => {
-      return nowIso >= periodo.dataInicio && nowIso <= periodo.dataFim;
-    }) ?? null;
-  }
-
-  private toIsoDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  private resetForm(): void {
-    this.editingId.set(null);
-    this.form.setValue({
-      transacaoRecorrenteId: '',
-      categoriaId: '',
-      descricao: '',
-      valor: '',
-      tipoMovimentacao: '',
-      tipoPagamento: '',
-      data: '',
-    });
-    this.form.markAsPristine();
-    this.form.markAsUntouched();
-    this.modalErrorMessage.set('');
-  }
-
 }

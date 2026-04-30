@@ -1,6 +1,8 @@
 package br.com.budgetflow.features.categorias.service;
 
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
+import br.com.budgetflow.common.exceptions.ConflictException;
+import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.categorias.dto.CategoriaRequestDTO;
 import br.com.budgetflow.features.categorias.dto.CategoriaResponseDTO;
@@ -52,7 +54,7 @@ public class CategoriaService {
 			String search,
 			Pageable pageable
 	) {
-        Long userId = SecurityUtils.currentUserId();
+		Long userId = SecurityUtils.currentUserId();
 		Specification<Categoria> specification = Specification
 				.where(CategoriaSpecification.hasUserId(userId))
 				.and(CategoriaSpecification.hasClassificacao(classificacao))
@@ -65,22 +67,23 @@ public class CategoriaService {
 
 	@Transactional(readOnly = true)
 	public Categoria findById(Long id) {
-		Categoria categoria = categoriaRepository.findById(id)
-				.orElseThrow(() -> new IllegalArgumentException("Categoria não encontrada"));
-		return categoria;
+		Long userId = SecurityUtils.currentUserId();
+		return findByIdAndUser(id, userId);
+	}
+
+	@Transactional(readOnly = true)
+	public Categoria findEntityByIdAndUser(Long id, Long userId) {
+		return findByIdAndUser(id, userId);
 	}
 
 	@Transactional
 	public CategoriaResponseDTO update(Long id, CategoriaRequestDTO categoriaDTO) {
-		Categoria categoria = categoriaRepository.findById(id)
-				.orElseThrow(() -> new IllegalArgumentException("Categoria não encontrada"));
-
 		Long userId = SecurityUtils.currentUserId();
+		Categoria categoria = findByIdAndUser(id, userId);
 		User user = this.userService.findById(userId);
 
 		String nome = categoriaDTO.nome().trim();
-
-		validateDuplicate(nome, user.getId(), categoriaDTO.classificacao(), id);
+		validateDuplicate(nome, userId, categoriaDTO.classificacao(), id);
 
 		categoriaMapper.updateCategoriaFromDto(categoriaDTO, categoria);
 		categoria.setNome(nome);
@@ -91,20 +94,24 @@ public class CategoriaService {
 
 	@Transactional
 	public void delete(Long id) {
-		if (!categoriaRepository.existsById(id)) {
-			throw new IllegalArgumentException("Categoria não encontrada");
-		}
-		categoriaRepository.deleteById(id);
+		Long userId = SecurityUtils.currentUserId();
+		Categoria categoria = findByIdAndUser(id, userId);
+		categoriaRepository.delete(categoria);
+	}
+
+	private Categoria findByIdAndUser(Long id, Long userId) {
+		return categoriaRepository.findByIdAndUserId(id, userId)
+				.orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
 	}
 
 	private void validateDuplicate(String nome, Long userId, ClassificacaoCategoria classificacao, Long categoriaId) {
-        String normalizedName = nome.toLowerCase();
+		String normalizedName = nome.toLowerCase();
 		boolean exists = categoriaId == null
 				? categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndClassificacao(normalizedName, userId, classificacao)
 				: categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndClassificacaoAndIdNot(normalizedName, userId, classificacao, categoriaId);
 
 		if (exists) {
-			throw new IllegalArgumentException("Já existe uma categoria com este nome para este usuário e classificação");
+			throw new ConflictException("Já existe uma categoria com este nome para este usuário e classificação");
 		}
 	}
 }

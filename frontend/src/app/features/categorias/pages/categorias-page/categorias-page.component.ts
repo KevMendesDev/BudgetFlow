@@ -1,10 +1,18 @@
-import { Component, inject, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { CategoriaResponse, ClassificacaoCategoria } from '../../../../core/models/categoria.models';
+import {
+  CLASSIFICACAO_LABELS,
+  CLASSIFICACOES,
+  CategoriaResponse,
+  ClassificacaoCategoria,
+} from '../../../../core/models/categoria.models';
 import { CategoriasApiService } from '../../../../core/services/categorias-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
+import { fieldError } from '../../../../shared/utils/form-error.util';
 
 @Component({
   selector: 'app-categorias-page',
@@ -12,10 +20,12 @@ import { mapApiError } from '../../../../shared/utils/error-message.util';
   templateUrl: './categorias-page.component.html',
   styleUrl: './categorias-page.component.scss',
 })
-export class CategoriasPageComponent {
+export class CategoriasPageComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly categoriasApi = inject(CategoriasApiService);
   private readonly toast = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly categorias = signal<CategoriaResponse[]>([]);
   readonly loading = signal(false);
@@ -25,11 +35,8 @@ export class CategoriasPageComponent {
   readonly editingId = signal<number | null>(null);
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
-  readonly classificacoes: Array<{ value: ClassificacaoCategoria; label: string }> = [
-    { value: 'ESSENCIAL', label: 'Essencial' },
-    { value: 'NAO_ESSENCIAL', label: 'Nao essencial' },
-    { value: 'INVESTIMENTO', label: 'Investimento' },
-  ];
+  readonly classificacoes = CLASSIFICACOES;
+  readonly fieldError = fieldError;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
     q: [''],
@@ -41,7 +48,7 @@ export class CategoriasPageComponent {
     classificacao: ['' as '' | ClassificacaoCategoria, [Validators.required]],
   });
 
-  constructor() {
+  ngOnInit(): void {
     this.loadCategorias();
   }
 
@@ -52,22 +59,6 @@ export class CategoriasPageComponent {
   clearFilters(): void {
     this.filtersForm.setValue({ q: '', classificacao: '' });
     this.loadCategorias();
-  }
-
-  fieldError(control: AbstractControl | null, label: string): string {
-    if (!control || !control.touched) {
-      return '';
-    }
-
-    if (control.hasError('required')) {
-      return `${label} obrigatorio`;
-    }
-
-    if (control.hasError('maxlength')) {
-      return `${label} deve ter no maximo 100 caracteres`;
-    }
-
-    return '';
   }
 
   submit(): void {
@@ -90,7 +81,7 @@ export class CategoriasPageComponent {
       ? this.categoriasApi.update(editingId, payload)
       : this.categoriasApi.create(payload);
 
-    request$.subscribe({
+    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.submitting.set(false);
         this.toast.show(editingId ? 'Categoria atualizada.' : 'Categoria criada.', 'success');
@@ -124,39 +115,41 @@ export class CategoriasPageComponent {
     this.resetForm();
   }
 
-  deleteCategoria(categoria: CategoriaResponse): void {
+  async deleteCategoria(categoria: CategoriaResponse): Promise<void> {
     if (this.deletingId()) {
       return;
     }
 
-    const confirmDelete = window.confirm(`Excluir a categoria "${categoria.nome}"?`);
-    if (!confirmDelete) {
+    const confirmed = await this.confirmDialog.confirm(`Excluir a categoria "${categoria.nome}"?`);
+    if (!confirmed) {
       return;
     }
 
     this.deletingId.set(categoria.id);
 
-    this.categoriasApi.delete(categoria.id).subscribe({
-      next: () => {
-        this.deletingId.set(null);
-        this.toast.show('Categoria excluida.', 'success');
+    this.categoriasApi
+      .delete(categoria.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.deletingId.set(null);
+          this.toast.show('Categoria excluída.', 'success');
 
-        if (this.editingId() === categoria.id) {
-          this.resetForm();
-        }
+          if (this.editingId() === categoria.id) {
+            this.resetForm();
+          }
 
-        this.loadCategorias();
-      },
-      error: (err) => {
-        this.deletingId.set(null);
-        this.toast.show(mapApiError(err), 'error');
-      },
-    });
+          this.loadCategorias();
+        },
+        error: (err) => {
+          this.deletingId.set(null);
+          this.toast.show(mapApiError(err), 'error');
+        },
+      });
   }
 
   classificacaoLabel(value: ClassificacaoCategoria): string {
-    const match = this.classificacoes.find((item) => item.value === value);
-    return match?.label ?? value;
+    return CLASSIFICACAO_LABELS[value] ?? value;
   }
 
   private loadCategorias(): void {
@@ -170,6 +163,7 @@ export class CategoriasPageComponent {
         q: filters.q,
         classificacao: filters.classificacao,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (page) => {
           this.categorias.set(page.content);

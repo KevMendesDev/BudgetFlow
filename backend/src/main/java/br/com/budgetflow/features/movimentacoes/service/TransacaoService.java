@@ -1,5 +1,8 @@
 package br.com.budgetflow.features.movimentacoes.service;
 
+import br.com.budgetflow.common.exceptions.BusinessRuleException;
+import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
+import br.com.budgetflow.common.utils.DateRangeUtils;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.categorias.repository.CategoriaRepository;
 import br.com.budgetflow.features.movimentacoes.criteria.TransacaoFilterCriteria;
@@ -21,8 +24,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
 
 @Service
 public class TransacaoService {
@@ -70,7 +71,7 @@ public class TransacaoService {
             TransacaoFilterCriteria criteria,
             Pageable pageable
     ) {
-        validateDateRange(criteria.getDataInicio(), criteria.getDataFim());
+        DateRangeUtils.validateRange(criteria.getDataInicio(), criteria.getDataFim());
 
         Long userId = SecurityUtils.currentUserId();
         Long effectivePeriodoId = periodoFinanceiroService.resolvePeriodoIdForFilterToTransacao(userId, criteria.getPeriodoId());
@@ -128,10 +129,10 @@ public class TransacaoService {
         this.validateManualTransacaoRequest(requestDTO);
 
         Categoria categoria = categoriaRepository.findById(requestDTO.categoriaId())
-                .orElseThrow(() -> new IllegalArgumentException("Categoria não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
 
         if (!categoria.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Categoria não encontrada");
+            throw new ResourceNotFoundException("Categoria não encontrada");
         }
 
         transacao.setTransacaoRecorrente(null);
@@ -177,18 +178,12 @@ public class TransacaoService {
                 || requestDTO.valor() == null
                 || requestDTO.tipoMovimentacao() == null
                 || requestDTO.tipoPagamento() == null) {
-            throw new IllegalArgumentException("Para transação sem recorrência, categoria, descrição, valor, tipo de movimentação e tipo de pagamento são obrigatórios");
+            throw new BusinessRuleException("Para transação sem recorrência, categoria, descrição, valor, tipo de movimentação e tipo de pagamento são obrigatórios");
         }
     }
 
     private Transacao findByIdAndUserId(Long id, Long userId) {
         return transacaoRepository.findByIdAndUserId(id, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Transação não encontrada"));
-    }
-
-    private void validateDateRange(LocalDate dataInicio, LocalDate dataFim) {
-        if (dataInicio != null && dataFim != null && dataFim.isBefore(dataInicio)) {
-            throw new IllegalArgumentException("A data de fim não pode ser anterior à data de início");
-        }
+                .orElseThrow(() -> new ResourceNotFoundException("Transação não encontrada"));
     }
 }

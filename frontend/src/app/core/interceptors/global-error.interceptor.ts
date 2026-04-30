@@ -24,7 +24,7 @@ export const globalErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
 function mapHttpErrorToMessage(error: HttpErrorResponse): string {
   if (error.status === 0) {
-    return 'Sem conexao com o servidor';
+    return 'Sem conexão com o servidor.';
   }
 
   const payload = error.error as { error?: string; errors?: Record<string, string> } | null;
@@ -40,12 +40,12 @@ function mapHttpErrorToMessage(error: HttpErrorResponse): string {
   }
 
   if (error.status >= 500) {
-    return 'Erro interno no servidor';
+    return 'Erro interno no servidor.';
   }
 
   if (error.status === 401) {
-    return 'Sessao expirada. Faz login de novo';
+    return 'Sessão expirada. Faça login novamente.';
   }
 
-  return 'Nao foi possivel concluir a requisicao';
+  return 'Não foi possível concluir a requisição.';
 }

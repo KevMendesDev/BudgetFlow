@@ -8,6 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.features.users.domain.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,8 +29,9 @@ import lombok.Setter;
 public class Categoria {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE,  generator = "sequence_generator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_generator")
+    @SequenceGenerator(name = "sequence_generator", sequenceName = "sequence_generator", allocationSize = 1)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @Column(nullable = false, length = 100)

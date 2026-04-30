@@ -2,8 +2,8 @@
   <div class="crud-container">
     <header>
       <p class="eyebrow">CRUD</p>
-      <h1>Periodos financeiros</h1>
-      <p class="muted">Gerencie periodos com criacao, edicao, listagem e exclusao.</p>
+      <h1>Períodos financeiros</h1>
+      <p class="muted">Gerencie períodos com criação, edição, listagem e exclusão.</p>
     </header>
 
     @if (errorMessage()) {
@@ -18,7 +18,7 @@
         </label>
 
         <label class="bf-label">
-          Data inicio
+          Data início
           <input class="bf-input" type="date" formControlName="dataInicio" />
         </label>
 
@@ -36,35 +36,35 @@
 
     <section class="bf-panel list">
       <div class="list-header">
-        <h2>Lista de periodos</h2>
-        <button class="bf-btn-primary" type="button" (click)="openCreateModal()">Criar periodo</button>
+        <h2>Lista de períodos</h2>
+        <button class="bf-btn-primary" type="button" (click)="openCreateModal()">Criar período</button>
       </div>
 
       @if (loading()) {
-        <div class="skeleton-list" aria-label="Carregando periodos">
+        <div class="skeleton-list" aria-label="Carregando períodos">
           @for (row of [1, 2, 3, 4, 5]; track row) {
             <p class="bf-skeleton-line h-11 w-full"></p>
           }
         </div>
       } @else if (periodos().length === 0) {
-        <p class="muted">Nenhum periodo encontrado com os filtros atuais.</p>
+        <p class="muted">Nenhum período encontrado com os filtros atuais.</p>
       } @else {
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Inicio</th>
+                <th>Início</th>
                 <th>Fim</th>
                 <th>Criado em</th>
-                <th class="actions-col">Acoes</th>
+                <th class="actions-col">Ações</th>
               </tr>
             </thead>
             <tbody>
               @for (periodo of periodos(); track periodo.id) {
                 <tr>
-                  <td>{{ formatDate(periodo.dataInicio) }}</td>
-                  <td>{{ formatDate(periodo.dataFim) }}</td>
-                  <td>{{ formatDate(periodo.createdAt.slice(0, 10)) }}</td>
+                  <td>{{ periodo.dataInicio | dateBR }}</td>
+                  <td>{{ periodo.dataFim | dateBR }}</td>
+                  <td>{{ periodo.createdAt.slice(0, 10) | dateBR }}</td>
                   <td class="actions-col">
                     <button type="button" class="btn-secondary" (click)="startEdit(periodo)">Editar</button>
                     <button
@@ -86,10 +86,10 @@
   </div>
 
   @if (modalOpen()) {
-    <section class="modal-backdrop" (click)="closeModal()" aria-label="Fechar popup">
+    <section class="modal-backdrop" (click)="closeModal()" aria-label="Fechar modal">
       <div class="modal-card bf-panel" (click)="$event.stopPropagation()">
         <div class="modal-head">
-          <h2>{{ editingId() ? 'Editar periodo' : 'Criar periodo' }}</h2>
+          <h2>{{ editingId() ? 'Editar período' : 'Criar período' }}</h2>
           <button class="btn-secondary" type="button" (click)="closeModal()" [disabled]="submitting()">Fechar</button>
         </div>
 
@@ -99,10 +99,10 @@
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="modal-form" novalidate>
           <label class="bf-label">
-            Data de inicio
+            Data de início
             <input class="bf-input" type="date" formControlName="dataInicio" />
-            @if (fieldError(form.controls.dataInicio, 'Data de inicio')) {
-              <small class="bf-error">{{ fieldError(form.controls.dataInicio, 'Data de inicio') }}</small>
+            @if (fieldError(form.controls.dataInicio, 'Data de início')) {
+              <small class="bf-error">{{ fieldError(form.controls.dataInicio, 'Data de início') }}</small>
             }
           </label>
 
@@ -116,7 +116,7 @@
 
           <div class="modal-actions">
             <button class="bf-btn-primary" type="submit" [disabled]="submitting() || loading()">
-              {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alteracoes' : 'Criar periodo' }}
+              {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alterações' : 'Criar período' }}
             </button>
           </div>
         </form>

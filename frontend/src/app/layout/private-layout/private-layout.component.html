@@ -10,7 +10,8 @@
           </div>
         </div>
         <button class="collapse-btn" (click)="toggleSidebar()" type="button" [attr.aria-label]="collapsed() ? 'Expandir menu' : 'Retrair menu'">
-          {{ collapsed() ? '>>' : '<<' }}
+          <span class="collapse-text">{{ collapsed() ? '>>' : '<<' }}</span>
+          <span class="collapse-icon" aria-hidden="true">☰</span>
         </button>
       </header>
 

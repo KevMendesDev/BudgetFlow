@@ -1,8 +1,12 @@
 package br.com.budgetflow.common.api;
 
+import br.com.budgetflow.common.exceptions.BusinessRuleException;
+import br.com.budgetflow.common.exceptions.ConflictException;
+import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.common.exceptions.UnauthorizedException;
 import tools.jackson.databind.exc.InvalidFormatException;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -26,14 +30,24 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("errors", errors));
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleConflict(ConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<Map<String, Object>> handleBusinessRule(BusinessRuleException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
-        return ResponseEntity.status(401).body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

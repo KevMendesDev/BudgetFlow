@@ -10,7 +10,10 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 public interface PeriodoFinanceiroRepository extends JpaRepository<PeriodoFinanceiro, Long>, JpaSpecificationExecutor<PeriodoFinanceiro> {
-	Page<PeriodoFinanceiro> findAllByUserId(Long userId, Pageable pageable);
 
-	Optional<PeriodoFinanceiro> findFirstByUserIdAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(Long userId, LocalDate dataInicio, LocalDate dataFim);
+    Page<PeriodoFinanceiro> findAllByUserId(Long userId, Pageable pageable);
+
+    Optional<PeriodoFinanceiro> findByIdAndUserId(Long id, Long userId);
+
+    Optional<PeriodoFinanceiro> findFirstByUserIdAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(Long userId, LocalDate dataInicio, LocalDate dataFim);
 }

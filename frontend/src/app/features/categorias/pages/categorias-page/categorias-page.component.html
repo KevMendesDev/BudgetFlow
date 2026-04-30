@@ -3,7 +3,7 @@
     <header>
       <p class="eyebrow">CRUD</p>
       <h1>Categorias</h1>
-      <p class="muted">Gerencie suas categorias com criacao, edicao, listagem e exclusao.</p>
+      <p class="muted">Gerencie suas categorias com criação, edição, listagem e exclusão.</p>
     </header>
 
     @if (errorMessage()) {
@@ -18,7 +18,7 @@
         </label>
 
         <label class="bf-label">
-          Classificacao
+          Classificação
           <select class="bf-input" formControlName="classificacao">
             <option value="">Todas</option>
             @for (item of classificacoes; track item.value) {
@@ -54,8 +54,8 @@
             <thead>
               <tr>
                 <th>Nome</th>
-                <th>Classificacao</th>
-                <th class="actions-col">Acoes</th>
+                <th>Classificação</th>
+                <th class="actions-col">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -84,7 +84,7 @@
   </div>
 
   @if (modalOpen()) {
-    <section class="modal-backdrop" (click)="closeModal()" aria-label="Fechar popup">
+    <section class="modal-backdrop" (click)="closeModal()" aria-label="Fechar modal">
       <div class="modal-card bf-panel" (click)="$event.stopPropagation()">
         <div class="modal-head">
           <h2>{{ editingId() ? 'Editar categoria' : 'Criar categoria' }}</h2>
@@ -98,28 +98,28 @@
         <form [formGroup]="form" (ngSubmit)="submit()" class="modal-form" novalidate>
           <label class="bf-label">
             Nome
-            <input class="bf-input" type="text" maxlength="100" formControlName="nome" placeholder="Ex: Alimentacao" />
+            <input class="bf-input" type="text" maxlength="100" formControlName="nome" placeholder="Ex: Alimentação" />
             @if (fieldError(form.controls.nome, 'Nome')) {
               <small class="bf-error">{{ fieldError(form.controls.nome, 'Nome') }}</small>
             }
           </label>
 
           <label class="bf-label">
-            Classificacao
+            Classificação
             <select class="bf-input" formControlName="classificacao">
               <option value="">Selecione</option>
               @for (item of classificacoes; track item.value) {
                 <option [value]="item.value">{{ item.label }}</option>
               }
             </select>
-            @if (fieldError(form.controls.classificacao, 'Classificacao')) {
-              <small class="bf-error">{{ fieldError(form.controls.classificacao, 'Classificacao') }}</small>
+            @if (fieldError(form.controls.classificacao, 'Classificação')) {
+              <small class="bf-error">{{ fieldError(form.controls.classificacao, 'Classificação') }}</small>
             }
           </label>
 
           <div class="modal-actions">
             <button class="bf-btn-primary" type="submit" [disabled]="submitting() || loading()">
-              {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alteracoes' : 'Criar categoria' }}
+              {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alterações' : 'Criar categoria' }}
             </button>
           </div>
         </form>

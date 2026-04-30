@@ -1,11 +1,24 @@
+import { PageResponse } from './pagination.models';
 import { ClassificacaoCategoria } from './categoria.models';
-import { PageResponse } from './transacao.models';
+import { TipoMovimentacao, TipoPagamento } from './transacao.models';
+
+export type { TipoMovimentacao, TipoPagamento };
 
 export type Frequencia = 'DIARIO' | 'SEMANAL' | 'MENSAL' | 'ANUAL';
 
-export type TipoMovimentacao = 'RECEITA' | 'DESPESA';
+export const FREQUENCIAS: Array<{ value: Frequencia; label: string }> = [
+  { value: 'DIARIO', label: 'Diário' },
+  { value: 'SEMANAL', label: 'Semanal' },
+  { value: 'MENSAL', label: 'Mensal' },
+  { value: 'ANUAL', label: 'Anual' },
+];
 
-export type TipoPagamento = 'DINHEIRO' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'PIX' | 'TRANSFERENCIA' | 'BOLETO';
+export const FREQUENCIA_LABELS: Record<Frequencia, string> = {
+  DIARIO: 'Diário',
+  SEMANAL: 'Semanal',
+  MENSAL: 'Mensal',
+  ANUAL: 'Anual',
+};
 
 export interface TransacaoRecorrenteRequest {
   categoriaId: number;

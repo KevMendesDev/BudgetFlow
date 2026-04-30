@@ -47,13 +47,12 @@ public class PeriodoFinanceiroController {
 	@GetMapping
 	@PreAuthorize("hasAnyRole('USER')")
 	public ResponseEntity<Page<PeriodoFinanceiroResponseDTO>> findAll(
-			@RequestParam(required = false) Long userId,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
 			@RequestParam(required = false, name = "q") String search,
 			Pageable pageable
 	) {
-		Page<PeriodoFinanceiroResponseDTO> periodos = periodoFinanceiroService.findAll(userId, dataInicio, dataFim, search, pageable);
+		Page<PeriodoFinanceiroResponseDTO> periodos = periodoFinanceiroService.findAll(dataInicio, dataFim, search, pageable);
 		return ResponseEntity.ok(periodos);
 	}
 

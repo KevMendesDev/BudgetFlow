@@ -2,6 +2,7 @@ package br.com.budgetflow.features.periodos.domain;
 
 import br.com.budgetflow.features.users.domain.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,8 +26,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class PeriodoFinanceiro {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE,  generator = "sequence_generator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_generator")
+    @SequenceGenerator(name = "sequence_generator", sequenceName = "sequence_generator", allocationSize = 1)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

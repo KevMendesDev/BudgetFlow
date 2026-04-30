@@ -3,7 +3,8 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../config/api.config';
-import { PageResponse, TransacaoRequest, TransacaoResponse } from '../models/transacao.models';
+import { PageResponse } from '../models/pagination.models';
+import { TransacaoRequest, TransacaoResponse } from '../models/transacao.models';
 
 @Injectable({ providedIn: 'root' })
 export class TransacoesApiService {

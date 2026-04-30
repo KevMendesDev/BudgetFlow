@@ -1,5 +1,6 @@
 package br.com.budgetflow.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -15,6 +16,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -23,9 +25,13 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtCookieAuthenticationFilter jwtFilter;
+    private final List<String> allowedOrigins;
 
-    public SecurityConfig(JwtCookieAuthenticationFilter jwtFilter) {
+    public SecurityConfig(
+            JwtCookieAuthenticationFilter jwtFilter,
+            @Value("${app.security.cors.allowed-origins}") String allowedOriginsRaw) {
         this.jwtFilter = jwtFilter;
+        this.allowedOrigins = Arrays.asList(allowedOriginsRaw.split(","));
     }
 
     @Bean
@@ -56,7 +62,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://localhost:4200"));
+        corsConfig.setAllowedOrigins(allowedOrigins);
         corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         corsConfig.setAllowedHeaders(List.of("*"));
         corsConfig.setAllowCredentials(true);

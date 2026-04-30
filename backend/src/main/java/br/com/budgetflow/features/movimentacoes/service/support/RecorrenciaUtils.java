@@ -1,6 +1,7 @@
 package br.com.budgetflow.features.movimentacoes.service.support;
 
 import br.com.budgetflow.common.enums.Frequencia;
+import br.com.budgetflow.common.exceptions.BusinessRuleException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -19,23 +20,23 @@ public final class RecorrenciaUtils {
 
     public static void validarDataTransacaoNaRecorrencia(LocalDate dataTransacao, LocalDate dataInicio, LocalDate dataFim) {
         if (dataTransacao.isBefore(dataInicio)) {
-            throw new IllegalArgumentException(MSG_DATA_ANTES_INICIO);
+            throw new BusinessRuleException(MSG_DATA_ANTES_INICIO);
         }
 
         if (dataFim != null && dataTransacao.isAfter(dataFim)) {
-            throw new IllegalArgumentException(MSG_DATA_APOS_FIM);
+            throw new BusinessRuleException(MSG_DATA_APOS_FIM);
         }
     }
 
     public static void validarRecorrenciaUnicaNoPeriodo(boolean jaExisteNoPeriodo) {
         if (jaExisteNoPeriodo) {
-            throw new IllegalArgumentException(MSG_DUPLICADA_PERIODO);
+            throw new BusinessRuleException(MSG_DUPLICADA_PERIODO);
         }
     }
 
     public static void validarLimiteParcelas(Integer totalParcelas, long parcelasLancadas) {
         if (totalParcelas != null && parcelasLancadas >= totalParcelas) {
-            throw new IllegalArgumentException(MSG_LIMITE_PARCELAS);
+            throw new BusinessRuleException(MSG_LIMITE_PARCELAS);
         }
     }
 
@@ -44,14 +45,14 @@ public final class RecorrenciaUtils {
             return null;
         }
         if (totalParcelas < 1) {
-            throw new IllegalArgumentException("O total de parcelas deve ser maior que zero");
+            throw new BusinessRuleException("O total de parcelas deve ser maior que zero");
         }
         return calcularDataOcorrencia(dataInicio, frequencia, totalParcelas - 1);
     }
 
     public static LocalDate calcularDataOcorrencia(LocalDate dataInicio, Frequencia frequencia, long indiceOcorrencia) {
         if (indiceOcorrencia < 0) {
-            throw new IllegalArgumentException("O índice da ocorrência não pode ser negativo");
+            throw new BusinessRuleException("O índice da ocorrência não pode ser negativo");
         }
 
         return switch (frequencia) {

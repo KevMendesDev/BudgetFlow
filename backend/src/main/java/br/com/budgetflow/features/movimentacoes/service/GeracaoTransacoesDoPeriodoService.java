@@ -32,6 +32,8 @@ public class GeracaoTransacoesDoPeriodoService {
         List<TransacaoRecorrente> recorrentes = recorrenteRepository.findAllByUserId(userId);
         List<Transacao> geradas = new ArrayList<>();
 
+        List<Transacao> pendentes = new ArrayList<>();
+
         for (TransacaoRecorrente recorrente : recorrentes) {
             List<LocalDate> datas = calcularDatas(recorrente, periodo);
             for (LocalDate data : datas) {
@@ -46,10 +48,12 @@ public class GeracaoTransacoesDoPeriodoService {
                     transacao.setTipoMovimentacao(recorrente.getTipoMovimentacao());
                     transacao.setTipoPagamento(recorrente.getTipoPagamento());
                     transacao.setData(data);
-                    geradas.add(transacaoRepository.save(transacao));
+                    pendentes.add(transacao);
                 }
             }
         }
+
+        geradas.addAll(transacaoRepository.saveAll(pendentes));
         return geradas;
     }
 

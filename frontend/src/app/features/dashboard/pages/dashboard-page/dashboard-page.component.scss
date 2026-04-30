@@ -131,6 +131,13 @@ button {
   background: rgba(255, 255, 255, 0.03);
   padding: 1rem;
 
+  .recentes-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
   h2 {
     margin: 0;
     font-family: var(--font-display);
@@ -159,6 +166,19 @@ button {
     display: block;
     margin-top: 0.2rem;
     color: var(--muted-text);
+  }
+}
+
+@media (max-width: 800px) {
+  .recentes {
+    .recentes-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .btn-create {
+      width: 100%;
+    }
   }
 }
 
@@ -191,69 +211,6 @@ button {
 .btn-inline:disabled {
   opacity: 0.65;
   cursor: not-allowed;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  background: rgba(0, 0, 0, 0.58);
-  backdrop-filter: blur(2px);
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-}
-
-.modal-card {
-  width: min(46rem, 100%);
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: rgba(8, 12, 18, 0.97);
-  padding: 1rem;
-}
-
-.modal-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.6rem;
-
-  h2 {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 1.1rem;
-  }
-}
-
-.tx-form {
-  margin-top: 0.8rem;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.8rem;
-}
-
-.tx-form input,
-.tx-form select {
-  border: 1px solid var(--line);
-  border-radius: 0.6rem;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
-  padding: 0.48rem 0.65rem;
-}
-
-.tx-form input:disabled,
-.tx-form select:disabled {
-  opacity: 0.72;
-}
-
-.full-width {
-  grid-column: 1 / -1;
-}
-
-.modal-actions {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: flex-end;
 }
 
 span.receita {
@@ -339,9 +296,5 @@ span.despesa {
 
   .row-buttons .btn-inline {
     flex: 1;
-  }
-
-  .tx-form {
-    grid-template-columns: 1fr;
   }
 }

@@ -1,21 +1,27 @@
-import { Component, inject, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { PeriodoFinanceiroResponse } from '../../../../core/models/periodo-financeiro.models';
 import { PeriodosFinanceirosApiService } from '../../../../core/services/periodos-financeiros-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { DateBRPipe } from '../../../../shared/pipes/date-br.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
+import { fieldError } from '../../../../shared/utils/form-error.util';
 
 @Component({
   selector: 'app-periodos-financeiros-page',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, DateBRPipe],
   templateUrl: './periodos-financeiros-page.component.html',
   styleUrl: './periodos-financeiros-page.component.scss',
 })
-export class PeriodosFinanceirosPageComponent {
+export class PeriodosFinanceirosPageComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly periodosApi = inject(PeriodosFinanceirosApiService);
   private readonly toast = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly periodos = signal<PeriodoFinanceiroResponse[]>([]);
   readonly loading = signal(false);
@@ -25,6 +31,7 @@ export class PeriodosFinanceirosPageComponent {
   readonly editingId = signal<number | null>(null);
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
+  readonly fieldError = fieldError;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
     q: [''],
@@ -37,7 +44,7 @@ export class PeriodosFinanceirosPageComponent {
     dataFim: ['', [Validators.required]],
   });
 
-  constructor() {
+  ngOnInit(): void {
     this.loadPeriodos();
   }
 
@@ -70,18 +77,6 @@ export class PeriodosFinanceirosPageComponent {
     this.resetForm();
   }
 
-  fieldError(control: AbstractControl | null, label: string): string {
-    if (!control || !control.touched) {
-      return '';
-    }
-
-    if (control.hasError('required')) {
-      return `${label} obrigatoria`;
-    }
-
-    return '';
-  }
-
   submit(): void {
     if (this.form.invalid || this.submitting()) {
       this.form.markAllAsTouched();
@@ -90,27 +85,24 @@ export class PeriodosFinanceirosPageComponent {
 
     const raw = this.form.getRawValue();
     if (raw.dataFim < raw.dataInicio) {
-      this.modalErrorMessage.set('A data de fim nao pode ser anterior a data de inicio.');
+      this.modalErrorMessage.set('A data de fim não pode ser anterior à data de início.');
       return;
     }
 
     this.modalErrorMessage.set('');
     this.submitting.set(true);
 
-    const payload = {
-      dataInicio: raw.dataInicio,
-      dataFim: raw.dataFim,
-    };
+    const payload = { dataInicio: raw.dataInicio, dataFim: raw.dataFim };
 
     const editingId = this.editingId();
     const request$ = editingId
       ? this.periodosApi.update(editingId, payload)
       : this.periodosApi.create(payload);
 
-    request$.subscribe({
+    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.submitting.set(false);
-        this.toast.show(editingId ? 'Periodo atualizado.' : 'Periodo criado.', 'success');
+        this.toast.show(editingId ? 'Período atualizado.' : 'Período criado.', 'success');
         this.closeModal();
         this.loadPeriodos();
       },
@@ -121,36 +113,34 @@ export class PeriodosFinanceirosPageComponent {
     });
   }
 
-  deletePeriodo(periodo: PeriodoFinanceiroResponse): void {
+  async deletePeriodo(periodo: PeriodoFinanceiroResponse): Promise<void> {
     if (this.deletingId()) {
       return;
     }
 
-    const confirmDelete = window.confirm(
-      `Excluir periodo de ${this.formatDate(periodo.dataInicio)} ate ${this.formatDate(periodo.dataFim)}?`
+    const confirmed = await this.confirmDialog.confirm(
+      `Excluir o período de ${periodo.dataInicio} até ${periodo.dataFim}?`
     );
-
-    if (!confirmDelete) {
+    if (!confirmed) {
       return;
     }
 
     this.deletingId.set(periodo.id);
 
-    this.periodosApi.delete(periodo.id).subscribe({
-      next: () => {
-        this.deletingId.set(null);
-        this.toast.show('Periodo excluido.', 'success');
-        this.loadPeriodos();
-      },
-      error: (err) => {
-        this.deletingId.set(null);
-        this.toast.show(mapApiError(err), 'error');
-      },
-    });
-  }
-
-  formatDate(value: string): string {
-    return new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR');
+    this.periodosApi
+      .delete(periodo.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.deletingId.set(null);
+          this.toast.show('Período excluído.', 'success');
+          this.loadPeriodos();
+        },
+        error: (err) => {
+          this.deletingId.set(null);
+          this.toast.show(mapApiError(err), 'error');
+        },
+      });
   }
 
   private loadPeriodos(): void {
@@ -165,6 +155,7 @@ export class PeriodosFinanceirosPageComponent {
         dataInicio: filters.dataInicio,
         dataFim: filters.dataFim,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (page) => {
           this.periodos.set(page.content);

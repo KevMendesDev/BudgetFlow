@@ -1,0 +1,126 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.modal-card {
+  width: min(46rem, 100%);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(8, 12, 18, 0.97);
+  padding: 1rem;
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+
+  h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+  }
+}
+
+.error {
+  margin-top: 1rem;
+  color: #ff9d9d;
+}
+
+.periodo-field {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--muted-text);
+}
+
+.periodo-field select,
+.periodo-field input {
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0.48rem 0.65rem;
+}
+
+.tx-form {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.tx-form input,
+.tx-form select {
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0.48rem 0.65rem;
+}
+
+.tx-form input:disabled,
+.tx-form select:disabled {
+  opacity: 0.72;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.modal-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-create {
+  border: 0;
+  border-radius: 0.75rem;
+  background: linear-gradient(130deg, var(--brand-green), #6af0b2);
+  color: #06130c;
+  font-weight: 700;
+  padding: 0.62rem 0.95rem;
+  cursor: pointer;
+}
+
+.btn-create:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn-inline {
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+
+.btn-inline:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 800px) {
+  .tx-form {
+    grid-template-columns: 1fr;
+  }
+}

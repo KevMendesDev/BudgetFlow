@@ -146,11 +146,18 @@ tr {
   display: grid;
   place-items: center;
   padding: 1rem;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
 }
 
 .modal-card {
   width: min(34rem, 100%);
   padding: 1rem;
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .modal-head {

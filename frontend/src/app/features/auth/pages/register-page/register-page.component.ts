@@ -1,11 +1,13 @@
-import { Component, inject, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthApiService } from '../../../../core/services/auth-api.service';
 import { SessionService } from '../../../../core/services/session.service';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { formatCpf, formatPhone, onlyDigits } from '../../../../shared/utils/format.util';
+import { fieldError } from '../../../../shared/utils/form-error.util';
 import { cpfValidator, strongPasswordValidator, telefoneValidator } from '../../../../shared/validators/br-validators';
 
 @Component({
@@ -18,9 +20,11 @@ export class RegisterPageComponent {
   private readonly authApi = inject(AuthApiService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(false);
   readonly errorMessage = signal('');
+  readonly fieldError = fieldError;
 
   readonly form = this.formBuilder.nonNullable.group({
     nome: ['', [Validators.required]],
@@ -40,38 +44,6 @@ export class RegisterPageComponent {
     telefoneControl.setValue(formatPhone(telefoneControl.value), { emitEvent: false });
   }
 
-  fieldError(control: AbstractControl | null, label: string): string {
-    if (!control || !control.touched) {
-      return '';
-    }
-
-    if (control.hasError('required')) {
-      return `${label} obrigatorio`;
-    }
-
-    if (control.hasError('email')) {
-      return 'Email invalido';
-    }
-
-    if (control.hasError('cpf')) {
-      return 'CPF invalido';
-    }
-
-    if (control.hasError('telefone')) {
-      return 'Telefone invalido';
-    }
-
-    if (control.hasError('strongPassword')) {
-      return 'Senha fraca: usa maiuscula, minuscula, numero e especial';
-    }
-
-    if (control.hasError('minlength')) {
-      return 'Senha precisa ter pelo menos 8 caracteres';
-    }
-
-    return '';
-  }
-
   submit(): void {
     if (this.form.invalid || this.loading()) {
       this.form.markAllAsTouched();
@@ -89,6 +61,7 @@ export class RegisterPageComponent {
         cpf: onlyDigits(formValue.cpf),
         telefone: formValue.telefone ? onlyDigits(formValue.telefone) : null,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (currentUser) => {
           this.session.setUser(currentUser);

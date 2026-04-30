@@ -1,29 +1,44 @@
-import { Component, inject, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { CategoriaResponse } from '../../../../core/models/categoria.models';
 import {
+  FREQUENCIA_LABELS,
+  FREQUENCIAS,
   Frequencia,
-  TipoMovimentacao,
-  TipoPagamento,
   TransacaoRecorrenteResponse,
 } from '../../../../core/models/transacao-recorrente.models';
+import {
+  TIPO_MOVIMENTACAO_LABELS,
+  TIPO_PAGAMENTO_LABELS,
+  TIPOS_MOVIMENTACAO,
+  TIPOS_PAGAMENTO,
+  TipoMovimentacao,
+  TipoPagamento,
+} from '../../../../core/models/transacao.models';
 import { CategoriasApiService } from '../../../../core/services/categorias-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { TransacoesRecorrentesApiService } from '../../../../core/services/transacoes-recorrentes-api.service';
+import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
+import { DateBRPipe } from '../../../../shared/pipes/date-br.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
+import { fieldError } from '../../../../shared/utils/form-error.util';
 
 @Component({
   selector: 'app-transacoes-recorrentes-page',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CurrencyBRLPipe, DateBRPipe],
   templateUrl: './transacoes-recorrentes-page.component.html',
   styleUrl: './transacoes-recorrentes-page.component.scss',
 })
-export class TransacoesRecorrentesPageComponent {
+export class TransacoesRecorrentesPageComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly recorrentesApi = inject(TransacoesRecorrentesApiService);
   private readonly categoriasApi = inject(CategoriasApiService);
   private readonly toast = inject(ToastService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly recorrencias = signal<TransacaoRecorrenteResponse[]>([]);
   readonly categorias = signal<CategoriaResponse[]>([]);
@@ -36,26 +51,10 @@ export class TransacoesRecorrentesPageComponent {
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
 
-  readonly frequencias: Array<{ value: Frequencia; label: string }> = [
-    { value: 'DIARIO', label: 'Diario' },
-    { value: 'SEMANAL', label: 'Semanal' },
-    { value: 'MENSAL', label: 'Mensal' },
-    { value: 'ANUAL', label: 'Anual' },
-  ];
-
-  readonly tiposMovimentacao: Array<{ value: TipoMovimentacao; label: string }> = [
-    { value: 'RECEITA', label: 'Receita' },
-    { value: 'DESPESA', label: 'Despesa' },
-  ];
-
-  readonly tiposPagamento: Array<{ value: TipoPagamento; label: string }> = [
-    { value: 'DINHEIRO', label: 'Dinheiro' },
-    { value: 'CARTAO_CREDITO', label: 'Cartao de credito' },
-    { value: 'CARTAO_DEBITO', label: 'Cartao de debito' },
-    { value: 'PIX', label: 'Pix' },
-    { value: 'TRANSFERENCIA', label: 'Transferencia' },
-    { value: 'BOLETO', label: 'Boleto' },
-  ];
+  readonly frequencias = FREQUENCIAS;
+  readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
+  readonly tiposPagamento = TIPOS_PAGAMENTO;
+  readonly fieldError = fieldError;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
     query: [''],
@@ -75,7 +74,7 @@ export class TransacoesRecorrentesPageComponent {
     totalParcelas: ['', [Validators.min(1)]],
   });
 
-  constructor() {
+  ngOnInit(): void {
     this.loadCategorias();
     this.loadRecorrencias();
   }
@@ -116,26 +115,6 @@ export class TransacoesRecorrentesPageComponent {
     this.resetForm();
   }
 
-  fieldError(control: AbstractControl | null, label: string): string {
-    if (!control || !control.touched) {
-      return '';
-    }
-
-    if (control.hasError('required')) {
-      return `${label} obrigatorio`;
-    }
-
-    if (control.hasError('maxlength')) {
-      return `${label} deve ter no maximo 255 caracteres`;
-    }
-
-    if (control.hasError('min')) {
-      return `${label} invalido`;
-    }
-
-    return '';
-  }
-
   submit(): void {
     if (this.form.invalid || this.submitting()) {
       this.form.markAllAsTouched();
@@ -163,10 +142,10 @@ export class TransacoesRecorrentesPageComponent {
       ? this.recorrentesApi.update(editingId, payload)
       : this.recorrentesApi.create(payload);
 
-    request$.subscribe({
+    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
         this.submitting.set(false);
-        this.toast.show(editingId ? 'Recorrencia atualizada.' : 'Recorrencia criada.', 'success');
+        this.toast.show(editingId ? 'Recorrência atualizada.' : 'Recorrência criada.', 'success');
         this.closeModal();
         this.loadRecorrencias();
       },
@@ -177,72 +156,64 @@ export class TransacoesRecorrentesPageComponent {
     });
   }
 
-  deleteRecorrencia(item: TransacaoRecorrenteResponse): void {
+  async deleteRecorrencia(item: TransacaoRecorrenteResponse): Promise<void> {
     if (this.deletingId()) {
       return;
     }
 
-    const confirmDelete = window.confirm(`Excluir a recorrencia "${item.descricao}"?`);
-    if (!confirmDelete) {
+    const confirmed = await this.confirmDialog.confirm(
+      `Excluir a recorrência "${item.descricao}"?`
+    );
+    if (!confirmed) {
       return;
     }
 
     this.deletingId.set(item.id);
 
-    this.recorrentesApi.delete(item.id).subscribe({
-      next: () => {
-        this.deletingId.set(null);
-        this.toast.show('Recorrencia excluida.', 'success');
-        this.loadRecorrencias();
-      },
-      error: (err) => {
-        this.deletingId.set(null);
-        this.toast.show(mapApiError(err), 'error');
-      },
-    });
-  }
-
-  formatMoney(value: number): string {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 2,
-    }).format(value);
-  }
-
-  formatDate(value: string | null): string {
-    if (!value) {
-      return '-';
-    }
-
-    return new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR');
+    this.recorrentesApi
+      .delete(item.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.deletingId.set(null);
+          this.toast.show('Recorrência excluída.', 'success');
+          this.loadRecorrencias();
+        },
+        error: (err) => {
+          this.deletingId.set(null);
+          this.toast.show(mapApiError(err), 'error');
+        },
+      });
   }
 
   frequenciaLabel(value: Frequencia): string {
-    return this.frequencias.find((item) => item.value === value)?.label ?? value;
+    return FREQUENCIA_LABELS[value] ?? value;
   }
 
   tipoMovimentacaoLabel(value: TipoMovimentacao): string {
-    return this.tiposMovimentacao.find((item) => item.value === value)?.label ?? value;
+    return TIPO_MOVIMENTACAO_LABELS[value] ?? value;
   }
 
   tipoPagamentoLabel(value: TipoPagamento): string {
-    return this.tiposPagamento.find((item) => item.value === value)?.label ?? value;
+    return TIPO_PAGAMENTO_LABELS[value] ?? value;
   }
 
   private loadCategorias(): void {
     this.loadingCategorias.set(true);
 
-    this.categoriasApi.listAll().subscribe({
-      next: (page) => {
-        this.categorias.set(page.content);
-        this.loadingCategorias.set(false);
-      },
-      error: (err) => {
-        this.errorMessage.set(mapApiError(err));
-        this.loadingCategorias.set(false);
-      },
-    });
+    this.categoriasApi
+      .listAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          this.categorias.set(page.content);
+          this.loadingCategorias.set(false);
+        },
+        error: (err) => {
+          this.errorMessage.set(mapApiError(err));
+          this.loadingCategorias.set(false);
+        },
+      });
   }
 
   private loadRecorrencias(): void {
@@ -257,6 +228,7 @@ export class TransacoesRecorrentesPageComponent {
         frequencia: filters.frequencia,
         tipoMovimentacao: filters.tipoMovimentacao,
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (page) => {
           this.recorrencias.set(page.content);

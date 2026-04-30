@@ -8,11 +8,16 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 
+import java.util.Optional;
+
 public interface CategoriaRepository extends JpaRepository<Categoria, Long>, JpaSpecificationExecutor<Categoria> {
 
     Page<Categoria> findAllByUserId(Long userId, Pageable pageable);
-	boolean existsByNomeIgnoreCaseAndUserIdAndClassificacao(String nome, Long userId, ClassificacaoCategoria classificacao);
 
-	boolean existsByNomeIgnoreCaseAndUserIdAndClassificacaoAndIdNot(String nome, Long userId, ClassificacaoCategoria classificacao, Long id);
+    Optional<Categoria> findByIdAndUserId(Long id, Long userId);
+
+    boolean existsByNomeIgnoreCaseAndUserIdAndClassificacao(String nome, Long userId, ClassificacaoCategoria classificacao);
+
+    boolean existsByNomeIgnoreCaseAndUserIdAndClassificacaoAndIdNot(String nome, Long userId, ClassificacaoCategoria classificacao, Long id);
 
 }

@@ -1,5 +1,7 @@
 package br.com.budgetflow.common.components;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -8,6 +10,8 @@ import java.net.InetAddress;
 
 @Component
 public class BudgetFlowStartupInfo {
+
+    private static final Logger log = LoggerFactory.getLogger(BudgetFlowStartupInfo.class);
 
     @EventListener(ApplicationReadyEvent.class)
     public void printStartupInfo() {
@@ -19,10 +23,6 @@ public class BudgetFlowStartupInfo {
             externalUrl = "http://" + hostAddress + ":" + port;
         } catch (Exception ignored) {}
 
-        System.out.println("\n\n" +
-            "Your Application is running:\n" +
-            "  Local:    " + localUrl + "\n" +
-            "  External: " + externalUrl + "\n"
-        );
+        log.info("\n\nYour Application is running:\n  Local:    {}\n  External: {}\n", localUrl, externalUrl);
     }
 }

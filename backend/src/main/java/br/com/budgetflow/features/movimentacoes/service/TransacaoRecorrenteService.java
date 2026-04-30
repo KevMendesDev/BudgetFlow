@@ -1,5 +1,7 @@
 package br.com.budgetflow.features.movimentacoes.service;
 
+import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
+import br.com.budgetflow.common.utils.DateRangeUtils;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.categorias.service.CategoriaService;
 import br.com.budgetflow.features.movimentacoes.criteria.TransacaoRecorrenteFilterCriteria;
@@ -45,9 +47,9 @@ public class TransacaoRecorrenteService {
     public TransacaoRecorrenteResponseDTO create(TransacaoRecorrenteRequestDTO requestDTO) {
         Long userId = SecurityUtils.currentUserId();
         User user = userService.findById(userId);
-        Categoria categoria = categoriaService.findById(requestDTO.categoriaId());
+        Categoria categoria = categoriaService.findEntityByIdAndUser(requestDTO.categoriaId(), userId);
 
-        validateDateRange(requestDTO.dataInicio(), requestDTO.dataFim());
+        DateRangeUtils.validateRange(requestDTO.dataInicio(), requestDTO.dataFim());
 
         TransacaoRecorrente transacaoRecorrente = transacaoRecorrenteMapper.toEntity(requestDTO);
         transacaoRecorrente.setUser(user);
@@ -63,12 +65,12 @@ public class TransacaoRecorrenteService {
             TransacaoRecorrenteFilterCriteria criteria,
             Pageable pageable
     ) {
-        validateDateRange(criteria.getDataInicio(), criteria.getDataFim());
+        DateRangeUtils.validateRange(criteria.getDataInicio(), criteria.getDataFim());
 
         Long userId = SecurityUtils.currentUserId();
 
         Specification<TransacaoRecorrente> specification = TransacaoRecorrenteSpecification
-            .createSpecification(criteria, userId, null);
+                .createSpecification(criteria, userId);
 
         return transacaoRecorrenteRepository.findAll(specification, pageable)
                 .map(transacaoRecorrenteMapper::toResponseDTO);
@@ -85,9 +87,9 @@ public class TransacaoRecorrenteService {
     public TransacaoRecorrenteResponseDTO update(Long id, TransacaoRecorrenteRequestDTO requestDTO) {
         Long userId = SecurityUtils.currentUserId();
         TransacaoRecorrente transacaoRecorrente = findByIdAndUserId(id, userId);
-        Categoria categoria = categoriaService.findById(requestDTO.categoriaId());
+        Categoria categoria = categoriaService.findEntityByIdAndUser(requestDTO.categoriaId(), userId);
 
-        validateDateRange(requestDTO.dataInicio(), requestDTO.dataFim());
+        DateRangeUtils.validateRange(requestDTO.dataInicio(), requestDTO.dataFim());
 
         transacaoRecorrenteMapper.updateFromDto(requestDTO, transacaoRecorrente);
         transacaoRecorrente.setCategoria(categoria);
@@ -118,12 +120,6 @@ public class TransacaoRecorrenteService {
 
     private TransacaoRecorrente findByIdAndUserId(Long id, Long userId) {
         return transacaoRecorrenteRepository.findByIdAndUserId(id, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Transação recorrente não encontrada"));
-    }
-
-    private void validateDateRange(LocalDate dataInicio, LocalDate dataFim) {
-        if (dataInicio != null && dataFim != null && dataFim.isBefore(dataInicio)) {
-            throw new IllegalArgumentException("A data de fim não pode ser anterior à data de início");
-        }
+                .orElseThrow(() -> new ResourceNotFoundException("Transação recorrente não encontrada"));
     }
 }

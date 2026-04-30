@@ -1,4 +1,4 @@
-import { PageResponse } from './transacao.models';
+import { PageResponse } from './pagination.models';
 
 export interface PeriodoFinanceiroRequest {
   dataInicio: string;

@@ -1,5 +1,8 @@
 package br.com.budgetflow.features.periodos.service;
 
+import br.com.budgetflow.common.exceptions.BusinessRuleException;
+import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
+import br.com.budgetflow.common.utils.DateRangeUtils;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.periodos.dto.PeriodoFinanceiroRequestDTO;
 import br.com.budgetflow.features.periodos.dto.PeriodoFinanceiroResponseDTO;
@@ -37,7 +40,7 @@ public class PeriodoFinanceiroService {
 
     @Transactional
     public PeriodoFinanceiroResponseDTO create(PeriodoFinanceiroRequestDTO periodoDTO) {
-        this.validateDates(periodoDTO);
+        DateRangeUtils.validateRange(periodoDTO.dataInicio(), periodoDTO.dataFim());
 
         User user = this.userService.findById(SecurityUtils.currentUserId());
 
@@ -48,23 +51,21 @@ public class PeriodoFinanceiroService {
     }
 
     @Transactional(readOnly = true)
-        public Page<PeriodoFinanceiroResponseDTO> findAll(
-            Long userId,
+    public Page<PeriodoFinanceiroResponseDTO> findAll(
             LocalDate dataInicio,
             LocalDate dataFim,
             String search,
             Pageable pageable
-        ) {
-        this.validateDateRange(dataInicio, dataFim);
+    ) {
+        DateRangeUtils.validateRange(dataInicio, dataFim);
 
         Long currentUserId = SecurityUtils.currentUserId();
 
         Specification<PeriodoFinanceiro> specification = Specification
-            .where(PeriodoFinanceiroSpecification.hasCurrentUserId(currentUserId))
-            .and(PeriodoFinanceiroSpecification.hasUserId(userId))
-            .and(PeriodoFinanceiroSpecification.hasDataInicioFrom(dataInicio))
-            .and(PeriodoFinanceiroSpecification.hasDataFimTo(dataFim))
-            .and(PeriodoFinanceiroSpecification.hasSearchTerm(search));
+                .where(PeriodoFinanceiroSpecification.hasCurrentUserId(currentUserId))
+                .and(PeriodoFinanceiroSpecification.hasDataInicioFrom(dataInicio))
+                .and(PeriodoFinanceiroSpecification.hasDataFimTo(dataFim))
+                .and(PeriodoFinanceiroSpecification.hasSearchTerm(search));
 
         return periodoFinanceiroRepository.findAll(specification, pageable)
                 .map(periodoFinanceiroMapper::toResponseDTO);
@@ -72,19 +73,20 @@ public class PeriodoFinanceiroService {
 
     @Transactional(readOnly = true)
     public PeriodoFinanceiro findById(Long id) {
-        PeriodoFinanceiro periodo = periodoFinanceiroRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Período financeiro não encontrado"));
-        return periodo;
+        Long userId = SecurityUtils.currentUserId();
+        return periodoFinanceiroRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Período financeiro não encontrado"));
     }
 
     @Transactional
     public PeriodoFinanceiroResponseDTO update(Long id, PeriodoFinanceiroRequestDTO periodoDTO) {
-        this.validateDates(periodoDTO);
+        DateRangeUtils.validateRange(periodoDTO.dataInicio(), periodoDTO.dataFim());
 
-        PeriodoFinanceiro periodo = periodoFinanceiroRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Período financeiro não encontrado"));
+        Long userId = SecurityUtils.currentUserId();
+        PeriodoFinanceiro periodo = periodoFinanceiroRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Período financeiro não encontrado"));
 
-        User user = this.userService.findById(SecurityUtils.currentUserId());
+        User user = this.userService.findById(userId);
 
         periodoFinanceiroMapper.updatePeriodoFromDto(periodoDTO, periodo);
         periodo.setUser(user);
@@ -94,26 +96,21 @@ public class PeriodoFinanceiroService {
 
     @Transactional
     public void delete(Long id) {
-        if (!periodoFinanceiroRepository.existsById(id)) {
-            throw new IllegalArgumentException("Período financeiro não encontrado");
-        }
-        periodoFinanceiroRepository.deleteById(id);
+        Long userId = SecurityUtils.currentUserId();
+        PeriodoFinanceiro periodo = periodoFinanceiroRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Período financeiro não encontrado"));
+        periodoFinanceiroRepository.delete(periodo);
     }
 
     public PeriodoFinanceiro resolvePeriodoToTransacao(Long periodoId, Long userId) {
         if (periodoId == null) {
             return periodoFinanceiroRepository
                     .findFirstByUserIdAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(userId, LocalDate.now(), LocalDate.now())
-                    .orElseThrow(() -> new IllegalArgumentException("Nenhum período financeiro atual encontrado para o usuário"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Nenhum período financeiro atual encontrado para o usuário"));
         }
 
-        PeriodoFinanceiro periodo = this.findById(periodoId);
-
-        if (!periodo.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Período financeiro não encontrado");
-        }
-
-        return periodo;
+        return periodoFinanceiroRepository.findByIdAndUserId(periodoId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Período financeiro não encontrado"));
     }
 
     public Long resolvePeriodoIdForFilterToTransacao(Long userId, Long periodoId) {
@@ -125,17 +122,5 @@ public class PeriodoFinanceiroService {
                 .findFirstByUserIdAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(userId, LocalDate.now(), LocalDate.now())
                 .map(PeriodoFinanceiro::getId)
                 .orElse(null);
-    }
-
-    private void validateDates(PeriodoFinanceiroRequestDTO periodoDTO) {
-        if (periodoDTO.dataFim().isBefore(periodoDTO.dataInicio())) {
-            throw new IllegalArgumentException("A data de fim não pode ser anterior à data de início");
-        }
-    }
-
-    private void validateDateRange(LocalDate dataInicio, LocalDate dataFim) {
-        if (dataInicio != null && dataFim != null && dataFim.isBefore(dataInicio)) {
-            throw new IllegalArgumentException("A data de fim não pode ser anterior à data de início");
-        }
     }
 }

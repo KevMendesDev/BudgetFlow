@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,7 +32,8 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_generator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @SequenceGenerator(name = "sequence_generator", sequenceName = "sequence_generator", allocationSize = 1)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @Column(nullable = false)
@@ -101,7 +103,8 @@ public class User {
 
     @Override
     public String toString() {
-        return "User [id=" + id + ", nome=" + nome + ", email=" + email + ", cpf=" + cpf + ", telefone=" + telefone + ", senha="
-                + senha + ", roles=" + roles + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
+        return "User [id=" + id + ", nome=" + nome + ", email=" + email + ", cpf=" + cpf
+                + ", telefone=" + telefone + ", roles=" + roles
+                + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
     }
 }

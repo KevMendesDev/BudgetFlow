@@ -2,6 +2,7 @@ package br.com.budgetflow.features.movimentacoes.domain;
 
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,8 +24,9 @@ import java.time.LocalDate;
 public class Transacao extends Movimentacao {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE,  generator = "sequence_generator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_generator")
+    @SequenceGenerator(name = "sequence_generator", sequenceName = "sequence_generator", allocationSize = 1)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
