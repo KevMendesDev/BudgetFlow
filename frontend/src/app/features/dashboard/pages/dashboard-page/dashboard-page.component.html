@@ -34,21 +34,6 @@
           </article>
         }
       </section>
-
-      <section class="recentes" aria-label="Carregando lista de transações">
-        <h2 class="bf-skeleton-line h-4 w-36"></h2>
-        <ul>
-          @for (row of skeletonRows; track row) {
-            <li>
-              <div>
-                <p class="bf-skeleton-line h-4 w-40"></p>
-                <small class="bf-skeleton-line mt-2 block h-3 w-28"></small>
-              </div>
-              <span class="bf-skeleton-line h-3 w-16"></span>
-            </li>
-          }
-        </ul>
-      </section>
     } @else {
       @if (!selectedPeriodo()) {
         <p class="muted loading">Não existem períodos financeiros cadastrados.</p>
@@ -69,58 +54,13 @@
         </article>
       </section>
 
-      <section class="recentes">
-        <div class="recentes-head">
-          @if (transacoes().length === 0) {
-            <p class="muted">Você não possui transações para esse período.</p>
-          } @else {
-            <h2>Transações do período</h2>
-          }
-          <button type="button" class="btn-create" (click)="openCreateModal()" [disabled]="!selectedPeriodo()">
-            Cadastrar transação
-          </button>
-        </div>
-        @if (transacoes().length > 0) {
-          <ul>
-            @for (tx of transacoes(); track tx.id) {
-              <li>
-                <div>
-                  <strong>{{ tx.descricao || 'Sem descrição' }}</strong>
-                  <small>
-                    {{ tx.categoriaNome }} • {{ formatDate(tx.data) }}
-                    @if (parcelaInfo(tx)) {
-                      • Parcela {{ parcelaInfo(tx) }}
-                    }
-                  </small>
-                </div>
-                <div class="tx-actions">
-                  <span [class.receita]="tx.tipoMovimentacao === 'RECEITA'" [class.despesa]="tx.tipoMovimentacao === 'DESPESA'">
-                    {{ tx.tipoMovimentacao === 'DESPESA' ? '-' : '+' }} {{ tx.valor | currencyBRL }}
-                  </span>
-                  <div class="row-buttons">
-                    <button type="button" class="btn-inline" (click)="startEdit(tx)">Editar</button>
-                    <button type="button" class="btn-inline danger" (click)="deleteTransacao(tx)" [disabled]="deletingId() === tx.id">
-                      {{ deletingId() === tx.id ? 'Excluindo...' : 'Excluir' }}
-                    </button>
-                  </div>
-                </div>
-              </li>
-            }
-          </ul>
-        }
-      </section>
+      <app-dashboard-transacoes
+        [categorias]="categorias()"
+        [recorrentes]="recorrentes()"
+        [transacoes]="transacoes()"
+        [selectedPeriodo]="selectedPeriodo()"
+        (changed)="onTransacoesChanged()"
+      />
     }
   </div>
-
-  @if (modalOpen()) {
-    <app-transacao-modal
-      [categorias]="categorias()"
-      [recorrentes]="recorrentes()"
-      [transacoes]="transacoes()"
-      [selectedPeriodo]="selectedPeriodo()"
-      [editingTransacao]="editingTransacao()"
-      (saved)="onTransacaoSaved()"
-      (closed)="closeModal()"
-    />
-  }
 </main>

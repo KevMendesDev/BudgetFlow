@@ -1,0 +1,187 @@
+<section class="recentes">
+  <div class="recentes-head">
+    <div>
+      <h2>Transações do período</h2>
+      @if (totalElements() > 0) {
+        <small class="muted">{{ totalElements() }} transações</small>
+      }
+    </div>
+    <div class="head-actions">
+      <button type="button" class="btn-icon" (click)="toggleFiltros()" [disabled]="!selectedPeriodo()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M4 5h16M7 12h10M10 19h4"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        {{ filtrosAbertos() ? 'Esconder filtros' : 'Mostrar filtros' }}
+      </button>
+      <button type="button" class="btn-create" (click)="openCreateModal()" [disabled]="!selectedPeriodo()">
+        Cadastrar transação
+      </button>
+    </div>
+  </div>
+
+  @if (filtrosAbertos()) {
+    <form class="filters" (submit)="$event.preventDefault(); aplicarFiltros()">
+      <label>
+        Categoria
+        <input
+          type="text"
+          list="categorias-list"
+          placeholder="Selecione ou digite"
+          [value]="filtroNomeCategoria()"
+          (input)="filtroNomeCategoria.set($any($event.target).value)"
+        />
+        <datalist id="categorias-list">
+          @for (nome of categoriasDistinct(); track nome) {
+            <option [value]="nome"></option>
+          }
+        </datalist>
+      </label>
+
+      <label>
+        Classificação
+        <select
+          [value]="filtroClassificacao()"
+          (change)="filtroClassificacao.set($any($event.target).value)"
+        >
+          <option value="">Todas</option>
+          @for (classificacao of classificacoes; track classificacao.value) {
+            <option [value]="classificacao.value">{{ classificacao.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Tipo movimentação
+        <select
+          [value]="filtroTipoMovimentacao()"
+          (change)="filtroTipoMovimentacao.set($any($event.target).value)"
+        >
+          <option value="">Todos</option>
+          @for (tipo of tiposMovimentacao; track tipo.value) {
+            <option [value]="tipo.value">{{ tipo.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Tipo pagamento
+        <select
+          [value]="filtroTipoPagamento()"
+          (change)="filtroTipoPagamento.set($any($event.target).value)"
+        >
+          <option value="">Todos</option>
+          @for (tipo of tiposPagamento; track tipo.value) {
+            <option [value]="tipo.value">{{ tipo.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Recorrente
+        <select
+          [value]="filtroRecorrente()"
+          (change)="filtroRecorrente.set($any($event.target).value)"
+        >
+          <option value="all">Todas</option>
+          <option value="true">Recorrentes</option>
+          <option value="false">Não recorrentes</option>
+        </select>
+      </label>
+
+      <div class="filters-actions">
+        <button type="button" class="btn-secondary" (click)="limparFiltros()">Limpar</button>
+        <button type="submit" class="btn-primary">Aplicar</button>
+      </div>
+    </form>
+  }
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  @if (!selectedPeriodo()) {
+    <p class="muted">Selecione um período para visualizar transações.</p>
+  }
+
+  @if (loading()) {
+    <ul class="skeleton-list">
+      @for (row of skeletonRows; track row) {
+        <li>
+          <div>
+            <p class="bf-skeleton-line h-4 w-40"></p>
+            <small class="bf-skeleton-line mt-2 block h-3 w-28"></small>
+          </div>
+          <span class="bf-skeleton-line h-3 w-16"></span>
+        </li>
+      }
+    </ul>
+  } @else {
+    @if (paginaConteudo().length === 0 && selectedPeriodo()) {
+      <p class="muted">Nenhuma transação encontrada para os filtros atuais.</p>
+    }
+
+    @if (paginaConteudo().length > 0) {
+      <ul class="transacoes-list">
+        @for (tx of paginaConteudo(); track tx.id) {
+          <li>
+            <div>
+              <strong>{{ tx.descricao || 'Sem descrição' }}</strong>
+              <small>
+                {{ tx.categoriaNome }} • {{ formatDate(tx.data) }}
+                @if (parcelaInfo(tx)) {
+                  • Parcela {{ parcelaInfo(tx) }}
+                }
+              </small>
+            </div>
+            <div class="tx-actions">
+              <span [class.receita]="tx.tipoMovimentacao === 'RECEITA'" [class.despesa]="tx.tipoMovimentacao === 'DESPESA'">
+                {{ tx.tipoMovimentacao === 'DESPESA' ? '-' : '+' }} {{ tx.valor | currencyBRL }}
+              </span>
+              <div class="row-buttons">
+                <button type="button" class="btn-inline" (click)="startEdit(tx)">Editar</button>
+                <button type="button" class="btn-inline danger" (click)="deleteTransacao(tx)" [disabled]="deletingId() === tx.id">
+                  {{ deletingId() === tx.id ? 'Excluindo...' : 'Excluir' }}
+                </button>
+              </div>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  }
+
+  @if (totalPages() > 1) {
+    <div class="pagination">
+      <button type="button" class="btn-inline" (click)="irPaginaAnterior()" [disabled]="paginaAtual() === 0">
+        Anterior
+      </button>
+      <span>Página {{ paginaAtual() + 1 }} de {{ totalPages() }}</span>
+      <button
+        type="button"
+        class="btn-inline"
+        (click)="irProximaPagina()"
+        [disabled]="paginaAtual() + 1 >= totalPages()"
+      >
+        Próxima
+      </button>
+    </div>
+  }
+</section>
+
+@if (modalOpen()) {
+  <app-transacao-modal
+    [categorias]="categorias()"
+    [recorrentes]="recorrentes()"
+    [transacoes]="transacoes()"
+    [selectedPeriodo]="selectedPeriodo()"
+    [editingTransacao]="editingTransacao()"
+    (saved)="onTransacaoSaved()"
+    (closed)="closeModal()"
+  />
+}

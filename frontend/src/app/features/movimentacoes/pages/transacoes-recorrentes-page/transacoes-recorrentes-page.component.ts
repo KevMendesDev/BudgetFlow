@@ -2,7 +2,7 @@ import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { CategoriaResponse } from '../../../../core/models/categoria.models';
+import { CategoriaResponse, CLASSIFICACAO_LABELS } from '../../../../core/models/categoria.models';
 import {
   FREQUENCIA_LABELS,
   FREQUENCIAS,
@@ -55,6 +55,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
   readonly tiposPagamento = TIPOS_PAGAMENTO;
   readonly fieldError = fieldError;
+  readonly classificacaoLabels = CLASSIFICACAO_LABELS;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
     query: [''],

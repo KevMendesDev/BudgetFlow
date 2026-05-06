@@ -15,7 +15,9 @@
         <select formControlName="transacaoRecorrenteId" (change)="onRecorrenteChange($any($event.target).value)">
           <option value="">Manual</option>
           @for (rec of recorrentesDisponiveis(); track rec.id) {
-            <option [value]="rec.id">{{ rec.descricao }} • {{ rec.categoriaNome }}</option>
+            <option [value]="rec.id">
+              {{ rec.descricao }} • {{ rec.categoriaNome }} • {{ classificacaoLabels[rec.classificacaoCategoria] }}
+            </option>
           }
         </select>
       </label>
@@ -25,7 +27,9 @@
         <select formControlName="categoriaId" [disabled]="!isManualMode()">
           <option value="">Selecione</option>
           @for (categoria of categorias(); track categoria.id) {
-            <option [value]="categoria.id">{{ categoria.nome }}</option>
+            <option [value]="categoria.id">
+              {{ categoria.nome }} • {{ classificacaoLabels[categoria.classificacao] }}
+            </option>
           }
         </select>
         @if (fieldError(form.controls.categoriaId, 'Categoria')) {

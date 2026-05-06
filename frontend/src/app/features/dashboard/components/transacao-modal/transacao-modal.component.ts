@@ -2,7 +2,7 @@ import { Component, DestroyRef, inject, input, OnInit, output } from '@angular/c
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { CategoriaResponse } from '../../../../core/models/categoria.models';
+import { CategoriaResponse, CLASSIFICACAO_LABELS } from '../../../../core/models/categoria.models';
 import { PeriodoFinanceiro } from '../../../../core/models/periodo.models';
 import { TransacaoRecorrenteResponse } from '../../../../core/models/transacao-recorrente.models';
 import { TransacoesApiService } from '../../../../core/services/transacoes-api.service';
@@ -42,6 +42,7 @@ export class TransacaoModalComponent implements OnInit {
 
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
   readonly tiposPagamento = TIPOS_PAGAMENTO;
+  readonly classificacaoLabels = CLASSIFICACAO_LABELS;
   readonly fieldError = fieldError;
 
   readonly submitting = signal(false);

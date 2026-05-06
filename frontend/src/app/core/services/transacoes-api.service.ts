@@ -4,7 +4,25 @@ import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../config/api.config';
 import { PageResponse } from '../models/pagination.models';
-import { TransacaoRequest, TransacaoResponse } from '../models/transacao.models';
+import {
+  TipoMovimentacao,
+  TipoPagamento,
+  TransacaoRequest,
+  TransacaoResponse,
+} from '../models/transacao.models';
+
+export interface TransacaoListParams {
+  periodoId: number;
+  dataInicio: string;
+  dataFim: string;
+  page?: number;
+  size?: number;
+  nomeCategoria?: string;
+  classificacaoCategoria?: string;
+  tipoMovimentacao?: TipoMovimentacao;
+  tipoPagamento?: TipoPagamento;
+  recorrente?: boolean;
+}
 
 @Injectable({ providedIn: 'root' })
 export class TransacoesApiService {
@@ -23,6 +41,39 @@ export class TransacoesApiService {
     });
 
     return this.http.get<PageResponse<TransacaoResponse>>(`${API_BASE_URL}/api/transacoes`, { params });
+  }
+
+  listByPeriodoFiltered(params: TransacaoListParams): Observable<PageResponse<TransacaoResponse>> {
+    let httpParams = new HttpParams({
+      fromObject: {
+        periodoId: String(params.periodoId),
+        dataInicio: params.dataInicio,
+        dataFim: params.dataFim,
+        page: String(params.page ?? 0),
+        size: String(params.size ?? 20),
+        sort: 'data,desc',
+      },
+    });
+
+    if (params.nomeCategoria) {
+      httpParams = httpParams.set('nomeCategoria', params.nomeCategoria);
+    }
+    if (params.classificacaoCategoria) {
+      httpParams = httpParams.set('classificacaoCategoria', params.classificacaoCategoria);
+    }
+    if (params.tipoMovimentacao) {
+      httpParams = httpParams.set('tipoMovimentacao', params.tipoMovimentacao);
+    }
+    if (params.tipoPagamento) {
+      httpParams = httpParams.set('tipoPagamento', params.tipoPagamento);
+    }
+    if (params.recorrente !== undefined) {
+      httpParams = httpParams.set('recorrente', String(params.recorrente));
+    }
+
+    return this.http.get<PageResponse<TransacaoResponse>>(`${API_BASE_URL}/api/transacoes`, {
+      params: httpParams,
+    });
   }
 
   create(payload: TransacaoRequest): Observable<TransacaoResponse> {
