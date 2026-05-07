@@ -14,4 +14,6 @@ export interface PeriodoFinanceiroResponse {
   updatedAt: string;
 }
 
+export type PeriodoFinanceiro = PeriodoFinanceiroResponse;
+
 export type PeriodoFinanceiroPageResponse = PageResponse<PeriodoFinanceiroResponse>;

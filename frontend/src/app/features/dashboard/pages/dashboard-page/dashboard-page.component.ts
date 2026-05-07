@@ -2,7 +2,7 @@ import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { CategoriaResponse } from '../../../../core/models/categoria.models';
-import { PeriodoFinanceiro } from '../../../../core/models/periodo.models';
+import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import { TransacaoRecorrenteResponse } from '../../../../core/models/transacao-recorrente.models';
 import { SessionService } from '../../../../core/services/session.service';
 import { TransacaoResponse } from '../../../../core/models/transacao.models';
@@ -34,7 +34,7 @@ export class DashboardPageComponent implements OnInit {
   readonly loadingPeriodos = signal(true);
   readonly loadingResumo = signal(true);
   readonly loadingCategorias = signal(true);
-  readonly loading = computed(() => this.loadingPeriodos() || this.loadingResumo());
+  readonly loading = computed(() => this.loadingPeriodos() || this.loadingResumo() || this.loadingCategorias());
   readonly errorMessage = signal('');
   readonly periodos = signal<PeriodoFinanceiro[]>([]);
   readonly categorias = signal<CategoriaResponse[]>([]);

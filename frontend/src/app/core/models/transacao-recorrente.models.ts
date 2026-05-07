@@ -13,12 +13,9 @@ export const FREQUENCIAS: Array<{ value: Frequencia; label: string }> = [
   { value: 'ANUAL', label: 'Anual' },
 ];
 
-export const FREQUENCIA_LABELS: Record<Frequencia, string> = {
-  DIARIO: 'Diário',
-  SEMANAL: 'Semanal',
-  MENSAL: 'Mensal',
-  ANUAL: 'Anual',
-};
+export const FREQUENCIA_LABELS = Object.fromEntries(
+  FREQUENCIAS.map(({ value, label }) => [value, label])
+) as Record<Frequencia, string>;
 
 export interface TransacaoRecorrenteRequest {
   categoriaId: number;

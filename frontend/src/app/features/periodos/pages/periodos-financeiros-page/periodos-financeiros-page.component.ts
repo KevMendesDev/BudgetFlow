@@ -62,7 +62,7 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
   }
 
   clearFilters(): void {
-    this.filtersForm.setValue({ q: '', dataInicio: '', dataFim: '' });
+    this.filtersForm.setValue({ q: '', dataInicio: '', dataFim: '' }, { emitEvent: false });
     this.loadPeriodos();
   }
 
@@ -145,9 +145,8 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
           this.toast.show('Período excluído.', 'success');
           this.loadPeriodos();
         },
-        error: (err) => {
+        error: () => {
           this.deletingId.set(null);
-          this.toast.show(mapApiError(err), 'error');
         },
       });
   }

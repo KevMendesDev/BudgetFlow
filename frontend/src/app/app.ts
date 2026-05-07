@@ -8,6 +8,5 @@ import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confi
   selector: 'app-root',
   imports: [RouterOutlet, AppToastComponent, ConfirmDialogComponent],
   templateUrl: './app.html',
-  styleUrl: './app.scss',
 })
 export class App {}

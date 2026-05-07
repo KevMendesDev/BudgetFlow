@@ -1,5 +1,3 @@
-import { PageResponse } from './pagination.models';
-
 export type TipoMovimentacao = 'RECEITA' | 'DESPESA';
 export type TipoPagamento =
   | 'DINHEIRO'
@@ -23,19 +21,13 @@ export const TIPOS_PAGAMENTO: Array<{ value: TipoPagamento; label: string }> = [
   { value: 'BOLETO', label: 'Boleto' },
 ];
 
-export const TIPO_MOVIMENTACAO_LABELS: Record<TipoMovimentacao, string> = {
-  RECEITA: 'Receita',
-  DESPESA: 'Despesa',
-};
+export const TIPO_MOVIMENTACAO_LABELS = Object.fromEntries(
+  TIPOS_MOVIMENTACAO.map(({ value, label }) => [value, label])
+) as Record<TipoMovimentacao, string>;
 
-export const TIPO_PAGAMENTO_LABELS: Record<TipoPagamento, string> = {
-  DINHEIRO: 'Dinheiro',
-  CARTAO_CREDITO: 'Cartão de crédito',
-  CARTAO_DEBITO: 'Cartão de débito',
-  PIX: 'Pix',
-  TRANSFERENCIA: 'Transferência',
-  BOLETO: 'Boleto',
-};
+export const TIPO_PAGAMENTO_LABELS = Object.fromEntries(
+  TIPOS_PAGAMENTO.map(({ value, label }) => [value, label])
+) as Record<TipoPagamento, string>;
 
 export interface TransacaoResponse {
   id: number;
@@ -64,5 +56,3 @@ export interface TransacaoRequest {
   transacaoRecorrenteId: number | null;
   data: string;
 }
-
-export type { PageResponse };

@@ -65,15 +65,6 @@
   color: var(--muted-text);
 }
 
-button {
-  border: 1px solid var(--line);
-  border-radius: 0.7rem;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
-  padding: 0.58rem 0.95rem;
-  cursor: pointer;
-}
-
 .cards {
   margin-top: 1.4rem;
   display: grid;
@@ -111,16 +102,6 @@ button {
   color: #ff8b8b;
 }
 
-
-@keyframes shimmer {
-  from {
-    background-position: 200% 0;
-  }
-
-  to {
-    background-position: -200% 0;
-  }
-}
 
 @media (max-width: 800px) {
   .cards {

@@ -8,11 +8,9 @@ export const CLASSIFICACOES: Array<{ value: ClassificacaoCategoria; label: strin
   { value: 'INVESTIMENTO', label: 'Investimento' },
 ];
 
-export const CLASSIFICACAO_LABELS: Record<ClassificacaoCategoria, string> = {
-  ESSENCIAL: 'Essencial',
-  NAO_ESSENCIAL: 'Não essencial',
-  INVESTIMENTO: 'Investimento',
-};
+export const CLASSIFICACAO_LABELS = Object.fromEntries(
+  CLASSIFICACOES.map(({ value, label }) => [value, label])
+) as Record<ClassificacaoCategoria, string>;
 
 export interface CategoriaRequest {
   nome: string;
@@ -23,7 +21,7 @@ export interface CategoriaResponse {
   id: number;
   nome: string;
   classificacao: ClassificacaoCategoria;
-  userId: string;
+  userId: number;
   createdAt: string;
   updatedAt: string;
 }

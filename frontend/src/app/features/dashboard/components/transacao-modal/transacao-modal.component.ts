@@ -1,9 +1,9 @@
-import { Component, DestroyRef, inject, input, OnInit, output } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, OnInit, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { CategoriaResponse, CLASSIFICACAO_LABELS } from '../../../../core/models/categoria.models';
-import { PeriodoFinanceiro } from '../../../../core/models/periodo.models';
+import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import { TransacaoRecorrenteResponse } from '../../../../core/models/transacao-recorrente.models';
 import { TransacoesApiService } from '../../../../core/services/transacoes-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -17,8 +17,6 @@ import {
 import { fieldError } from '../../../../shared/utils/form-error.util';
 import { formatDate, toIsoDate } from '../../../../shared/utils/format.util';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
-import { signal, computed } from '@angular/core';
-
 @Component({
   selector: 'app-transacao-modal',
   imports: [ReactiveFormsModule],

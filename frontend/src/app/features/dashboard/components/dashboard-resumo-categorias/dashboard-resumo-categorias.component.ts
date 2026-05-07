@@ -9,7 +9,7 @@ import {
   ClassificacaoCategoria,
   CLASSIFICACAO_LABELS,
 } from '../../../../core/models/categoria.models';
-import { PeriodoFinanceiro } from '../../../../core/models/periodo.models';
+import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import { TransacaoResponse } from '../../../../core/models/transacao.models';
 import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { formatDate, toIsoDate } from '../../../../shared/utils/format.util';

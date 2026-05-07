@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../config/api.config';
 import { PageResponse } from '../models/pagination.models';
-import { PeriodoFinanceiro } from '../models/periodo.models';
+import { PeriodoFinanceiro } from '../models/periodo-financeiro.models';
 
 @Injectable({ providedIn: 'root' })
 export class PeriodosApiService {

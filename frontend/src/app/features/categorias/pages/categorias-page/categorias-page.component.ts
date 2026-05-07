@@ -66,7 +66,7 @@ export class CategoriasPageComponent implements OnInit {
   }
 
   clearFilters(): void {
-    this.filtersForm.setValue({ q: '', classificacao: '' });
+    this.filtersForm.setValue({ q: '', classificacao: '' }, { emitEvent: false });
     this.loadCategorias();
   }
 
@@ -150,9 +150,8 @@ export class CategoriasPageComponent implements OnInit {
 
           this.loadCategorias();
         },
-        error: (err) => {
+        error: () => {
           this.deletingId.set(null);
-          this.toast.show(mapApiError(err), 'error');
         },
       });
   }

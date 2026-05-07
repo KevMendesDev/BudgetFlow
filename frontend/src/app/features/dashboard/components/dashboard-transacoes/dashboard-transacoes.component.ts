@@ -6,7 +6,7 @@ import {
   ClassificacaoCategoria,
   CLASSIFICACOES,
 } from '../../../../core/models/categoria.models';
-import { PeriodoFinanceiro } from '../../../../core/models/periodo.models';
+import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import {
   TIPOS_MOVIMENTACAO,
   TIPOS_PAGAMENTO,
@@ -134,9 +134,8 @@ export class DashboardTransacoesComponent {
           this.loadPage(this.paginaAtual());
           this.changed.emit();
         },
-        error: (err) => {
+        error: () => {
           this.deletingId.set(null);
-          this.toast.show(mapApiError(err), 'error');
         },
       });
   }

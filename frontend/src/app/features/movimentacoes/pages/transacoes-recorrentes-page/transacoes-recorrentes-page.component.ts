@@ -94,7 +94,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   }
 
   clearFilters(): void {
-    this.filtersForm.setValue({ query: '', frequencia: '', tipoMovimentacao: '' });
+    this.filtersForm.setValue({ query: '', frequencia: '', tipoMovimentacao: '' }, { emitEvent: false });
     this.loadRecorrencias();
   }
 
@@ -189,9 +189,8 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
           this.toast.show('Recorrência excluída.', 'success');
           this.loadRecorrencias();
         },
-        error: (err) => {
+        error: () => {
           this.deletingId.set(null);
-          this.toast.show(mapApiError(err), 'error');
         },
       });
   }
