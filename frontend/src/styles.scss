@@ -33,6 +33,26 @@ select {
 	font: inherit;
 }
 
+button {
+	cursor: pointer;
+}
+
+select {
+	appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%239ea8bb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 1rem center;
+	background-size: 1rem;
+	padding-right: 2.5rem;
+}
+
+select option,
+select optgroup {
+	background-color: rgb(28, 28, 28);
+	color: var(--text);
+	border-radius: 10px;
+}
+
 @layer components {
 	.bf-panel {
 		@apply rounded-2xl border border-[var(--line)] bg-white/5;
@@ -69,4 +89,7 @@ select {
 	.bf-skeleton-line {
 		@apply animate-pulse rounded-full bg-white/10;
 	}
+}
+.bf-input[type="date"]::-webkit-calendar-picker-indicator {
+	filter: invert(1);
 }

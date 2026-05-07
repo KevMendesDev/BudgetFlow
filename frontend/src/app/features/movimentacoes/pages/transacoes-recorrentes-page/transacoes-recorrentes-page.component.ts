@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { CategoriaResponse, CLASSIFICACAO_LABELS } from '../../../../core/models/categoria.models';
 import {
@@ -78,6 +79,14 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   ngOnInit(): void {
     this.loadCategorias();
     this.loadRecorrencias();
+
+    this.filtersForm.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => this.loadRecorrencias());
   }
 
   applyFilters(): void {

@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { PeriodoFinanceiroResponse } from '../../../../core/models/periodo-financeiro.models';
 import { PeriodosFinanceirosApiService } from '../../../../core/services/periodos-financeiros-api.service';
@@ -46,6 +47,14 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPeriodos();
+
+    this.filtersForm.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => this.loadPeriodos());
   }
 
   applyFilters(): void {

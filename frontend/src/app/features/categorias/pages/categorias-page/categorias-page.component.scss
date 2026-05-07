@@ -158,6 +158,7 @@ tr {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  background-color: var(--bg);
 }
 
 .modal-head {

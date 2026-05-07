@@ -80,15 +80,11 @@ export class DashboardTransacoesComponent {
     effect(() => {
       const periodo = this.selectedPeriodo();
       if (!periodo) {
-        this.loading.set(false);
-        this.errorMessage.set('');
-        this.paginaConteudo.set([]);
-        this.totalPages.set(0);
-        this.totalElements.set(0);
+        this.resetPageState();
         return;
       }
       this.paginaAtual.set(0);
-      this.carregarPagina(0);
+      this.loadPage(0);
     });
   }
 
@@ -110,7 +106,7 @@ export class DashboardTransacoesComponent {
 
   onTransacaoSaved(): void {
     this.modalOpen.set(false);
-    this.carregarPagina(this.paginaAtual());
+    this.loadPage(this.paginaAtual());
     this.changed.emit();
   }
 
@@ -135,7 +131,7 @@ export class DashboardTransacoesComponent {
         next: () => {
           this.deletingId.set(null);
           this.toast.show('Transação excluída.', 'success');
-          this.carregarPagina(this.paginaAtual());
+          this.loadPage(this.paginaAtual());
           this.changed.emit();
         },
         error: (err) => {
@@ -147,7 +143,7 @@ export class DashboardTransacoesComponent {
 
   aplicarFiltros(): void {
     this.paginaAtual.set(0);
-    this.carregarPagina(0);
+    this.loadPage(0);
   }
 
   toggleFiltros(): void {
@@ -161,7 +157,7 @@ export class DashboardTransacoesComponent {
     this.filtroTipoPagamento.set('');
     this.filtroRecorrente.set('all');
     this.paginaAtual.set(0);
-    this.carregarPagina(0);
+    this.loadPage(0);
   }
 
   irPaginaAnterior(): void {
@@ -170,7 +166,7 @@ export class DashboardTransacoesComponent {
       return;
     }
     this.paginaAtual.set(atual - 1);
-    this.carregarPagina(atual - 1);
+    this.loadPage(atual - 1);
   }
 
   irProximaPagina(): void {
@@ -179,7 +175,7 @@ export class DashboardTransacoesComponent {
       return;
     }
     this.paginaAtual.set(atual + 1);
-    this.carregarPagina(atual + 1);
+    this.loadPage(atual + 1);
   }
 
   parcelaInfo(tx: TransacaoResponse): string {
@@ -205,34 +201,16 @@ export class DashboardTransacoesComponent {
     return `${numero}/${total}`;
   }
 
-  private carregarPagina(page: number): void {
-    const periodo = this.selectedPeriodo();
-    if (!periodo) {
+  private loadPage(page: number): void {
+    const params = this.buildListParams(page);
+    if (!params) {
       return;
     }
 
-    this.loading.set(true);
-    this.errorMessage.set('');
-
-    const nomeCategoria = this.filtroNomeCategoria().trim();
-    const classificacao = this.filtroClassificacao();
-    const tipoMovimentacao = this.filtroTipoMovimentacao();
-    const tipoPagamento = this.filtroTipoPagamento();
-    const recorrenteRaw = this.filtroRecorrente();
+    this.startLoadingPage();
 
     this.transacoesApi
-      .listByPeriodoFiltered({
-        periodoId: periodo.id,
-        dataInicio: periodo.dataInicio,
-        dataFim: periodo.dataFim,
-        page,
-        size: 20,
-        nomeCategoria: nomeCategoria || undefined,
-        classificacaoCategoria: classificacao || undefined,
-        tipoMovimentacao: tipoMovimentacao || undefined,
-        tipoPagamento: tipoPagamento || undefined,
-        recorrente: recorrenteRaw === 'all' ? undefined : recorrenteRaw === 'true',
-      })
+      .listByPeriodoFiltered(params)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (pageResponse) => {
@@ -246,6 +224,56 @@ export class DashboardTransacoesComponent {
           this.loading.set(false);
         },
       });
+  }
+
+  private startLoadingPage(): void {
+    this.loading.set(true);
+    this.errorMessage.set('');
+  }
+
+  private resetPageState(): void {
+    this.loading.set(false);
+    this.errorMessage.set('');
+    this.paginaConteudo.set([]);
+    this.totalPages.set(0);
+    this.totalElements.set(0);
+  }
+
+  private buildListParams(page: number): {
+    periodoId: number;
+    dataInicio: string;
+    dataFim: string;
+    page: number;
+    size: number;
+    nomeCategoria?: string;
+    classificacaoCategoria?: ClassificacaoCategoria;
+    tipoMovimentacao?: TipoMovimentacao;
+    tipoPagamento?: TipoPagamento;
+    recorrente?: boolean;
+  } | null {
+    const periodo = this.selectedPeriodo();
+    if (!periodo) {
+      return null;
+    }
+
+    const nomeCategoria = this.filtroNomeCategoria().trim();
+    const classificacao = this.filtroClassificacao();
+    const tipoMovimentacao = this.filtroTipoMovimentacao();
+    const tipoPagamento = this.filtroTipoPagamento();
+    const recorrenteRaw = this.filtroRecorrente();
+
+    return {
+      periodoId: periodo.id,
+      dataInicio: periodo.dataInicio,
+      dataFim: periodo.dataFim,
+      page,
+      size: 20,
+      nomeCategoria: nomeCategoria || undefined,
+      classificacaoCategoria: classificacao || undefined,
+      tipoMovimentacao: tipoMovimentacao || undefined,
+      tipoPagamento: tipoPagamento || undefined,
+      recorrente: recorrenteRaw === 'all' ? undefined : recorrenteRaw === 'true',
+    };
   }
 
   private calcularNumeroParcela(

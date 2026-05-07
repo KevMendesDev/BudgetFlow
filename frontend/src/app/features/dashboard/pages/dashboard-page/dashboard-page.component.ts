@@ -14,10 +14,11 @@ import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { formatDate, toIsoDate } from '../../../../shared/utils/format.util';
 import { DashboardTransacoesComponent } from '../../components/dashboard-transacoes/dashboard-transacoes.component';
+import { DashboardResumoCategoriasComponent } from '../../components/dashboard-resumo-categorias/dashboard-resumo-categorias.component';
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [CurrencyBRLPipe, DashboardTransacoesComponent],
+  imports: [CurrencyBRLPipe, DashboardResumoCategoriasComponent, DashboardTransacoesComponent],
   templateUrl: './dashboard-page.component.html',
   styleUrl: './dashboard-page.component.scss',
 })
@@ -61,9 +62,9 @@ export class DashboardPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.carregarCategorias();
-    this.carregarRecorrentes();
-    this.carregarPeriodos();
+    this.loadCategorias();
+    this.loadRecorrentes();
+    this.loadPeriodos();
   }
 
   formatDate = formatDate;
@@ -82,7 +83,7 @@ export class DashboardPageComponent implements OnInit {
     const periodoSelecionado = this.periodos().find((periodo) => periodo.id === periodoId);
 
     if (periodoSelecionado) {
-      this.carregarResumoPorPeriodo(periodoSelecionado);
+      this.loadResumoPorPeriodo(periodoSelecionado);
     }
   }
 
@@ -90,7 +91,7 @@ export class DashboardPageComponent implements OnInit {
     this.reloadSelectedPeriodo();
   }
 
-  private carregarPeriodos(): void {
+  private loadPeriodos(): void {
     this.loadingPeriodos.set(true);
     this.errorMessage.set('');
 
@@ -112,7 +113,7 @@ export class DashboardPageComponent implements OnInit {
           }
 
           this.selectedPeriodoId.set(periodoPadrao.id);
-          this.carregarResumoPorPeriodo(periodoPadrao);
+          this.loadResumoPorPeriodo(periodoPadrao);
         },
         error: (err) => {
           this.errorMessage.set(mapApiError(err));
@@ -122,7 +123,7 @@ export class DashboardPageComponent implements OnInit {
       });
   }
 
-  private carregarResumoPorPeriodo(periodo: PeriodoFinanceiro): void {
+  private loadResumoPorPeriodo(periodo: PeriodoFinanceiro): void {
     this.loadingResumo.set(true);
     this.errorMessage.set('');
 
@@ -141,7 +142,7 @@ export class DashboardPageComponent implements OnInit {
       });
   }
 
-  private carregarCategorias(): void {
+  private loadCategorias(): void {
     this.loadingCategorias.set(true);
 
     this.categoriasApi
@@ -159,7 +160,7 @@ export class DashboardPageComponent implements OnInit {
       });
   }
 
-  private carregarRecorrentes(): void {
+  private loadRecorrentes(): void {
     this.transacoesRecorrentesApi
       .listAll()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -176,7 +177,7 @@ export class DashboardPageComponent implements OnInit {
   private reloadSelectedPeriodo(): void {
     const periodo = this.selectedPeriodo();
     if (periodo) {
-      this.carregarResumoPorPeriodo(periodo);
+      this.loadResumoPorPeriodo(periodo);
     }
   }
 

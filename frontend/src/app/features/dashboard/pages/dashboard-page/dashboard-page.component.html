@@ -54,6 +54,12 @@
         </article>
       </section>
 
+      <app-dashboard-resumo-categorias
+        [categorias]="categorias()"
+        [transacoes]="transacoes()"
+        [selectedPeriodo]="selectedPeriodo()"
+      />
+
       <app-dashboard-transacoes
         [categorias]="categorias()"
         [recorrentes]="recorrentes()"
