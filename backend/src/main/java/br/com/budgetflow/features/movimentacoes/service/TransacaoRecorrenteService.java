@@ -1,6 +1,8 @@
 package br.com.budgetflow.features.movimentacoes.service;
 
+import br.com.budgetflow.common.exceptions.EntityHasRelationshipsException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
+import br.com.budgetflow.common.service.RelacionamentoChecker;
 import br.com.budgetflow.common.utils.DateRangeUtils;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.categorias.service.CategoriaService;
@@ -30,17 +32,20 @@ public class TransacaoRecorrenteService {
     private final UserService userService;
     private final TransacaoRecorrenteMapper transacaoRecorrenteMapper;
     private final CategoriaService categoriaService;
+    private final RelacionamentoChecker relacionamentoChecker;
 
     public TransacaoRecorrenteService(
             TransacaoRecorrenteRepository transacaoRecorrenteRepository,
             UserService userService,
             TransacaoRecorrenteMapper transacaoRecorrenteMapper,
-            CategoriaService categoriaService
+            CategoriaService categoriaService,
+            RelacionamentoChecker relacionamentoChecker
     ) {
         this.transacaoRecorrenteRepository = transacaoRecorrenteRepository;
         this.userService = userService;
         this.transacaoRecorrenteMapper = transacaoRecorrenteMapper;
         this.categoriaService = categoriaService;
+        this.relacionamentoChecker = relacionamentoChecker;
     }
 
     @Transactional
@@ -103,6 +108,13 @@ public class TransacaoRecorrenteService {
     public void delete(Long id) {
         Long userId = SecurityUtils.currentUserId();
         TransacaoRecorrente transacaoRecorrente = findByIdAndUserId(id, userId);
+
+        if (relacionamentoChecker.transacaoRecorrenteHasRelationships(id, userId)) {
+            throw new EntityHasRelationshipsException(
+                    "A transação recorrente \"" + transacaoRecorrente.getDescricao() + "\" não pode ser excluída pois está vinculada a uma ou mais transações"
+            );
+        }
+
         transacaoRecorrenteRepository.delete(transacaoRecorrente);
     }
 

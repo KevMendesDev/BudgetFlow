@@ -2,6 +2,7 @@ package br.com.budgetflow.common.api;
 
 import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.common.exceptions.ConflictException;
+import br.com.budgetflow.common.exceptions.EntityHasRelationshipsException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.common.exceptions.UnauthorizedException;
 import tools.jackson.databind.exc.InvalidFormatException;
@@ -42,7 +43,12 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(BusinessRuleException.class)
     public ResponseEntity<Map<String, Object>> handleBusinessRule(BusinessRuleException ex) {
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(EntityHasRelationshipsException.class)
+    public ResponseEntity<Map<String, Object>> handleEntityHasRelationships(EntityHasRelationshipsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)

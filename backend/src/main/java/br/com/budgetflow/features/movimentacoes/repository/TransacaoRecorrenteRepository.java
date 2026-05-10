@@ -12,4 +12,6 @@ public interface TransacaoRecorrenteRepository extends JpaRepository<TransacaoRe
 	Optional<TransacaoRecorrente> findByIdAndUserId(Long id, Long userId);
 
 	List<TransacaoRecorrente> findAllByUserId(Long userId);
+
+	boolean existsByCategoriaIdAndUserId(Long categoriaId, Long userId);
 }

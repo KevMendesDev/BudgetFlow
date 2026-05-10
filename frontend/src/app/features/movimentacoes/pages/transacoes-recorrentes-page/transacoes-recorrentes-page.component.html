@@ -89,7 +89,8 @@
                       type="button"
                       class="btn-danger"
                       (click)="deleteRecorrencia(item)"
-                      [disabled]="deletingId() === item.id"
+                      [disabled]="deletingId() === item.id || item.possuiRelacionamentos"
+                      [title]="item.possuiRelacionamentos ? 'Recorrência vinculada a uma ou mais transações' : ''"
                     >
                       {{ deletingId() === item.id ? 'Excluindo...' : 'Excluir' }}
                     </button>

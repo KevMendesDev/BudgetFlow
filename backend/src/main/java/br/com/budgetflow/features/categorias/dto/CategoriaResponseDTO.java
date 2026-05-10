@@ -8,6 +8,7 @@ public record CategoriaResponseDTO(
     ClassificacaoCategoria classificacao,
     String userId,
     String createdAt,
-    String updatedAt
+    String updatedAt,
+    boolean possuiRelacionamentos
 ) {
 }

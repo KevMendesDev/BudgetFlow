@@ -71,7 +71,8 @@
                       type="button"
                       class="btn-danger"
                       (click)="deletePeriodo(periodo)"
-                      [disabled]="deletingId() === periodo.id"
+                      [disabled]="deletingId() === periodo.id || periodo.possuiRelacionamentos"
+                      [title]="periodo.possuiRelacionamentos ? 'Período vinculado a uma ou mais transações' : ''"
                     >
                       {{ deletingId() === periodo.id ? 'Excluindo...' : 'Excluir' }}
                     </button>

@@ -9,5 +9,6 @@ public record PeriodoFinanceiroResponseDTO(
     LocalDate dataInicio,
     LocalDate dataFim,
     LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    LocalDateTime updatedAt,
+    boolean possuiRelacionamentos
 ) {}

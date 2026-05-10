@@ -1,7 +1,8 @@
 package br.com.budgetflow.features.periodos.service;
 
-import br.com.budgetflow.common.exceptions.BusinessRuleException;
+import br.com.budgetflow.common.exceptions.EntityHasRelationshipsException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
+import br.com.budgetflow.common.service.RelacionamentoChecker;
 import br.com.budgetflow.common.utils.DateRangeUtils;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.periodos.dto.PeriodoFinanceiroRequestDTO;
@@ -27,15 +28,18 @@ public class PeriodoFinanceiroService {
     private final PeriodoFinanceiroRepository periodoFinanceiroRepository;
     private final UserService userService;
     private final PeriodoFinanceiroMapper periodoFinanceiroMapper;
+    private final RelacionamentoChecker relacionamentoChecker;
 
     public PeriodoFinanceiroService(
             PeriodoFinanceiroRepository periodoFinanceiroRepository,
             UserService userService,
-            PeriodoFinanceiroMapper periodoFinanceiroMapper
+            PeriodoFinanceiroMapper periodoFinanceiroMapper,
+            RelacionamentoChecker relacionamentoChecker
     ) {
         this.periodoFinanceiroRepository = periodoFinanceiroRepository;
         this.userService = userService;
         this.periodoFinanceiroMapper = periodoFinanceiroMapper;
+        this.relacionamentoChecker = relacionamentoChecker;
     }
 
     @Transactional
@@ -99,6 +103,13 @@ public class PeriodoFinanceiroService {
         Long userId = SecurityUtils.currentUserId();
         PeriodoFinanceiro periodo = periodoFinanceiroRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Período financeiro não encontrado"));
+
+        if (relacionamentoChecker.periodoHasRelationships(id, userId)) {
+            throw new EntityHasRelationshipsException(
+                    "O período financeiro \"" + periodo.getDataInicio() + " - " + periodo.getDataFim() + "\" não pode ser excluído pois está vinculado a uma ou mais transações"
+            );
+        }
+
         periodoFinanceiroRepository.delete(periodo);
     }
 

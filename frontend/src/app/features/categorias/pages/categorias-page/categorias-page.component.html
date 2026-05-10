@@ -69,7 +69,8 @@
                       type="button"
                       class="btn-danger"
                       (click)="deleteCategoria(categoria)"
-                      [disabled]="deletingId() === categoria.id"
+                      [disabled]="deletingId() === categoria.id || categoria.possuiRelacionamentos"
+                      [title]="categoria.possuiRelacionamentos ? 'Categoria vinculada a uma ou mais transações' : ''"
                     >
                       {{ deletingId() === categoria.id ? 'Excluindo...' : 'Excluir' }}
                     </button>

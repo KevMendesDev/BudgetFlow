@@ -20,7 +20,7 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
-import { formatDate, toIsoDate } from '../../../../shared/utils/format.util';
+import { formatDate } from '../../../../shared/utils/format.util';
 import { TransacaoModalComponent } from '../transacao-modal/transacao-modal.component';
 
 @Component({
@@ -57,7 +57,7 @@ export class DashboardTransacoesComponent {
   readonly filtroTipoMovimentacao = signal<TipoMovimentacao | ''>('');
   readonly filtroTipoPagamento = signal<TipoPagamento | ''>('');
   readonly filtroRecorrente = signal<'all' | 'true' | 'false'>('all');
-  readonly filtrosAbertos = signal(true);
+  readonly filtrosAbertos = signal(false);
 
   readonly categoriasDistinct = computed(() => {
     const names = new Set<string>();
@@ -279,20 +279,15 @@ export class DashboardTransacoesComponent {
     recorrente: TransacaoRecorrenteResponse,
     data: string
   ): number | null {
-    let atual = recorrente.dataInicio;
-    let indice = 1;
-    let guard = 0;
+    const inicio = new Date(`${recorrente.dataInicio}T00:00:00`);
+    const alvo = new Date(`${data}T00:00:00`);
 
-    while (atual <= data && guard < 5000) {
-      if (atual === data) {
-        return indice;
-      }
-      atual = this.proximaData(atual, recorrente.frequencia);
-      indice += 1;
-      guard += 1;
+    if (alvo < inicio) {
+      return null;
     }
 
-    return null;
+    const indice = this.calcularIndice(inicio, alvo, recorrente.frequencia);
+    return indice >= 0 ? indice + 1 : null;
   }
 
   private calcularTotalParcelasPorDataFim(recorrente: TransacaoRecorrenteResponse): number | null {
@@ -300,42 +295,28 @@ export class DashboardTransacoesComponent {
       return null;
     }
 
-    let atual = recorrente.dataInicio;
-    let total = 0;
-    let guard = 0;
+    const inicio = new Date(`${recorrente.dataInicio}T00:00:00`);
+    const fim = new Date(`${recorrente.dataFim}T00:00:00`);
 
-    while (atual <= recorrente.dataFim && guard < 5000) {
-      total += 1;
-      atual = this.proximaData(atual, recorrente.frequencia);
-      guard += 1;
+    if (fim < inicio) {
+      return null;
     }
 
-    return total || null;
+    return this.calcularIndice(inicio, fim, recorrente.frequencia) + 1;
   }
 
-  private proximaData(dataIso: string, frequencia: Frequencia): string {
-    const date = new Date(`${dataIso}T00:00:00`);
+  private calcularIndice(inicio: Date, alvo: Date, frequencia: Frequencia): number {
+    const MS_DIA = 1000 * 60 * 60 * 24;
 
-    if (frequencia === 'DIARIO') {
-      date.setDate(date.getDate() + 1);
-    } else if (frequencia === 'SEMANAL') {
-      date.setDate(date.getDate() + 7);
-    } else if (frequencia === 'MENSAL') {
-      const day = date.getDate();
-      const next = new Date(date);
-      next.setDate(1);
-      next.setMonth(next.getMonth() + 1);
-      const maxDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
-      next.setDate(Math.min(day, maxDay));
-      return toIsoDate(next);
-    } else {
-      const day = date.getDate();
-      const month = date.getMonth();
-      const year = date.getFullYear() + 1;
-      const maxDay = new Date(year, month + 1, 0).getDate();
-      return toIsoDate(new Date(year, month, Math.min(day, maxDay)));
+    switch (frequencia) {
+      case 'DIARIO':
+        return Math.floor((alvo.getTime() - inicio.getTime()) / MS_DIA);
+      case 'SEMANAL':
+        return Math.floor((alvo.getTime() - inicio.getTime()) / (MS_DIA * 7));
+      case 'MENSAL':
+        return (alvo.getFullYear() - inicio.getFullYear()) * 12 + (alvo.getMonth() - inicio.getMonth());
+      case 'ANUAL':
+        return alvo.getFullYear() - inicio.getFullYear();
     }
-
-    return toIsoDate(date);
   }
 }

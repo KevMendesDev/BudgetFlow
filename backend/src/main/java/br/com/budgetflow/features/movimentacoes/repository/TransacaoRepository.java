@@ -23,5 +23,11 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long>, Jpa
 
     long countByTransacaoRecorrenteIdAndUserIdAndIdNot(Long transacaoRecorrenteId, Long userId, Long id);
 
+    boolean existsByCategoriaIdAndUserId(Long categoriaId, Long userId);
+
+    boolean existsByPeriodoIdAndUserId(Long periodoId, Long userId);
+
+    boolean existsByTransacaoRecorrenteIdAndUserId(Long transacaoRecorrenteId, Long userId);
+
     Optional<Transacao> findByIdAndUserId(Long id, Long userId);
 }

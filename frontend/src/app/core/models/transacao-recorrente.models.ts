@@ -46,6 +46,7 @@ export interface TransacaoRecorrenteResponse {
   totalParcelas: number | null;
   createdAt: string;
   updatedAt: string;
+  possuiRelacionamentos: boolean;
 }
 
 export type TransacaoRecorrentePageResponse = PageResponse<TransacaoRecorrenteResponse>;

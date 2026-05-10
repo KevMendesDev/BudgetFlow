@@ -24,6 +24,7 @@ export interface CategoriaResponse {
   userId: number;
   createdAt: string;
   updatedAt: string;
+  possuiRelacionamentos: boolean;
 }
 
 export type CategoriaPageResponse = PageResponse<CategoriaResponse>;

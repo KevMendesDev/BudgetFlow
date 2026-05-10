@@ -12,6 +12,7 @@ export interface PeriodoFinanceiroResponse {
   dataFim: string;
   createdAt: string;
   updatedAt: string;
+  possuiRelacionamentos: boolean;
 }
 
 export type PeriodoFinanceiro = PeriodoFinanceiroResponse;

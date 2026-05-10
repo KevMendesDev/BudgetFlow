@@ -4,16 +4,17 @@ import { catchError, throwError } from 'rxjs';
 
 import { ToastService } from '../services/toast.service';
 
-const AUTH_ENDPOINTS_WITH_LOCAL_HANDLING = ['/api/auth/login', '/api/auth/register'];
+const AUTH_ENDPOINTS_WITH_LOCAL_HANDLING = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'];
 
 export const globalErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const toastService = inject(ToastService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      const skipToast = AUTH_ENDPOINTS_WITH_LOCAL_HANDLING.some((route) => req.url.includes(route));
+      const skipToastByRoute = AUTH_ENDPOINTS_WITH_LOCAL_HANDLING.some((route) => req.url.includes(route));
+      const skipToastByRefreshTokenError = isRefreshTokenError(error);
 
-      if (!skipToast) {
+      if (!skipToastByRoute && !skipToastByRefreshTokenError) {
         toastService.show(mapHttpErrorToMessage(error));
       }
 
@@ -48,4 +49,11 @@ function mapHttpErrorToMessage(error: HttpErrorResponse): string {
   }
 
   return 'Não foi possível concluir a requisição.';
+}
+
+function isRefreshTokenError(error: HttpErrorResponse): boolean {
+  const payload = error.error as { error?: string } | null;
+  const message = payload?.error?.toLowerCase();
+
+  return !!message && message.includes('refresh token');
 }

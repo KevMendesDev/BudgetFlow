@@ -1,16 +1,16 @@
 package br.com.budgetflow.features.movimentacoes.mapper;
 
+import br.com.budgetflow.common.service.RelacionamentoChecker;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoRecorrenteRequestDTO;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoRecorrenteResponseDTO;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
-public interface TransacaoRecorrenteMapper {
+public abstract class TransacaoRecorrenteMapper {
+    @Autowired
+    protected RelacionamentoChecker relacionamentoChecker;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
@@ -18,7 +18,7 @@ public interface TransacaoRecorrenteMapper {
     @Mapping(source = "valorParcela", target = "valor")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    TransacaoRecorrente toEntity(TransacaoRecorrenteRequestDTO dto);
+    public abstract TransacaoRecorrente toEntity(TransacaoRecorrenteRequestDTO dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
@@ -27,7 +27,7 @@ public interface TransacaoRecorrenteMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateFromDto(TransacaoRecorrenteRequestDTO dto, @MappingTarget TransacaoRecorrente entity);
+    public abstract void updateFromDto(TransacaoRecorrenteRequestDTO dto, @MappingTarget TransacaoRecorrente entity);
 
     @Mapping(source = "user.id", target = "userId")
     @Mapping(source = "categoria.id", target = "categoriaId")
@@ -38,5 +38,18 @@ public interface TransacaoRecorrenteMapper {
             target = "valorTotal",
             expression = "java(br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils.calcularValorTotal(entity.getValor(), entity.getTotalParcelas()))"
     )
-    TransacaoRecorrenteResponseDTO toResponseDTO(TransacaoRecorrente entity);
+    @Mapping(target = "possuiRelacionamentos", ignore = true)
+    protected abstract TransacaoRecorrenteResponseDTO toResponseDTOBase(TransacaoRecorrente entity);
+
+    public TransacaoRecorrenteResponseDTO toResponseDTO(TransacaoRecorrente entity) {
+        TransacaoRecorrenteResponseDTO transacaoBase = toResponseDTOBase(entity);
+        boolean possuiRelacionamentos = relacionamentoChecker.transacaoRecorrenteHasRelationships(entity.getId(), entity.getUser().getId());
+        return new TransacaoRecorrenteResponseDTO(
+                transacaoBase.id(), transacaoBase.userId(), transacaoBase.categoriaId(), transacaoBase.categoriaNome(),
+                transacaoBase.classificacaoCategoria(), transacaoBase.descricao(), transacaoBase.valorParcela(), transacaoBase.valorTotal(),
+                transacaoBase.tipoMovimentacao(), transacaoBase.tipoPagamento(), transacaoBase.frequencia(),
+                transacaoBase.dataInicio(), transacaoBase.dataFim(), transacaoBase.totalParcelas(),
+                transacaoBase.createdAt(), transacaoBase.updatedAt(), possuiRelacionamentos
+        );
+    }
 }

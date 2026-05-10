@@ -25,6 +25,7 @@ public record TransacaoRecorrenteResponseDTO(
         LocalDate dataFim,
         Integer totalParcelas,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        boolean possuiRelacionamentos
 ) {
 }
