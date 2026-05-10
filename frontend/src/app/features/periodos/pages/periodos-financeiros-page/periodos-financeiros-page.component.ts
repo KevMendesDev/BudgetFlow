@@ -32,6 +32,7 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
   readonly editingId = signal<number | null>(null);
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
+  readonly filtrosAbertos = signal(false);
   readonly fieldError = fieldError;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
@@ -55,6 +56,10 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => this.loadPeriodos());
+  }
+
+  toggleFiltros(): void {
+    this.filtrosAbertos.update((v) => !v);
   }
 
   applyFilters(): void {

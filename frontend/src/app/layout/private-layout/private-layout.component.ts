@@ -16,7 +16,7 @@ export class PrivateLayoutComponent {
   private readonly router = inject(Router);
 
   readonly user = computed(() => this.session.user());
-  readonly collapsed = signal(false);
+  readonly collapsed = signal(true);
 
   toggleSidebar(): void {
     this.collapsed.update((state) => !state);

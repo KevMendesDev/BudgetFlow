@@ -72,6 +72,7 @@ select optgroup {
 
 	.bf-input {
 		@apply w-full rounded-xl border border-[var(--line)] bg-[rgba(10,13,20,0.9)] px-4 py-3 text-[var(--text)] outline-none focus:border-[var(--brand-green)] focus:ring-3 focus:ring-[rgba(18,201,120,0.14)];
+		font-size: 1rem;
 	}
 
 	.bf-error {

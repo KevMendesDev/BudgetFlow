@@ -51,6 +51,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   readonly editingId = signal<number | null>(null);
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
+  readonly filtrosAbertos = signal(false);
 
   readonly frequencias = FREQUENCIAS;
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
@@ -87,6 +88,10 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => this.loadRecorrencias());
+  }
+
+  toggleFiltros(): void {
+    this.filtrosAbertos.update((v) => !v);
   }
 
   applyFilters(): void {

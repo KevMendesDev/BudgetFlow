@@ -36,6 +36,7 @@ export class CategoriasPageComponent implements OnInit {
   readonly editingId = signal<number | null>(null);
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
+  readonly filtrosAbertos = signal(false);
   readonly classificacoes = CLASSIFICACOES;
   readonly fieldError = fieldError;
 
@@ -59,6 +60,10 @@ export class CategoriasPageComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => this.loadCategorias());
+  }
+
+  toggleFiltros(): void {
+    this.filtrosAbertos.update((v) => !v);
   }
 
   applyFilters(): void {

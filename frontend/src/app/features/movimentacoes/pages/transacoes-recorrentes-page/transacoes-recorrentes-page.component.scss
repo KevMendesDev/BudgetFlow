@@ -4,10 +4,6 @@
 	grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) minmax(0, 12rem) auto;
 }
 
-.table-wrap table {
-	min-width: 66rem;
-}
-
 .modal-wide {
 	width: min(48rem, 100%);
 	background-color: var(--bg);
@@ -22,9 +18,15 @@
 	grid-column: 1 / -1;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 767px) {
 	.filters-grid,
 	.modal-grid {
 		grid-template-columns: 1fr;
+	}
+}
+
+@media (min-width: 768px) and (max-width: 960px) {
+	.filters-grid {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 10rem) minmax(0, 10rem) auto;
 	}
 }

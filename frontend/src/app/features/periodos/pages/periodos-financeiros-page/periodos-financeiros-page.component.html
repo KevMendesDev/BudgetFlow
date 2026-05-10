@@ -11,27 +11,36 @@
     }
 
     <section class="bf-panel filters">
-      <form [formGroup]="filtersForm" (ngSubmit)="applyFilters()" class="filters-grid" novalidate>
-        <label class="bf-label">
-          Busca
-          <input class="bf-input" type="text" formControlName="q" placeholder="Ex: 2026-01" />
-        </label>
+      <button type="button" class="filters-toggle" (click)="toggleFiltros()">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-filter">
+          <path d="M4 5h16M7 12h10M10 19h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        {{ filtrosAbertos() ? 'Esconder filtros' : 'Mostrar filtros' }}
+      </button>
 
-        <label class="bf-label">
-          Data início
-          <input class="bf-input" type="date" formControlName="dataInicio" />
-        </label>
+      @if (filtrosAbertos()) {
+        <form [formGroup]="filtersForm" (ngSubmit)="applyFilters()" class="filters-grid" novalidate>
+          <label class="bf-label">
+            Busca
+            <input class="bf-input" type="text" formControlName="q" placeholder="Ex: 2026-01" />
+          </label>
 
-        <label class="bf-label">
-          Data fim
-          <input class="bf-input" type="date" formControlName="dataFim" />
-        </label>
+          <label class="bf-label">
+            Data início
+            <input class="bf-input" type="date" formControlName="dataInicio" />
+          </label>
 
-        <div class="filters-actions">
-          <button class="bf-btn-primary" type="submit" [disabled]="loading()">Filtrar</button>
-          <button class="btn-secondary" type="button" (click)="clearFilters()" [disabled]="loading()">Limpar</button>
-        </div>
-      </form>
+          <label class="bf-label">
+            Data fim
+            <input class="bf-input" type="date" formControlName="dataFim" />
+          </label>
+
+          <div class="filters-actions">
+            <button class="bf-btn-primary" type="submit" [disabled]="loading()">Filtrar</button>
+            <button class="btn-secondary" type="button" (click)="clearFilters()" [disabled]="loading()">Limpar</button>
+          </div>
+        </form>
+      }
     </section>
 
     <section class="bf-panel list">
@@ -82,6 +91,29 @@
             </tbody>
           </table>
         </div>
+
+        <ul class="cards-list">
+          @for (periodo of periodos(); track periodo.id) {
+            <li class="card-item">
+              <div class="card-main">
+                <strong>{{ periodo.dataInicio | dateBR }} → {{ periodo.dataFim | dateBR }}</strong>
+                <small class="card-muted">Criado em {{ periodo.createdAt.slice(0, 10) | dateBR }}</small>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn-secondary" (click)="startEdit(periodo)">Editar</button>
+                <button
+                  type="button"
+                  class="btn-danger"
+                  (click)="deletePeriodo(periodo)"
+                  [disabled]="deletingId() === periodo.id || periodo.possuiRelacionamentos"
+                  [title]="periodo.possuiRelacionamentos ? 'Período vinculado a uma ou mais transações' : ''"
+                >
+                  {{ deletingId() === periodo.id ? 'Excluindo...' : 'Excluir' }}
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
       }
     </section>
   </div>
@@ -116,7 +148,7 @@
           </label>
 
           <div class="modal-actions">
-            <button class="bf-btn-primary" type="submit" [disabled]="submitting() || loading()">
+            <button class="bf-btn-primary" type="submit" [disabled]="submitting()">
               {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alterações' : 'Criar período' }}
             </button>
           </div>

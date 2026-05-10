@@ -45,11 +45,37 @@ h1 {
   padding: 1rem;
 }
 
+.filters-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  color: var(--muted-text);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: var(--text);
+    border-color: rgba(174, 185, 210, 0.45);
+  }
+}
+
+.icon-filter {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
 .filters-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 15rem) auto;
   gap: 0.8rem;
   align-items: end;
+  margin-top: 0.9rem;
 }
 
 .filters-actions {
@@ -97,6 +123,7 @@ h1 {
   gap: 0.55rem;
 }
 
+/* Tabela — visível só no desktop */
 .table-wrap {
   margin-top: 1rem;
   overflow-x: auto;
@@ -137,6 +164,100 @@ tr {
   border-bottom: 1px solid rgba(174, 185, 210, 0.2);
 }
 
+/* Cards — visível só no mobile */
+.cards-list {
+  display: none;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  gap: 0.6rem;
+  flex-direction: column;
+}
+
+.card-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 0.75rem;
+  border-bottom: 1px solid rgba(174, 185, 210, 0.15);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+
+  strong {
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.card-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--muted-text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  width: fit-content;
+}
+
+.card-muted {
+  font-size: 0.8rem;
+  color: var(--muted-text);
+}
+
+.card-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.15rem;
+}
+
+.card-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  &.receita {
+    color: var(--brand-green);
+  }
+
+  &.despesa {
+    color: #ff9d9d;
+  }
+}
+
+.card-dates {
+  font-size: 0.78rem;
+  color: var(--muted-text);
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex-shrink: 0;
+
+  .btn-secondary,
+  .btn-danger {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+}
+
+/* Modal */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -189,15 +310,22 @@ tr {
   justify-content: flex-end;
 }
 
-@media (max-width: 960px) {
-  .filters-grid,
-  .modal-form {
+@media (max-width: 767px) {
+  .table-wrap {
+    display: none;
+  }
+
+  .cards-list {
+    display: flex;
+  }
+
+  .filters-grid {
     grid-template-columns: 1fr;
   }
 
   .filters-actions {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .list-header {
@@ -205,7 +333,13 @@ tr {
     align-items: stretch;
   }
 
-  td.actions-col {
-    justify-content: flex-start;
+  .modal-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 960px) {
+  .filters-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) auto;
   }
 }
