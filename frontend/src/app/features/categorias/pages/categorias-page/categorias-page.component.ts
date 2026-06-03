@@ -14,6 +14,7 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { fieldError } from '../../../../shared/utils/form-error.util';
+import { isDesktopViewport } from '../../../../shared/utils/viewport.util';
 
 @Component({
   selector: 'app-categorias-page',
@@ -36,7 +37,7 @@ export class CategoriasPageComponent implements OnInit {
   readonly editingId = signal<number | null>(null);
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
-  readonly filtrosAbertos = signal(false);
+  readonly filtrosAbertos = signal(isDesktopViewport());
   readonly classificacoes = CLASSIFICACOES;
   readonly fieldError = fieldError;
 

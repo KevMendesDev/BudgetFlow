@@ -10,6 +10,7 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
 import { DateBRPipe } from '../../../../shared/pipes/date-br.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { fieldError } from '../../../../shared/utils/form-error.util';
+import { isDesktopViewport } from '../../../../shared/utils/viewport.util';
 
 @Component({
   selector: 'app-periodos-financeiros-page',
@@ -32,7 +33,7 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
   readonly editingId = signal<number | null>(null);
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
-  readonly filtrosAbertos = signal(false);
+  readonly filtrosAbertos = signal(isDesktopViewport());
   readonly fieldError = fieldError;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
