@@ -120,7 +120,6 @@ public class TransacaoService {
             transacao.setTransacaoRecorrente(transacaoRecorrente);
             transacao.setCategoria(transacaoRecorrente.getCategoria());
             transacao.setDescricao(transacaoRecorrente.getDescricao());
-            transacao.setValor(transacaoRecorrente.getValor());
             transacao.setTipoMovimentacao(transacaoRecorrente.getTipoMovimentacao());
             transacao.setTipoPagamento(transacaoRecorrente.getTipoPagamento());
             return;

@@ -137,11 +137,11 @@ export class TransacaoModalComponent implements OnInit {
     const recorrenteId = raw.transacaoRecorrenteId ? Number(raw.transacaoRecorrenteId) : null;
 
     const payload = {
-      categoriaId: recorrenteId ? null : Number(raw.categoriaId),
-      descricao: recorrenteId ? null : raw.descricao.trim(),
-      valor: recorrenteId ? null : Number(raw.valor),
-      tipoMovimentacao: recorrenteId ? null : (raw.tipoMovimentacao as TipoMovimentacao),
-      tipoPagamento: recorrenteId ? null : (raw.tipoPagamento as TipoPagamento),
+      categoriaId: Number(raw.categoriaId),
+      descricao: raw.descricao.trim(),
+      valor:  Number(raw.valor),
+      tipoMovimentacao: raw.tipoMovimentacao as TipoMovimentacao,
+      tipoPagamento: raw.tipoPagamento as TipoPagamento,
       periodoId: periodo.id,
       transacaoRecorrenteId: recorrenteId,
       data: raw.data,

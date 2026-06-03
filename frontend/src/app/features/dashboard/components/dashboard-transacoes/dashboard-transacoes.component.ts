@@ -214,8 +214,8 @@ export class DashboardTransacoesComponent {
       .subscribe({
         next: (pageResponse) => {
           this.paginaConteudo.set(pageResponse.content);
-          this.totalPages.set(pageResponse.totalPages ?? 0);
-          this.totalElements.set(pageResponse.totalElements ?? 0);
+          this.totalPages.set(pageResponse.page.totalPages ?? 0);
+          this.totalElements.set(pageResponse.page.totalElements ?? 0);
           this.loading.set(false);
         },
         error: (err) => {
