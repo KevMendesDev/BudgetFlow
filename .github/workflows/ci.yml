@@ -83,4 +83,4 @@ jobs:
           cache: maven
 
       - name: Run tests
-        run: ./mvnw verify
+        run: ./mvnw clean verify
