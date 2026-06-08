@@ -25,13 +25,16 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtCookieAuthenticationFilter jwtFilter;
-    private final List<String> allowedOrigins;
+    private final List<String> allowedOriginPatterns;
 
     public SecurityConfig(
             JwtCookieAuthenticationFilter jwtFilter,
             @Value("${app.security.cors.allowed-origins}") String allowedOriginsRaw) {
         this.jwtFilter = jwtFilter;
-        this.allowedOrigins = Arrays.asList(allowedOriginsRaw.split(","));
+        this.allowedOriginPatterns = Arrays.stream(allowedOriginsRaw.split(","))
+            .map(String::trim)
+            .filter(origin -> !origin.isEmpty())
+            .toList();
     }
 
     @Bean
@@ -62,7 +65,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(allowedOrigins);
+        corsConfig.setAllowedOriginPatterns(allowedOriginPatterns);
         corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         corsConfig.setAllowedHeaders(List.of("*"));
         corsConfig.setAllowCredentials(true);

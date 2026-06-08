@@ -34,7 +34,7 @@ export class DashboardPageComponent implements OnInit {
   readonly loadingPeriodos = signal(true);
   readonly loadingResumo = signal(true);
   readonly loadingCategorias = signal(true);
-  readonly loading = computed(() => this.loadingPeriodos() || this.loadingResumo() || this.loadingCategorias());
+  readonly loading = computed(() => this.loadingPeriodos() || this.loadingResumo());
   readonly errorMessage = signal('');
   readonly periodos = signal<PeriodoFinanceiro[]>([]);
   readonly categorias = signal<CategoriaResponse[]>([]);

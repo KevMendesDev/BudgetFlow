@@ -27,7 +27,9 @@
     "SPRING_DATASOURCE_URL": "jdbc:postgresql://172.17.0.1:5434/budgetflow",
     "SPRING_DATASOURCE_USERNAME": "postgres",
     "SPRING_DATASOURCE_PASSWORD": "postgres",
-    "SPRING_SECURITY_JWT_SECRET": "mysecretkey"
+    "SPRING_DOCKER_COMPOSE_ENABLED": "false",
+    "JWT_SECRET": "dev-only-change-me-with-at-least-32-chars",
+    "SPRING_PROFILES_ACTIVE": "dev"
   },
 
   "customizations": {

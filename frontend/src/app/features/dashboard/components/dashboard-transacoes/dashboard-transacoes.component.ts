@@ -30,6 +30,8 @@ import { TransacaoModalComponent } from '../transacao-modal/transacao-modal.comp
   styleUrl: './dashboard-transacoes.component.scss',
 })
 export class DashboardTransacoesComponent {
+  private static readonly PAGE_SIZE = 20;
+
   private readonly transacoesApi = inject(TransacoesApiService);
   private readonly toast = inject(ToastService);
   private readonly confirmDialog = inject(ConfirmDialogService);
@@ -79,11 +81,19 @@ export class DashboardTransacoesComponent {
   constructor() {
     effect(() => {
       const periodo = this.selectedPeriodo();
+      const transacoes = this.transacoes();
       if (!periodo) {
         this.resetPageState();
         return;
       }
+
       this.paginaAtual.set(0);
+
+      if (this.shouldUseClientPagination()) {
+        this.syncPageFromInputs(0, transacoes);
+        return;
+      }
+
       this.loadPage(0);
     });
   }
@@ -106,8 +116,11 @@ export class DashboardTransacoesComponent {
 
   onTransacaoSaved(): void {
     this.modalOpen.set(false);
-    this.loadPage(this.paginaAtual());
     this.changed.emit();
+
+    if (!this.shouldUseClientPagination()) {
+      this.loadPage(this.paginaAtual());
+    }
   }
 
   async deleteTransacao(tx: TransacaoResponse): Promise<void> {
@@ -131,8 +144,11 @@ export class DashboardTransacoesComponent {
         next: () => {
           this.deletingId.set(null);
           this.toast.show('Transação excluída.', 'success');
-          this.loadPage(this.paginaAtual());
           this.changed.emit();
+
+          if (!this.shouldUseClientPagination()) {
+            this.loadPage(this.paginaAtual());
+          }
         },
         error: () => {
           this.deletingId.set(null);
@@ -142,6 +158,12 @@ export class DashboardTransacoesComponent {
 
   aplicarFiltros(): void {
     this.paginaAtual.set(0);
+
+    if (this.shouldUseClientPagination()) {
+      this.syncPageFromInputs(0);
+      return;
+    }
+
     this.loadPage(0);
   }
 
@@ -156,7 +178,7 @@ export class DashboardTransacoesComponent {
     this.filtroTipoPagamento.set('');
     this.filtroRecorrente.set('all');
     this.paginaAtual.set(0);
-    this.loadPage(0);
+    this.syncPageFromInputs(0);
   }
 
   irPaginaAnterior(): void {
@@ -164,6 +186,12 @@ export class DashboardTransacoesComponent {
     if (atual <= 0) {
       return;
     }
+
+    if (this.shouldUseClientPagination()) {
+      this.syncPageFromInputs(atual - 1);
+      return;
+    }
+
     this.paginaAtual.set(atual - 1);
     this.loadPage(atual - 1);
   }
@@ -173,6 +201,12 @@ export class DashboardTransacoesComponent {
     if (atual + 1 >= this.totalPages()) {
       return;
     }
+
+    if (this.shouldUseClientPagination()) {
+      this.syncPageFromInputs(atual + 1);
+      return;
+    }
+
     this.paginaAtual.set(atual + 1);
     this.loadPage(atual + 1);
   }
@@ -233,9 +267,39 @@ export class DashboardTransacoesComponent {
   private resetPageState(): void {
     this.loading.set(false);
     this.errorMessage.set('');
+    this.paginaAtual.set(0);
     this.paginaConteudo.set([]);
     this.totalPages.set(0);
     this.totalElements.set(0);
+  }
+
+  private shouldUseClientPagination(): boolean {
+    return !!this.selectedPeriodo() && !this.hasActiveFilters();
+  }
+
+  private hasActiveFilters(): boolean {
+    return !!(
+      this.filtroNomeCategoria().trim() ||
+      this.filtroClassificacao() ||
+      this.filtroTipoMovimentacao() ||
+      this.filtroTipoPagamento() ||
+      this.filtroRecorrente() !== 'all'
+    );
+  }
+
+  private syncPageFromInputs(page: number, transacoes = this.transacoes()): void {
+    const totalElements = transacoes.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / DashboardTransacoesComponent.PAGE_SIZE));
+    const currentPage = Math.min(page, totalPages - 1);
+    const start = currentPage * DashboardTransacoesComponent.PAGE_SIZE;
+    const end = start + DashboardTransacoesComponent.PAGE_SIZE;
+
+    this.errorMessage.set('');
+    this.loading.set(false);
+    this.paginaAtual.set(currentPage);
+    this.totalElements.set(totalElements);
+    this.totalPages.set(totalElements === 0 ? 0 : totalPages);
+    this.paginaConteudo.set(transacoes.slice(start, end));
   }
 
   private buildListParams(page: number): {
@@ -266,7 +330,7 @@ export class DashboardTransacoesComponent {
       dataInicio: periodo.dataInicio,
       dataFim: periodo.dataFim,
       page,
-      size: 20,
+      size: DashboardTransacoesComponent.PAGE_SIZE,
       nomeCategoria: nomeCategoria || undefined,
       classificacaoCategoria: classificacao || undefined,
       tipoMovimentacao: tipoMovimentacao || undefined,
