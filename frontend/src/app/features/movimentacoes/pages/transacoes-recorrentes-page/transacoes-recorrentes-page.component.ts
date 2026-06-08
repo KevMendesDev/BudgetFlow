@@ -26,6 +26,7 @@ import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { DateBRPipe } from '../../../../shared/pipes/date-br.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { fieldError } from '../../../../shared/utils/form-error.util';
+import { isDesktopViewport } from '../../../../shared/utils/viewport.util';
 
 @Component({
   selector: 'app-transacoes-recorrentes-page',
@@ -51,7 +52,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   readonly editingId = signal<number | null>(null);
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
-  readonly filtrosAbertos = signal(false);
+  readonly filtrosAbertos = signal(isDesktopViewport());
 
   readonly frequencias = FREQUENCIAS;
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;

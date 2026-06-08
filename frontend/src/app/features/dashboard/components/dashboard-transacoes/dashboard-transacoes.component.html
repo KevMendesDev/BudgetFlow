@@ -1,4 +1,4 @@
-<section class="recentes">
+<section class="transacoes">
   <div class="recentes-head">
     <div>
       <h2>Transações do período</h2>
@@ -17,7 +17,9 @@
             stroke-linejoin="round"
           />
         </svg>
-        {{ filtrosAbertos() ? 'Esconder filtros' : 'Mostrar filtros' }}
+        @if (filtrosAbertos()) {
+          <span>Esconder filtros</span>
+        }
       </button>
       <button type="button" class="btn-create" (click)="openCreateModal()" [disabled]="!selectedPeriodo()">
         Cadastrar transação
@@ -26,7 +28,9 @@
   </div>
 
   @if (filtrosAbertos()) {
-    <form class="filters" (submit)="$event.preventDefault(); aplicarFiltros()">
+    <section class="bf-panel filters-panel">
+      <h2>Filtros</h2>
+      <form class="filters" (submit)="$event.preventDefault()">
       <label>
         Categoria
         <input
@@ -97,9 +101,11 @@
       <div class="filters-actions">
         <button type="button" class="btn-secondary" (click)="limparFiltros()">Limpar</button>
       </div>
-    </form>
+      </form>
+    </section>
   }
 
+  <section class="recentes bf-panel">
   @if (errorMessage()) {
     <p class="error">{{ errorMessage() }}</p>
   }
@@ -171,6 +177,7 @@
       </button>
     </div>
   }
+  </section>
 </section>
 
 @if (modalOpen()) {

@@ -1,22 +1,26 @@
-.recentes {
+.transacoes {
   margin-top: 1.2rem;
+}
+
+.recentes-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.transacoes h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.recentes {
+  margin-top: 1rem;
   border: 1px solid var(--line);
   border-radius: 1rem;
   background: rgba(255, 255, 255, 0.05);
   padding: 1rem;
-
-  .recentes-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.8rem;
-  }
-
-  h2 {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 1.1rem;
-  }
 
   ul {
     margin: 1rem 0 0;
@@ -49,8 +53,19 @@
   gap: 0.6rem;
 }
 
-.filters {
+.filters-panel {
   margin-top: 1rem;
+  padding: 1rem;
+
+  h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+  }
+}
+
+.filters {
+  margin-top: 0.9rem;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 0.75rem;
@@ -65,10 +80,13 @@
   input,
   select {
     border: 1px solid var(--line);
-    border-radius: 0.6rem;
+    border-radius: var(--control-radius);
     background-color: rgba(255, 255, 255, 0.04);
     color: var(--text);
-    padding: 0.48rem 0.65rem;
+    min-height: var(--control-height);
+    padding: var(--control-padding-y) var(--control-padding-x);
+    font-size: var(--control-font-size);
+    line-height: 1.2;
   }
 
   select {
@@ -104,12 +122,8 @@
 
 .btn-create {
   border: 0;
-  border-radius: 0.75rem;
   background: linear-gradient(130deg, var(--brand-green), #6af0b2);
   color: #06130c;
-  font-weight: 600;
-  padding: 0.62rem 0.95rem;
-  cursor: pointer;
 }
 
 .btn-create:disabled {
@@ -119,21 +133,12 @@
 
 .btn-primary {
   border: 1px solid var(--brand-green);
-  border-radius: 0.65rem;
   background: linear-gradient(130deg, var(--brand-green), #6af0b2);
   color: #06130c;
-  font-weight: 600;
-  padding: 0.3rem 0.75rem;
-  cursor: pointer;
 }
 
 .btn-secondary {
-  border: 1px solid var(--line);
-  border-radius: 0.65rem;
   background: rgba(255, 255, 255, 0.05);
-  color: var(--text);
-  padding: 0.3rem 0.75rem;
-  cursor: pointer;
 }
 
 .btn-icon {
@@ -141,11 +146,14 @@
   align-items: center;
   gap: 0.4rem;
   border: 1px solid var(--line);
-  border-radius: 0.65rem;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text);
-  padding: 0.45rem 0.7rem;
-  cursor: pointer;
+  background: none;
+  color: var(--muted-text);
+  font-weight: 400;
+
+  &:hover {
+    color: var(--text);
+    border-color: rgba(174, 185, 210, 0.45);
+  }
 
   svg {
     width: 1rem;
@@ -155,12 +163,8 @@
 
 .btn-inline {
   border: 1px solid var(--line);
-  border-radius: 0.6rem;
   background: rgba(255, 255, 255, 0.05);
   color: var(--text);
-  font-size: 0.8rem;
-  padding: 0.35rem 0.6rem;
-  cursor: pointer;
 }
 
 .btn-inline.danger {
@@ -199,24 +203,17 @@ span.despesa {
 }
 
 @media (max-width: 800px) {
-  .recentes {
-    .recentes-head {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .btn-create {
-      width: 100%;
-    }
+  .recentes-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .head-actions {
     width: 100%;
-    flex-direction: column;
+    justify-content: space-between;
   }
 
   .btn-icon {
-    width: 100%;
     justify-content: center;
   }
 

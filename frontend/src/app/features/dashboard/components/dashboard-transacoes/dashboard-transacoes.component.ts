@@ -21,6 +21,7 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
 import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { formatDate } from '../../../../shared/utils/format.util';
+import { isDesktopViewport } from '../../../../shared/utils/viewport.util';
 import { TransacaoModalComponent } from '../transacao-modal/transacao-modal.component';
 
 @Component({
@@ -59,7 +60,7 @@ export class DashboardTransacoesComponent {
   readonly filtroTipoMovimentacao = signal<TipoMovimentacao | ''>('');
   readonly filtroTipoPagamento = signal<TipoPagamento | ''>('');
   readonly filtroRecorrente = signal<'all' | 'true' | 'false'>('all');
-  readonly filtrosAbertos = signal(false);
+  readonly filtrosAbertos = signal(isDesktopViewport());
 
   readonly categoriasDistinct = computed(() => {
     const names = new Set<string>();

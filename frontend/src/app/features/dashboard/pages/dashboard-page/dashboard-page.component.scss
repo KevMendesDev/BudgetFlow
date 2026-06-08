@@ -53,11 +53,14 @@
 
 .periodo-field select {
   border: 1px solid var(--line);
-  border-radius: 0.6rem;
+  border-radius: var(--control-radius);
   background-color: rgba(255, 255, 255, 0.04);
   color: var(--text);
-  padding: 0.48rem 0.65rem;
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) var(--control-padding-x);
   padding-right: 2.5rem;
+  font-size: var(--control-font-size);
+  line-height: 1.2;
 }
 
 .muted {

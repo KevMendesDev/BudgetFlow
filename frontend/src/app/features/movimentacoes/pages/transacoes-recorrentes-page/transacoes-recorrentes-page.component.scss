@@ -1,26 +1,9 @@
-@use '../../../categorias/pages/categorias-page/categorias-page.component.scss';
-
 .filters-grid {
 	grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) minmax(0, 12rem) auto;
 }
 
-.modal-wide {
-	width: min(48rem, 100%);
-	background-color: var(--bg);
-}
-
-.modal-grid {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	column-gap: 0.8rem;
-}
-
-.full-width {
-	grid-column: 1 / -1;
-}
-
 @media (max-width: 767px) {
-	.filters-grid,
-	.modal-grid {
+	.filters-grid {
 		grid-template-columns: 1fr;
 	}
 }
