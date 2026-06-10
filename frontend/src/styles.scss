@@ -56,7 +56,6 @@ button.btn-confirm {
 	border-radius: var(--control-radius);
 	font-size: var(--control-font-size);
 	font-weight: 600;
-	line-height: 1.2;
 }
 
 .btn-secondary,
@@ -238,21 +237,6 @@ h1 {
 	flex-shrink: 0;
 }
 
-.crud-wrap .filters-grid {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(0, 11rem) minmax(0, 11rem) auto;
-	gap: 0.8rem;
-	align-items: end;
-	margin-top: 0.9rem;
-}
-
-.crud-wrap .filters-actions {
-	display: flex;
-	gap: 0.55rem;
-	align-items: flex-end;
-	justify-content: flex-end;
-}
-
 .crud-wrap .list h2 {
 	margin: 0;
 	font-family: var(--font-display);
@@ -264,12 +248,6 @@ h1 {
 	align-items: center;
 	justify-content: space-between;
 	gap: 0.75rem;
-}
-
-.crud-wrap .skeleton-list {
-	margin-top: 1rem;
-	display: grid;
-	gap: 0.55rem;
 }
 
 .crud-wrap .table-wrap {
@@ -450,21 +428,6 @@ h1 {
 	margin-bottom: 0;
 }
 
-.modal-form {
-	margin-top: 0.9rem;
-	display: grid;
-	gap: 0.8rem;
-}
-
-.modal-grid {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	column-gap: 0.8rem;
-}
-
-.full-width {
-	grid-column: 1 / -1;
-}
-
 .modal-actions {
 	display: flex;
 	justify-content: flex-end;
@@ -477,17 +440,6 @@ h1 {
 
 	.crud-wrap .cards-list {
 		display: flex;
-	}
-
-	.crud-wrap .filters-grid,
-	.modal-form,
-	.modal-grid {
-		grid-template-columns: 1fr;
-	}
-
-	.crud-wrap .filters-actions {
-		display: grid;
-		grid-template-columns: 1fr;
 	}
 
 	.crud-wrap .list-header {

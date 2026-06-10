@@ -25,24 +25,28 @@
     @if (filtrosAbertos()) {
       <section class="bf-panel filters">
         <h2>Filtros</h2>
-        <form [formGroup]="filtersForm" class="filters-grid" novalidate>
-          <label class="bf-label">
+        <form
+          [formGroup]="filtersForm"
+          class="mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12"
+          novalidate
+        >
+          <label class="bf-label md:col-span-4">
             Busca
             <input class="bf-input" type="text" formControlName="q" placeholder="Ex: 2026-01" />
           </label>
 
-          <label class="bf-label">
+          <label class="bf-label md:col-span-3">
             Data início
             <input class="bf-input" type="date" formControlName="dataInicio" />
           </label>
 
-          <label class="bf-label">
+          <label class="bf-label md:col-span-3">
             Data fim
             <input class="bf-input" type="date" formControlName="dataFim" />
           </label>
 
-          <div class="filters-actions">
-            <button class="btn-secondary" type="button" (click)="clearFilters()" [disabled]="loading()">Limpar</button>
+          <div class="flex md:col-span-2 md:justify-end">
+            <button class="btn-secondary w-full md:w-auto" type="button" (click)="clearFilters()" [disabled]="loading()">Limpar</button>
           </div>
         </form>
       </section>
@@ -54,7 +58,7 @@
       </div>
 
       @if (loading()) {
-        <div class="skeleton-list" aria-label="Carregando períodos">
+        <div class="mt-4 grid gap-2" aria-label="Carregando períodos">
           @for (row of [1, 2, 3, 4, 5]; track row) {
             <p class="bf-skeleton-line h-11 w-full"></p>
           }
@@ -134,7 +138,7 @@
           <p class="error modal-error">{{ modalErrorMessage() }}</p>
         }
 
-        <form [formGroup]="form" (ngSubmit)="submit()" class="modal-form" novalidate>
+        <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid gap-3" novalidate>
           <label class="bf-label">
             Data de início
             <input class="bf-input" type="date" formControlName="dataInicio" />

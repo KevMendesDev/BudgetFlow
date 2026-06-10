@@ -13,7 +13,7 @@
     @if (resumoCategorias().length === 0) {
       <p class="muted">Sem despesas no período selecionado.</p>
     } @else {
-      <div class="categorias-grid">
+      <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         @for (item of resumoCategorias(); track item.nome + item.classificacao) {
           <article class="categoria-card">
             <header>
@@ -30,7 +30,7 @@
                 [data]="categoriaChartData(item)"
                 [options]="categoriaChartOptions()"
               ></canvas>
-              <span class="categoria-percent">{{ item.percentualLucro | number: '1.0-0' }}%</span>
+              <span class="categoria-percent flex items-center justify-center">{{ item.percentualLucro | number: '1.0-0' }}%</span>
             </div>
             <small>Percentual do lucro gasto</small>
           </article>

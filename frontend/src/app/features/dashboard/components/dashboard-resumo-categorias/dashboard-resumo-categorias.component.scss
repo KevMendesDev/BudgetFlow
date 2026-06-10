@@ -31,13 +31,6 @@
   cursor: pointer;
 }
 
-.categorias-grid {
-  margin-top: 1rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.8rem;
-}
-
 .categoria-card {
   border: 1px solid rgba(174, 185, 210, 0.2);
   border-radius: 0.9rem;
@@ -87,8 +80,6 @@
 .categoria-percent {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text);
@@ -152,8 +143,4 @@
     align-items: flex-start;
   }
 
-  .classificacao-row {
-    grid-template-columns: 1fr;
-    justify-items: start;
-  }
 }

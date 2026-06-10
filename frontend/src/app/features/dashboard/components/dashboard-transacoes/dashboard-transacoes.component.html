@@ -30,8 +30,8 @@
   @if (filtrosAbertos()) {
     <section class="bf-panel filters-panel">
       <h2>Filtros</h2>
-      <form class="filters" (submit)="$event.preventDefault()">
-      <label>
+      <form class="filters mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12" (submit)="$event.preventDefault()">
+      <label class="grid gap-1 md:col-span-4 xl:col-span-2">
         Categoria
         <input
           type="text"
@@ -47,7 +47,7 @@
         </datalist>
       </label>
 
-      <label>
+      <label class="grid gap-1 md:col-span-4 xl:col-span-2">
         Classificação
         <select
           [value]="filtroClassificacao()"
@@ -60,7 +60,7 @@
         </select>
       </label>
 
-      <label>
+      <label class="grid gap-1 md:col-span-4 xl:col-span-2">
         Tipo movimentação
         <select
           [value]="filtroTipoMovimentacao()"
@@ -73,7 +73,7 @@
         </select>
       </label>
 
-      <label>
+      <label class="grid gap-1 md:col-span-4 xl:col-span-2">
         Tipo pagamento
         <select
           [value]="filtroTipoPagamento()"
@@ -86,7 +86,7 @@
         </select>
       </label>
 
-      <label>
+      <label class="grid gap-1 md:col-span-4 xl:col-span-2">
         Recorrente
         <select
           [value]="filtroRecorrente()"
@@ -98,8 +98,8 @@
         </select>
       </label>
 
-      <div class="filters-actions">
-        <button type="button" class="btn-secondary" (click)="limparFiltros()">Limpar</button>
+      <div class="flex md:col-span-4 md:justify-end xl:col-span-2">
+        <button type="button" class="btn-secondary w-full md:w-auto" (click)="limparFiltros()">Limpar</button>
       </div>
       </form>
     </section>
@@ -115,7 +115,7 @@
   }
 
   @if (loading()) {
-    <ul class="skeleton-list">
+    <ul class="skeleton-list mt-4 grid gap-2">
       @for (row of skeletonRows; track row) {
         <li>
           <div>
@@ -132,7 +132,7 @@
     }
 
     @if (paginaConteudo().length > 0) {
-      <ul class="transacoes-list">
+      <ul class="mt-4 grid gap-2">
         @for (tx of paginaConteudo(); track tx.id) {
           <li>
             <div>
@@ -144,7 +144,7 @@
                 }
               </small>
             </div>
-            <div class="tx-actions">
+            <div class="grid w-full justify-items-stretch gap-2 min-[801px]:w-auto min-[801px]:justify-items-end">
               <span [class.receita]="tx.tipoMovimentacao === 'RECEITA'" [class.despesa]="tx.tipoMovimentacao === 'DESPESA'">
                 {{ tx.tipoMovimentacao === 'DESPESA' ? '-' : '+' }} {{ tx.valor | currencyBRL }}
               </span>

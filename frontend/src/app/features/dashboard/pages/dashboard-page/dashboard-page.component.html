@@ -5,7 +5,7 @@
         <h1>Olá, {{ user()?.nome }}</h1>
       </div>
       <div class="topbar-actions">
-        <label class="periodo-field" for="periodoSelect">
+        <label class="periodo-field grid gap-1" for="periodoSelect">
           Período selecionado
           <select
             id="periodoSelect"
@@ -26,7 +26,7 @@
     }
 
     @if (loading()) {
-      <section class="cards" aria-label="Carregando cards de resumo">
+      <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3" aria-label="Carregando cards de resumo">
         @for (item of skeletonCards; track item) {
           <article class="card">
             <p class="bf-skeleton-line h-3 w-28"></p>
@@ -39,7 +39,7 @@
         <p class="muted loading">Não existem períodos financeiros cadastrados.</p>
       }
 
-      <section class="cards">
+      <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         <article class="card saldo">
           <p>Saldo</p>
           <strong>{{ resumo().saldo | currencyBRL }}</strong>

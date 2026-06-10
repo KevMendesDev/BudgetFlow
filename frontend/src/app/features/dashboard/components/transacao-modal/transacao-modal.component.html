@@ -9,8 +9,8 @@
       <p class="error modal-error">{{ errorMessage() }}</p>
     }
 
-    <form [formGroup]="form" (ngSubmit)="submit()" class="modal-form modal-grid" novalidate>
-      <label class="bf-label">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-12" novalidate>
+      <label class="bf-label md:col-span-6">
         Valor
         <input class="bf-input" type="number" min="0.01" step="0.01" formControlName="valor" [disabled]="!isManualMode()" />
         @if (fieldError(form.controls.valor, 'Valor')) {
@@ -18,7 +18,7 @@
         }
       </label>
 
-      <label class="bf-label">
+      <label class="bf-label md:col-span-6">
         Tipo de movimentação
         <select class="bf-input" formControlName="tipoMovimentacao" [disabled]="!isManualMode()">
           <option value="">Selecione</option>
@@ -31,7 +31,7 @@
         }
       </label>
 
-      <label class="bf-label full-width">
+      <label class="bf-label md:col-span-12">
         Descrição
         <input class="bf-input" type="text" formControlName="descricao" [disabled]="!isManualMode()" placeholder="Ex: Mercado" />
         @if (fieldError(form.controls.descricao, 'Descrição')) {
@@ -39,7 +39,7 @@
         }
       </label>
 
-      <label class="bf-label">
+      <label class="bf-label md:col-span-6">
         Categoria
         <select
           class="bf-input"
@@ -56,7 +56,7 @@
         }
       </label>
 
-      <label class="bf-label">
+      <label class="bf-label md:col-span-6">
         Transação recorrente (opcional)
         <select class="bf-input" formControlName="transacaoRecorrenteId" (change)="onRecorrenteChange($any($event.target).value)">
           <option value="">Manual</option>
@@ -66,7 +66,7 @@
         </select>
       </label>
 
-      <label class="bf-label">
+      <label class="bf-label md:col-span-6">
         Tipo de pagamento
         <select class="bf-input" formControlName="tipoPagamento" [disabled]="!isManualMode()">
           <option value="">Selecione</option>
@@ -79,7 +79,7 @@
         }
       </label>
 
-      <label class="bf-label">
+      <label class="bf-label md:col-span-6">
         Data
         <input class="bf-input" type="date" formControlName="data" />
         @if (fieldError(form.controls.data, 'Data')) {
@@ -87,7 +87,7 @@
         }
       </label>
 
-      <div class="modal-actions full-width">
+      <div class="modal-actions md:col-span-12">
         <button class="bf-btn-primary" type="submit" [disabled]="submitting()">
           {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alterações' : 'Salvar transação' }}
         </button>
