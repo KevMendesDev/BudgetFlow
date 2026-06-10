@@ -11,41 +11,6 @@
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="modal-form modal-grid" novalidate>
       <label class="bf-label">
-        Transação recorrente (opcional)
-        <select class="bf-input" formControlName="transacaoRecorrenteId" (change)="onRecorrenteChange($any($event.target).value)">
-          <option value="">Manual</option>
-          @for (rec of recorrentesDisponiveis(); track rec.id) {
-            <option [value]="rec.id">
-              {{ rec.descricao }} • {{ rec.categoriaNome }} • {{ classificacaoLabels[rec.classificacaoCategoria] }}
-            </option>
-          }
-        </select>
-      </label>
-
-      <label class="bf-label">
-        Categoria
-        <select class="bf-input" formControlName="categoriaId" [disabled]="!isManualMode()">
-          <option value="">Selecione</option>
-          @for (categoria of categorias(); track categoria.id) {
-            <option [value]="categoria.id">
-              {{ categoria.nome }} • {{ classificacaoLabels[categoria.classificacao] }}
-            </option>
-          }
-        </select>
-        @if (fieldError(form.controls.categoriaId, 'Categoria')) {
-          <small class="bf-error">{{ fieldError(form.controls.categoriaId, 'Categoria') }}</small>
-        }
-      </label>
-
-      <label class="bf-label full-width">
-        Descrição
-        <input class="bf-input" type="text" formControlName="descricao" [disabled]="!isManualMode()" placeholder="Ex: Mercado" />
-        @if (fieldError(form.controls.descricao, 'Descrição')) {
-          <small class="bf-error">{{ fieldError(form.controls.descricao, 'Descrição') }}</small>
-        }
-      </label>
-
-      <label class="bf-label">
         Valor
         <input class="bf-input" type="number" min="0.01" step="0.01" formControlName="valor" [disabled]="!isManualMode()" />
         @if (fieldError(form.controls.valor, 'Valor')) {
@@ -64,6 +29,41 @@
         @if (fieldError(form.controls.tipoMovimentacao, 'Tipo de movimentação')) {
           <small class="bf-error">{{ fieldError(form.controls.tipoMovimentacao, 'Tipo de movimentação') }}</small>
         }
+      </label>
+
+      <label class="bf-label full-width">
+        Descrição
+        <input class="bf-input" type="text" formControlName="descricao" [disabled]="!isManualMode()" placeholder="Ex: Mercado" />
+        @if (fieldError(form.controls.descricao, 'Descrição')) {
+          <small class="bf-error">{{ fieldError(form.controls.descricao, 'Descrição') }}</small>
+        }
+      </label>
+
+      <label class="bf-label">
+        Categoria
+        <select
+          class="bf-input"
+          formControlName="categoriaId"
+          [disabled]="!isManualMode() || !form.controls.tipoMovimentacao.value"
+        >
+          <option value="">{{ form.controls.tipoMovimentacao.value ? 'Selecione' : 'Selecione o tipo de movimentação' }}</option>
+          @for (categoria of categoriasDisponiveis(); track categoria.id) {
+            <option [value]="categoria.id">{{ categoriaOptionLabel(categoria) }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.categoriaId, 'Categoria')) {
+          <small class="bf-error">{{ fieldError(form.controls.categoriaId, 'Categoria') }}</small>
+        }
+      </label>
+
+      <label class="bf-label">
+        Transação recorrente (opcional)
+        <select class="bf-input" formControlName="transacaoRecorrenteId" (change)="onRecorrenteChange($any($event.target).value)">
+          <option value="">Manual</option>
+          @for (rec of recorrentesDisponiveis(); track rec.id) {
+            <option [value]="rec.id">{{ recorrenteOptionLabel(rec) }}</option>
+          }
+        </select>
       </label>
 
       <label class="bf-label">

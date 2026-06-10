@@ -2,7 +2,11 @@ import { Component, computed, DestroyRef, inject, input, OnInit, output, signal 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { CategoriaResponse, CLASSIFICACAO_LABELS } from '../../../../core/models/categoria.models';
+import {
+  CategoriaResponse,
+  CLASSIFICACAO_LABELS,
+} from '../../../../core/models/categoria.models';
+import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.models';
 import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import { TransacaoRecorrenteResponse } from '../../../../core/models/transacao-recorrente.models';
 import { TransacoesApiService } from '../../../../core/services/transacoes-api.service';
@@ -10,7 +14,6 @@ import { ToastService } from '../../../../core/services/toast.service';
 import {
   TIPOS_MOVIMENTACAO,
   TIPOS_PAGAMENTO,
-  TipoMovimentacao,
   TipoPagamento,
   TransacaoResponse,
 } from '../../../../core/models/transacao.models';
@@ -52,7 +55,7 @@ export class TransacaoModalComponent implements OnInit {
     categoriaId: [''],
     descricao: ['', [Validators.maxLength(255)]],
     valor: [''],
-    tipoMovimentacao: ['' as '' | TipoMovimentacao],
+    tipoMovimentacao: ['' as '' | NaturezaFinanceira],
     tipoPagamento: ['' as '' | TipoPagamento],
     data: ['', [Validators.required]],
   });
@@ -73,6 +76,15 @@ export class TransacaoModalComponent implements OnInit {
     });
   });
 
+  categoriasDisponiveis(): CategoriaResponse[] {
+    const tipoMovimentacao = this.form.controls.tipoMovimentacao.value;
+    if (!tipoMovimentacao) {
+      return [];
+    }
+
+    return this.categorias().filter((categoria) => categoria.tipoCategoria === tipoMovimentacao);
+  }
+
   ngOnInit(): void {
     const tx = this.editingTransacao();
     if (tx) {
@@ -85,6 +97,20 @@ export class TransacaoModalComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => {
         this.toggleManualValidators(!value);
+      });
+
+    this.form.controls.tipoMovimentacao.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tipoMovimentacao) => {
+        const categoriaId = Number(this.form.controls.categoriaId.value);
+        if (!categoriaId || !tipoMovimentacao) {
+          return;
+        }
+
+        const categoria = this.categorias().find((item) => item.id === categoriaId);
+        if (categoria && categoria.tipoCategoria !== tipoMovimentacao) {
+          this.form.controls.categoriaId.setValue('');
+        }
       });
   }
 
@@ -118,6 +144,22 @@ export class TransacaoModalComponent implements OnInit {
     });
   }
 
+  categoriaOptionLabel(categoria: CategoriaResponse): string {
+    const parts = [categoria.nome];
+    if (categoria.classificacao) {
+      parts.push(this.classificacaoLabels[categoria.classificacao]);
+    }
+    return parts.join(' • ');
+  }
+
+  recorrenteOptionLabel(recorrente: TransacaoRecorrenteResponse): string {
+    const parts = [recorrente.descricao, recorrente.categoriaNome];
+    if (recorrente.classificacaoCategoria) {
+      parts.push(this.classificacaoLabels[recorrente.classificacaoCategoria]);
+    }
+    return parts.join(' • ');
+  }
+
   submit(): void {
     if (this.form.invalid || this.submitting()) {
       this.form.markAllAsTouched();
@@ -139,8 +181,8 @@ export class TransacaoModalComponent implements OnInit {
     const payload = {
       categoriaId: Number(raw.categoriaId),
       descricao: raw.descricao.trim(),
-      valor:  Number(raw.valor),
-      tipoMovimentacao: raw.tipoMovimentacao as TipoMovimentacao,
+      valor: Number(raw.valor),
+      tipoMovimentacao: raw.tipoMovimentacao as NaturezaFinanceira,
       tipoPagamento: raw.tipoPagamento as TipoPagamento,
       periodoId: periodo.id,
       transacaoRecorrenteId: recorrenteId,

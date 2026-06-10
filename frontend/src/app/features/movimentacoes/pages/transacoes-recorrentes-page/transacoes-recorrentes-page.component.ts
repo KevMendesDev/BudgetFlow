@@ -3,7 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
-import { CategoriaResponse, CLASSIFICACAO_LABELS } from '../../../../core/models/categoria.models';
+import {
+  CategoriaResponse,
+  CLASSIFICACAO_LABELS,
+} from '../../../../core/models/categoria.models';
+import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.models';
 import {
   FREQUENCIA_LABELS,
   FREQUENCIAS,
@@ -15,7 +19,6 @@ import {
   TIPO_PAGAMENTO_LABELS,
   TIPOS_MOVIMENTACAO,
   TIPOS_PAGAMENTO,
-  TipoMovimentacao,
   TipoPagamento,
 } from '../../../../core/models/transacao.models';
 import { CategoriasApiService } from '../../../../core/services/categorias-api.service';
@@ -63,14 +66,14 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   readonly filtersForm = this.formBuilder.nonNullable.group({
     query: [''],
     frequencia: ['' as '' | Frequencia],
-    tipoMovimentacao: ['' as '' | TipoMovimentacao],
+    tipoMovimentacao: ['' as '' | NaturezaFinanceira],
   });
 
   readonly form = this.formBuilder.nonNullable.group({
     categoriaId: ['', [Validators.required]],
     descricao: ['', [Validators.required, Validators.maxLength(255)]],
     valorParcela: ['', [Validators.required, Validators.min(0.01)]],
-    tipoMovimentacao: ['' as '' | TipoMovimentacao, [Validators.required]],
+    tipoMovimentacao: ['' as '' | NaturezaFinanceira, [Validators.required]],
     tipoPagamento: ['' as '' | TipoPagamento, [Validators.required]],
     frequencia: ['' as '' | Frequencia, [Validators.required]],
     dataInicio: ['', [Validators.required]],
@@ -78,9 +81,12 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
     totalParcelas: ['', [Validators.min(1)]],
   });
 
+  readonly categoriasDisponiveis = signal<CategoriaResponse[]>([]);
+
   ngOnInit(): void {
     this.loadCategorias();
     this.loadRecorrencias();
+    this.syncCategoriasDisponiveis();
 
     this.filtersForm.valueChanges
       .pipe(
@@ -89,6 +95,22 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe(() => this.loadRecorrencias());
+
+    this.form.controls.tipoMovimentacao.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tipoMovimentacao) => {
+        this.syncCategoriasDisponiveis();
+
+        const categoriaId = Number(this.form.controls.categoriaId.value);
+        if (!categoriaId || !tipoMovimentacao) {
+          return;
+        }
+
+        const categoria = this.categorias().find((item) => item.id === categoriaId);
+        if (categoria && categoria.tipoCategoria !== tipoMovimentacao) {
+          this.form.controls.categoriaId.setValue('');
+        }
+      });
   }
 
   toggleFiltros(): void {
@@ -145,7 +167,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
       categoriaId: Number(raw.categoriaId),
       descricao: raw.descricao.trim(),
       valorParcela: Number(raw.valorParcela),
-      tipoMovimentacao: raw.tipoMovimentacao as TipoMovimentacao,
+      tipoMovimentacao: raw.tipoMovimentacao as NaturezaFinanceira,
       tipoPagamento: raw.tipoPagamento as TipoPagamento,
       frequencia: raw.frequencia as Frequencia,
       dataInicio: raw.dataInicio,
@@ -205,12 +227,20 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
     return FREQUENCIA_LABELS[value] ?? value;
   }
 
-  tipoMovimentacaoLabel(value: TipoMovimentacao): string {
+  tipoMovimentacaoLabel(value: NaturezaFinanceira): string {
     return TIPO_MOVIMENTACAO_LABELS[value] ?? value;
   }
 
   tipoPagamentoLabel(value: TipoPagamento): string {
     return TIPO_PAGAMENTO_LABELS[value] ?? value;
+  }
+
+  categoriaOptionLabel(categoria: CategoriaResponse): string {
+    const parts = [categoria.nome];
+    if (categoria.classificacao) {
+      parts.push(this.classificacaoLabels[categoria.classificacao]);
+    }
+    return parts.join(' • ');
   }
 
   private loadCategorias(): void {
@@ -222,6 +252,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
       .subscribe({
         next: (page) => {
           this.categorias.set(page.content);
+          this.syncCategoriasDisponiveis();
           this.loadingCategorias.set(false);
         },
         error: (err) => {
@@ -272,5 +303,18 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
     this.form.markAsPristine();
     this.form.markAsUntouched();
     this.modalErrorMessage.set('');
+    this.syncCategoriasDisponiveis();
+  }
+
+  private syncCategoriasDisponiveis(): void {
+    const tipoMovimentacao = this.form.controls.tipoMovimentacao.value;
+    if (!tipoMovimentacao) {
+      this.categoriasDisponiveis.set([]);
+      return;
+    }
+
+    this.categoriasDisponiveis.set(
+      this.categorias().filter((categoria) => categoria.tipoCategoria === tipoMovimentacao)
+    );
   }
 }

@@ -8,7 +8,10 @@ import {
   CLASSIFICACOES,
   CategoriaResponse,
   ClassificacaoCategoria,
+  TIPO_CATEGORIA_LABELS,
+  TIPOS_CATEGORIA,
 } from '../../../../core/models/categoria.models';
+import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.models';
 import { CategoriasApiService } from '../../../../core/services/categorias-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
@@ -39,17 +42,28 @@ export class CategoriasPageComponent implements OnInit {
   readonly modalErrorMessage = signal('');
   readonly filtrosAbertos = signal(isDesktopViewport());
   readonly classificacoes = CLASSIFICACOES;
+  readonly tiposCategoria = TIPOS_CATEGORIA;
   readonly fieldError = fieldError;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
     q: [''],
     classificacao: ['' as '' | ClassificacaoCategoria],
+    tipoCategoria: ['' as '' | NaturezaFinanceira],
   });
 
   readonly form = this.formBuilder.nonNullable.group({
     nome: ['', [Validators.required, Validators.maxLength(100)]],
-    classificacao: ['' as '' | ClassificacaoCategoria, [Validators.required]],
+    tipoCategoria: [NaturezaFinanceira.DESPESA as NaturezaFinanceira, [Validators.required]],
+    classificacao: ['' as '' | ClassificacaoCategoria],
   });
+
+  constructor() {
+    this.configureClassificacaoValidator(this.form.controls.tipoCategoria.value);
+
+    this.form.controls.tipoCategoria.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tipoCategoria) => this.configureClassificacaoValidator(tipoCategoria));
+  }
 
   ngOnInit(): void {
     this.loadCategorias();
@@ -72,7 +86,7 @@ export class CategoriasPageComponent implements OnInit {
   }
 
   clearFilters(): void {
-    this.filtersForm.setValue({ q: '', classificacao: '' }, { emitEvent: false });
+    this.filtersForm.setValue({ q: '', classificacao: '', tipoCategoria: '' }, { emitEvent: false });
     this.loadCategorias();
   }
 
@@ -88,7 +102,11 @@ export class CategoriasPageComponent implements OnInit {
     const raw = this.form.getRawValue();
     const payload = {
       nome: raw.nome.trim(),
-      classificacao: raw.classificacao as ClassificacaoCategoria,
+      tipoCategoria: raw.tipoCategoria as NaturezaFinanceira,
+      classificacao:
+        raw.tipoCategoria === NaturezaFinanceira.DESPESA
+          ? (raw.classificacao as ClassificacaoCategoria)
+          : null,
     };
 
     const editingId = this.editingId();
@@ -120,7 +138,8 @@ export class CategoriasPageComponent implements OnInit {
     this.editingId.set(categoria.id);
     this.form.setValue({
       nome: categoria.nome,
-      classificacao: categoria.classificacao,
+      tipoCategoria: categoria.tipoCategoria,
+      classificacao: categoria.classificacao ?? '',
     });
     this.modalErrorMessage.set('');
   }
@@ -162,8 +181,19 @@ export class CategoriasPageComponent implements OnInit {
       });
   }
 
-  classificacaoLabel(value: ClassificacaoCategoria): string {
+  classificacaoLabel(value: ClassificacaoCategoria | null): string {
+    if (!value) {
+      return 'Sem classificação';
+    }
     return CLASSIFICACAO_LABELS[value] ?? value;
+  }
+
+  tipoCategoriaLabel(value: NaturezaFinanceira): string {
+    return TIPO_CATEGORIA_LABELS[value] ?? value;
+  }
+
+  isDespesaForm(): boolean {
+    return this.form.controls.tipoCategoria.value === NaturezaFinanceira.DESPESA;
   }
 
   private loadCategorias(): void {
@@ -176,6 +206,7 @@ export class CategoriasPageComponent implements OnInit {
       .listAll({
         q: filters.q,
         classificacao: filters.classificacao,
+        tipoCategoria: filters.tipoCategoria,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -192,9 +223,20 @@ export class CategoriasPageComponent implements OnInit {
 
   private resetForm(): void {
     this.editingId.set(null);
-    this.form.setValue({ nome: '', classificacao: '' });
+    this.form.setValue({ nome: '', tipoCategoria: NaturezaFinanceira.DESPESA, classificacao: '' });
     this.form.markAsPristine();
     this.form.markAsUntouched();
     this.modalErrorMessage.set('');
+  }
+
+  private configureClassificacaoValidator(tipoCategoria: NaturezaFinanceira): void {
+    const classificacaoControl = this.form.controls.classificacao;
+    if (tipoCategoria === NaturezaFinanceira.DESPESA) {
+      classificacaoControl.setValidators([Validators.required]);
+    } else {
+      classificacaoControl.setValue('', { emitEvent: false });
+      classificacaoControl.clearValidators();
+    }
+    classificacaoControl.updateValueAndValidity({ emitEvent: false });
   }
 }
