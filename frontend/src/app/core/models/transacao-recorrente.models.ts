@@ -1,8 +1,10 @@
 import { PageResponse } from './pagination.models';
 import { ClassificacaoCategoria } from './categoria.models';
-import { TipoMovimentacao, TipoPagamento } from './transacao.models';
+import { NaturezaFinanceira } from './natureza-financeira.models';
+import { TipoPagamento } from './transacao.models';
 
-export type { TipoMovimentacao, TipoPagamento };
+export { NaturezaFinanceira };
+export type { TipoPagamento };
 
 export type Frequencia = 'DIARIO' | 'SEMANAL' | 'MENSAL' | 'ANUAL';
 
@@ -21,7 +23,7 @@ export interface TransacaoRecorrenteRequest {
   categoriaId: number;
   descricao: string;
   valorParcela: number;
-  tipoMovimentacao: TipoMovimentacao;
+  tipoMovimentacao: NaturezaFinanceira;
   tipoPagamento: TipoPagamento;
   frequencia: Frequencia;
   dataInicio: string;
@@ -34,11 +36,11 @@ export interface TransacaoRecorrenteResponse {
   userId: number;
   categoriaId: number;
   categoriaNome: string;
-  classificacaoCategoria: ClassificacaoCategoria;
+  classificacaoCategoria: ClassificacaoCategoria | null;
   descricao: string;
   valorParcela: number;
   valorTotal: number;
-  tipoMovimentacao: TipoMovimentacao;
+  tipoMovimentacao: NaturezaFinanceira;
   tipoPagamento: TipoPagamento;
   frequencia: Frequencia;
   dataInicio: string;

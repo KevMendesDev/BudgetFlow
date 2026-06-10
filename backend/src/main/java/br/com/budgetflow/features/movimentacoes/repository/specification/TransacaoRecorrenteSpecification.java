@@ -2,7 +2,7 @@ package br.com.budgetflow.features.movimentacoes.repository.specification;
 
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.common.enums.Frequencia;
-import br.com.budgetflow.common.enums.TipoMovimentacao;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.common.enums.TipoPagamento;
 import br.com.budgetflow.features.movimentacoes.criteria.TransacaoRecorrenteFilterCriteria;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
@@ -90,7 +90,7 @@ public final class TransacaoRecorrenteSpecification {
                 : cb.equal(root.join("categoria", JoinType.INNER).get("classificacao"), classificacao);
     }
 
-    private static Specification<TransacaoRecorrente> hasTipoMovimentacao(TipoMovimentacao tipoMovimentacao) {
+    private static Specification<TransacaoRecorrente> hasTipoMovimentacao(NaturezaFinanceira tipoMovimentacao) {
         return (root, query, cb) -> tipoMovimentacao == null
                 ? null
                 : cb.equal(root.get("tipoMovimentacao"), tipoMovimentacao);

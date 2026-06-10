@@ -9,12 +9,17 @@ import {
   CategoriaResponse,
   ClassificacaoCategoria,
 } from '../models/categoria.models';
+import { NaturezaFinanceira } from '../models/natureza-financeira.models';
 
 @Injectable({ providedIn: 'root' })
 export class CategoriasApiService {
   private readonly http = inject(HttpClient);
 
-  listAll(filters?: { q?: string; classificacao?: ClassificacaoCategoria | '' }): Observable<CategoriaPageResponse> {
+  listAll(filters?: {
+    q?: string;
+    classificacao?: ClassificacaoCategoria | '';
+    tipoCategoria?: NaturezaFinanceira | '';
+  }): Observable<CategoriaPageResponse> {
     let params = new HttpParams({
       fromObject: {
         page: '0',
@@ -30,6 +35,10 @@ export class CategoriasApiService {
 
     if (filters?.classificacao) {
       params = params.set('classificacao', filters.classificacao);
+    }
+
+    if (filters?.tipoCategoria) {
+      params = params.set('tipoCategoria', filters.tipoCategoria);
     }
 
     return this.http.get<CategoriaPageResponse>(`${API_BASE_URL}/api/categorias`, { params });

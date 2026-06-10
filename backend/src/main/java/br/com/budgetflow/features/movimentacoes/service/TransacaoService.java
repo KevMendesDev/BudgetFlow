@@ -134,6 +134,10 @@ public class TransacaoService {
             throw new ResourceNotFoundException("Categoria não encontrada");
         }
 
+        if (!categoria.getTipoCategoria().name().equals(requestDTO.tipoMovimentacao().name())) {
+            throw new BusinessRuleException("O tipo da categoria deve ser igual ao tipo de movimentação");
+        }
+
         transacao.setTransacaoRecorrente(null);
         transacao.setCategoria(categoria);
         transacao.setDescricao(requestDTO.descricao().trim());

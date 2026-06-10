@@ -6,11 +6,11 @@ import {
   ClassificacaoCategoria,
   CLASSIFICACOES,
 } from '../../../../core/models/categoria.models';
+import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.models';
 import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import {
   TIPOS_MOVIMENTACAO,
   TIPOS_PAGAMENTO,
-  TipoMovimentacao,
   TipoPagamento,
   TransacaoResponse,
 } from '../../../../core/models/transacao.models';
@@ -57,7 +57,7 @@ export class DashboardTransacoesComponent {
 
   readonly filtroNomeCategoria = signal('');
   readonly filtroClassificacao = signal<ClassificacaoCategoria | ''>('');
-  readonly filtroTipoMovimentacao = signal<TipoMovimentacao | ''>('');
+  readonly filtroTipoMovimentacao = signal<NaturezaFinanceira | ''>('');
   readonly filtroTipoPagamento = signal<TipoPagamento | ''>('');
   readonly filtroRecorrente = signal<'all' | 'true' | 'false'>('all');
   readonly filtrosAbertos = signal(isDesktopViewport());
@@ -311,7 +311,7 @@ export class DashboardTransacoesComponent {
     size: number;
     nomeCategoria?: string;
     classificacaoCategoria?: ClassificacaoCategoria;
-    tipoMovimentacao?: TipoMovimentacao;
+    tipoMovimentacao?: NaturezaFinanceira;
     tipoPagamento?: TipoPagamento;
     recorrente?: boolean;
   } | null {
@@ -382,6 +382,8 @@ export class DashboardTransacoesComponent {
         return (alvo.getFullYear() - inicio.getFullYear()) * 12 + (alvo.getMonth() - inicio.getMonth());
       case 'ANUAL':
         return alvo.getFullYear() - inicio.getFullYear();
+      default:
+        return 0;
     }
   }
 }

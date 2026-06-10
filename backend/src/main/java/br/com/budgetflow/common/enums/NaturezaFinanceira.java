@@ -1,12 +1,12 @@
 package br.com.budgetflow.common.enums;
 
-public enum TipoMovimentacao {
+public enum NaturezaFinanceira {
     RECEITA("Receita"),
     DESPESA("Despesa");
 
     public final String value;
 
-    TipoMovimentacao(String value) {
+    NaturezaFinanceira(String value) {
         this.value = value;
     }
 

@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 
@@ -16,8 +17,23 @@ public interface CategoriaRepository extends JpaRepository<Categoria, Long>, Jpa
 
     Optional<Categoria> findByIdAndUserId(Long id, Long userId);
 
-    boolean existsByNomeIgnoreCaseAndUserIdAndClassificacao(String nome, Long userId, ClassificacaoCategoria classificacao);
+    boolean existsByNomeIgnoreCaseAndUserIdAndTipoCategoria(String nome, Long userId, NaturezaFinanceira tipoCategoria);
 
-    boolean existsByNomeIgnoreCaseAndUserIdAndClassificacaoAndIdNot(String nome, Long userId, ClassificacaoCategoria classificacao, Long id);
+    boolean existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndIdNot(String nome, Long userId, NaturezaFinanceira tipoCategoria, Long id);
+
+    boolean existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndClassificacao(
+            String nome,
+            Long userId,
+            NaturezaFinanceira tipoCategoria,
+            ClassificacaoCategoria classificacao
+    );
+
+    boolean existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndClassificacaoAndIdNot(
+            String nome,
+            Long userId,
+            NaturezaFinanceira tipoCategoria,
+            ClassificacaoCategoria classificacao,
+            Long id
+    );
 
 }

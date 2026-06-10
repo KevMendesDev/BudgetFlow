@@ -33,7 +33,7 @@ public abstract class CategoriaMapper {
         CategoriaResponseDTO categoriaBase = toResponseDTOBase(categoria);
         boolean possuiRelacionamentos = relacionamentoChecker.categoriaHasRelationships(categoria.getId(), categoria.getUser().getId());
         return new CategoriaResponseDTO(
-            categoriaBase.id(), categoriaBase.nome(), categoriaBase.classificacao(), 
+            categoriaBase.id(), categoriaBase.nome(), categoriaBase.classificacao(), categoriaBase.tipoCategoria(),
             categoriaBase.userId(), categoriaBase.createdAt(), categoriaBase.updatedAt(), 
             possuiRelacionamentos
         );

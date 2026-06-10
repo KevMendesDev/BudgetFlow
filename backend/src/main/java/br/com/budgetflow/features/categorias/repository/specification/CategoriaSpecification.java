@@ -1,6 +1,7 @@
 package br.com.budgetflow.features.categorias.repository.specification;
 
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,6 +21,12 @@ public final class CategoriaSpecification {
         return (root, query, cb) -> classificacao == null
                 ? null
                 : cb.equal(root.get("classificacao"), classificacao);
+    }
+
+    public static Specification<Categoria> hasTipoCategoria(NaturezaFinanceira tipoCategoria) {
+        return (root, query, cb) -> tipoCategoria == null
+                ? null
+                : cb.equal(root.get("tipoCategoria"), tipoCategoria);
     }
 
     public static Specification<Categoria> hasNomeUsuario(String nomeUsuario) {

@@ -1,5 +1,6 @@
 package br.com.budgetflow.features.movimentacoes.service;
 
+import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.common.exceptions.EntityHasRelationshipsException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.common.service.RelacionamentoChecker;
@@ -55,6 +56,7 @@ public class TransacaoRecorrenteService {
         Categoria categoria = categoriaService.findEntityByIdAndUser(requestDTO.categoriaId(), userId);
 
         DateRangeUtils.validateRange(requestDTO.dataInicio(), requestDTO.dataFim());
+        validateCategoriaTipo(categoria, requestDTO.tipoMovimentacao().name());
 
         TransacaoRecorrente transacaoRecorrente = transacaoRecorrenteMapper.toEntity(requestDTO);
         transacaoRecorrente.setUser(user);
@@ -95,6 +97,7 @@ public class TransacaoRecorrenteService {
         Categoria categoria = categoriaService.findEntityByIdAndUser(requestDTO.categoriaId(), userId);
 
         DateRangeUtils.validateRange(requestDTO.dataInicio(), requestDTO.dataFim());
+        validateCategoriaTipo(categoria, requestDTO.tipoMovimentacao().name());
 
         transacaoRecorrenteMapper.updateFromDto(requestDTO, transacaoRecorrente);
         transacaoRecorrente.setCategoria(categoria);
@@ -128,6 +131,12 @@ public class TransacaoRecorrenteService {
             return RecorrenciaUtils.calcularDataFim(requestDTO.dataInicio(), requestDTO.frequencia(), requestDTO.totalParcelas());
         }
         return requestDTO.dataFim();
+    }
+
+    private void validateCategoriaTipo(Categoria categoria, String tipoMovimentacao) {
+        if (!categoria.getTipoCategoria().name().equals(tipoMovimentacao)) {
+            throw new BusinessRuleException("O tipo da categoria deve ser igual ao tipo de movimentação");
+        }
     }
 
     private TransacaoRecorrente findByIdAndUserId(Long id, Long userId) {

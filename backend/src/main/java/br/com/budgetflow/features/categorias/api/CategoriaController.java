@@ -1,6 +1,7 @@
 package br.com.budgetflow.features.categorias.api;
 
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.features.categorias.dto.CategoriaRequestDTO;
 import br.com.budgetflow.features.categorias.dto.CategoriaResponseDTO;
 import br.com.budgetflow.features.categorias.mapper.CategoriaMapper;
@@ -40,11 +41,12 @@ public class CategoriaController {
     @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<Page<CategoriaResponseDTO>> findAll(
         @RequestParam(required = false) ClassificacaoCategoria classificacao,
+        @RequestParam(required = false) NaturezaFinanceira tipoCategoria,
         @RequestParam(required = false) String nomeUsuario,
         @RequestParam(required = false, name = "q") String search,
         Pageable pageable
     ) {
-        Page<CategoriaResponseDTO> categorias = categoriaService.findAll(classificacao, nomeUsuario, search, pageable);
+        Page<CategoriaResponseDTO> categorias = categoriaService.findAll(classificacao, tipoCategoria, nomeUsuario, search, pageable);
         return ResponseEntity.ok(categorias);
     }
 

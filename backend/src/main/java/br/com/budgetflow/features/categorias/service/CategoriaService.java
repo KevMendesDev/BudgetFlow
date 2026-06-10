@@ -1,6 +1,8 @@
 package br.com.budgetflow.features.categorias.service;
 
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
+import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.common.exceptions.ConflictException;
 import br.com.budgetflow.common.exceptions.EntityHasRelationshipsException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
@@ -42,10 +44,12 @@ public class CategoriaService {
 		User user = this.userService.findById(userId);
 
 		String nome = categoriaDTO.nome().trim();
-		this.validateDuplicate(nome, user.getId(), categoriaDTO.classificacao(), null);
+		ClassificacaoCategoria classificacao = normalizeClassificacao(categoriaDTO);
+		this.validateDuplicate(nome, user.getId(), categoriaDTO.tipoCategoria(), classificacao, null);
 
 		Categoria categoria = categoriaMapper.toEntity(categoriaDTO);
 		categoria.setNome(nome);
+		categoria.setClassificacao(classificacao);
 		categoria.setUser(user);
 
 		return categoriaMapper.toResponseDTO(categoriaRepository.save(categoria));
@@ -54,6 +58,7 @@ public class CategoriaService {
 	@Transactional(readOnly = true)
 	public Page<CategoriaResponseDTO> findAll(
 			ClassificacaoCategoria classificacao,
+			NaturezaFinanceira tipoCategoria,
 			String nomeUsuario,
 			String search,
 			Pageable pageable
@@ -62,6 +67,7 @@ public class CategoriaService {
 		Specification<Categoria> specification = Specification
 				.where(CategoriaSpecification.hasUserId(userId))
 				.and(CategoriaSpecification.hasClassificacao(classificacao))
+				.and(CategoriaSpecification.hasTipoCategoria(tipoCategoria))
 				.and(CategoriaSpecification.hasNomeUsuario(nomeUsuario))
 				.and(CategoriaSpecification.hasSearchTerm(search));
 
@@ -87,10 +93,12 @@ public class CategoriaService {
 		User user = this.userService.findById(userId);
 
 		String nome = categoriaDTO.nome().trim();
-		validateDuplicate(nome, userId, categoriaDTO.classificacao(), id);
+		ClassificacaoCategoria classificacao = normalizeClassificacao(categoriaDTO);
+		validateDuplicate(nome, userId, categoriaDTO.tipoCategoria(), classificacao, id);
 
 		categoriaMapper.updateCategoriaFromDto(categoriaDTO, categoria);
 		categoria.setNome(nome);
+		categoria.setClassificacao(classificacao);
 		categoria.setUser(user);
 
 		return categoriaMapper.toResponseDTO(categoriaRepository.save(categoria));
@@ -115,14 +123,49 @@ public class CategoriaService {
 				.orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
 	}
 
-	private void validateDuplicate(String nome, Long userId, ClassificacaoCategoria classificacao, Long categoriaId) {
+	private ClassificacaoCategoria normalizeClassificacao(CategoriaRequestDTO categoriaDTO) {
+		if (categoriaDTO.tipoCategoria() == NaturezaFinanceira.RECEITA) {
+			if (categoriaDTO.classificacao() != null) {
+				throw new BusinessRuleException("Categorias de receita não podem ter classificação");
+			}
+			return null;
+		}
+
+		if (categoriaDTO.classificacao() == null) {
+			throw new BusinessRuleException("A classificação da categoria é obrigatória para despesas");
+		}
+
+		return categoriaDTO.classificacao();
+	}
+
+	private void validateDuplicate(
+			String nome,
+			Long userId,
+			NaturezaFinanceira tipoCategoria,
+			ClassificacaoCategoria classificacao,
+			Long categoriaId
+	) {
 		String normalizedName = nome.toLowerCase();
-		boolean exists = categoriaId == null
-				? categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndClassificacao(normalizedName, userId, classificacao)
-				: categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndClassificacaoAndIdNot(normalizedName, userId, classificacao, categoriaId);
+
+		boolean exists;
+		if (tipoCategoria == NaturezaFinanceira.RECEITA) {
+			exists = categoriaId == null
+					? categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoria(normalizedName, userId, tipoCategoria)
+					: categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndIdNot(normalizedName, userId, tipoCategoria, categoriaId);
+		} else {
+			exists = categoriaId == null
+					? categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndClassificacao(normalizedName, userId, tipoCategoria, classificacao)
+					: categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndClassificacaoAndIdNot(
+							normalizedName,
+							userId,
+							tipoCategoria,
+							classificacao,
+							categoriaId
+					);
+		}
 
 		if (exists) {
-			throw new ConflictException("Já existe uma categoria com este nome para este usuário e classificação");
+			throw new ConflictException("Já existe uma categoria com este nome para este usuário");
 		}
 	}
 }

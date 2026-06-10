@@ -3,9 +3,9 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../config/api.config';
+import { NaturezaFinanceira } from '../models/natureza-financeira.models';
 import {
   Frequencia,
-  TipoMovimentacao,
   TransacaoRecorrentePageResponse,
   TransacaoRecorrenteRequest,
   TransacaoRecorrenteResponse,
@@ -18,7 +18,7 @@ export class TransacoesRecorrentesApiService {
   listAll(filters?: {
     query?: string;
     frequencia?: Frequencia | '';
-    tipoMovimentacao?: TipoMovimentacao | '';
+    tipoMovimentacao?: NaturezaFinanceira | '';
   }): Observable<TransacaoRecorrentePageResponse> {
     let params = new HttpParams({
       fromObject: {

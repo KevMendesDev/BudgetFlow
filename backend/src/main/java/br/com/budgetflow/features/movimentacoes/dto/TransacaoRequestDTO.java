@@ -1,6 +1,6 @@
 package br.com.budgetflow.features.movimentacoes.dto;
 
-import br.com.budgetflow.common.enums.TipoMovimentacao;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.common.enums.TipoPagamento;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -18,7 +18,7 @@ public record TransacaoRequestDTO(
         @DecimalMin(value = "0.01", message = "O valor deve ser maior que zero")
         BigDecimal valor,
 
-        TipoMovimentacao tipoMovimentacao,
+        NaturezaFinanceira tipoMovimentacao,
 
         TipoPagamento tipoPagamento,
 

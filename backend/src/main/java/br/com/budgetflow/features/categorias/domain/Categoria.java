@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.features.users.domain.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -21,8 +22,8 @@ import lombok.Setter;
         name = "categorias",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_categorias_nome_user_classificacao",
-                        columnNames = {"nome", "user_id", "classificacao"}
+                        name = "uk_categorias_nome_user_tipo_classificacao",
+                        columnNames = {"nome", "user_id", "tipo_categoria", "classificacao"}
                 )
         }
 )
@@ -38,8 +39,12 @@ public class Categoria {
     private String nome;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Column(length = 50)
     private ClassificacaoCategoria classificacao;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_categoria", nullable = false, length = 50)
+    private NaturezaFinanceira tipoCategoria;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -81,6 +86,6 @@ public class Categoria {
     @Override
     public String toString() {
         return "Categoria [id=" + id + ", nome=" + nome + ", classificacao=" + classificacao + ", createdAt="
-                + createdAt + ", updatedAt=" + updatedAt + "]";
+                + createdAt + ", updatedAt=" + updatedAt + ", tipoCategoria=" + tipoCategoria + "]";
     }
 }

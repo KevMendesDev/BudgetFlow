@@ -1,4 +1,6 @@
-export type TipoMovimentacao = 'RECEITA' | 'DESPESA';
+import { ClassificacaoCategoria } from './categoria.models';
+import { NaturezaFinanceira } from './natureza-financeira.models';
+
 export type TipoPagamento =
   | 'DINHEIRO'
   | 'CARTAO_CREDITO'
@@ -7,9 +9,9 @@ export type TipoPagamento =
   | 'TRANSFERENCIA'
   | 'BOLETO';
 
-export const TIPOS_MOVIMENTACAO: Array<{ value: TipoMovimentacao; label: string }> = [
-  { value: 'RECEITA', label: 'Receita' },
-  { value: 'DESPESA', label: 'Despesa' },
+export const TIPOS_MOVIMENTACAO: Array<{ value: NaturezaFinanceira; label: string }> = [
+  { value: NaturezaFinanceira.RECEITA, label: 'Receita' },
+  { value: NaturezaFinanceira.DESPESA, label: 'Despesa' },
 ];
 
 export const TIPOS_PAGAMENTO: Array<{ value: TipoPagamento; label: string }> = [
@@ -23,7 +25,7 @@ export const TIPOS_PAGAMENTO: Array<{ value: TipoPagamento; label: string }> = [
 
 export const TIPO_MOVIMENTACAO_LABELS = Object.fromEntries(
   TIPOS_MOVIMENTACAO.map(({ value, label }) => [value, label])
-) as Record<TipoMovimentacao, string>;
+) as Record<NaturezaFinanceira, string>;
 
 export const TIPO_PAGAMENTO_LABELS = Object.fromEntries(
   TIPOS_PAGAMENTO.map(({ value, label }) => [value, label])
@@ -34,12 +36,12 @@ export interface TransacaoResponse {
   userId: number;
   categoriaId: number;
   categoriaNome: string;
-  classificacaoCategoria: string;
+  classificacaoCategoria: ClassificacaoCategoria | null;
   periodoId: number;
   transacaoRecorrenteId: number | null;
   descricao: string;
   valor: number;
-  tipoMovimentacao: TipoMovimentacao;
+  tipoMovimentacao: NaturezaFinanceira;
   tipoPagamento: TipoPagamento;
   data: string;
   createdAt: string;
@@ -50,7 +52,7 @@ export interface TransacaoRequest {
   categoriaId: number | null;
   descricao: string | null;
   valor: number | null;
-  tipoMovimentacao: TipoMovimentacao | null;
+  tipoMovimentacao: NaturezaFinanceira | null;
   tipoPagamento: TipoPagamento | null;
   periodoId: number;
   transacaoRecorrenteId: number | null;

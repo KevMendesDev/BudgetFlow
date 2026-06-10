@@ -1,7 +1,7 @@
 package br.com.budgetflow.features.movimentacoes.dto;
 
 import br.com.budgetflow.common.enums.Frequencia;
-import br.com.budgetflow.common.enums.TipoMovimentacao;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.common.enums.TipoPagamento;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -25,7 +25,7 @@ public record TransacaoRecorrenteRequestDTO(
         BigDecimal valorParcela,
 
         @NotNull(message = "O tipo de movimentação é obrigatório")
-        TipoMovimentacao tipoMovimentacao,
+        NaturezaFinanceira tipoMovimentacao,
 
         @NotNull(message = "O tipo de pagamento é obrigatório")
         TipoPagamento tipoPagamento,

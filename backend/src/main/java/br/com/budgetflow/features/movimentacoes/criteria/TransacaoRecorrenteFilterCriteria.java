@@ -2,7 +2,7 @@ package br.com.budgetflow.features.movimentacoes.criteria;
 
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.common.enums.Frequencia;
-import br.com.budgetflow.common.enums.TipoMovimentacao;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.common.enums.TipoPagamento;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -23,7 +23,7 @@ public class TransacaoRecorrenteFilterCriteria {
     private BigDecimal valorMax;
     private String nomeCategoria;
     private ClassificacaoCategoria classificacaoCategoria;
-    private TipoMovimentacao tipoMovimentacao;
+    private NaturezaFinanceira tipoMovimentacao;
     private TipoPagamento tipoPagamento;
     private String query;
 
@@ -91,11 +91,11 @@ public class TransacaoRecorrenteFilterCriteria {
         this.classificacaoCategoria = classificacaoCategoria;
     }
 
-    public TipoMovimentacao getTipoMovimentacao() {
+    public NaturezaFinanceira getTipoMovimentacao() {
         return tipoMovimentacao;
     }
 
-    public void setTipoMovimentacao(TipoMovimentacao tipoMovimentacao) {
+    public void setTipoMovimentacao(NaturezaFinanceira tipoMovimentacao) {
         this.tipoMovimentacao = tipoMovimentacao;
     }
 

@@ -3,9 +3,9 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../config/api.config';
+import { NaturezaFinanceira } from '../models/natureza-financeira.models';
 import { PageResponse } from '../models/pagination.models';
 import {
-  TipoMovimentacao,
   TipoPagamento,
   TransacaoRequest,
   TransacaoResponse,
@@ -19,7 +19,7 @@ export interface TransacaoListParams {
   size?: number;
   nomeCategoria?: string;
   classificacaoCategoria?: string;
-  tipoMovimentacao?: TipoMovimentacao;
+  tipoMovimentacao?: NaturezaFinanceira;
   tipoPagamento?: TipoPagamento;
   recorrente?: boolean;
 }

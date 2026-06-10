@@ -2,7 +2,7 @@ package br.com.budgetflow.features.movimentacoes.dto;
 
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.common.enums.Frequencia;
-import br.com.budgetflow.common.enums.TipoMovimentacao;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.common.enums.TipoPagamento;
 
 import java.math.BigDecimal;
@@ -18,7 +18,7 @@ public record TransacaoRecorrenteResponseDTO(
         String descricao,
         BigDecimal valorParcela,
         BigDecimal valorTotal,
-        TipoMovimentacao tipoMovimentacao,
+        NaturezaFinanceira tipoMovimentacao,
         TipoPagamento tipoPagamento,
         Frequencia frequencia,
         LocalDate dataInicio,
