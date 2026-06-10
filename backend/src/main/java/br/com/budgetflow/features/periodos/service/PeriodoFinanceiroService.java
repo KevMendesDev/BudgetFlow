@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class PeriodoFinanceiroService {
@@ -71,8 +73,22 @@ public class PeriodoFinanceiroService {
                 .and(PeriodoFinanceiroSpecification.hasDataFimTo(dataFim))
                 .and(PeriodoFinanceiroSpecification.hasSearchTerm(search));
 
-        return periodoFinanceiroRepository.findAll(specification, pageable)
-                .map(periodoFinanceiroMapper::toResponseDTO);
+        Page<PeriodoFinanceiro> periodosPage = periodoFinanceiroRepository.findAll(specification, pageable);
+        List<Long> periodoIds = periodosPage.getContent().stream()
+                .map(PeriodoFinanceiro::getId)
+                .toList();
+
+        if (periodoIds.isEmpty()) {
+            return periodosPage.map(periodoFinanceiro -> periodoFinanceiroMapper.toResponseDTO(periodoFinanceiro, false));
+        }
+
+        Set<Long> periodosComRelacionamentos = relacionamentoChecker.findPeriodoIdsWithRelationships(periodoIds, currentUserId);
+
+        return periodosPage.map(periodoFinanceiro ->
+                periodoFinanceiroMapper.toResponseDTO(
+                        periodoFinanceiro,
+                        periodosComRelacionamentos.contains(periodoFinanceiro.getId())
+                ));
     }
 
     @Transactional(readOnly = true)

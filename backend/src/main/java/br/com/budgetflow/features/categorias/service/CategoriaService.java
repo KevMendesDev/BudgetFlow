@@ -23,149 +23,163 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Set;
+
 @Service
 public class CategoriaService {
 
-	private final CategoriaRepository categoriaRepository;
-	private final UserService userService;
-	private final CategoriaMapper categoriaMapper;
-	private final RelacionamentoChecker relacionamentoChecker;
+    private final CategoriaRepository categoriaRepository;
+    private final UserService userService;
+    private final CategoriaMapper categoriaMapper;
+    private final RelacionamentoChecker relacionamentoChecker;
 
-	public CategoriaService(CategoriaRepository categoriaRepository, UserService userService, CategoriaMapper categoriaMapper, RelacionamentoChecker relacionamentoChecker) {
-		this.categoriaRepository = categoriaRepository;
-		this.userService = userService;
-		this.categoriaMapper = categoriaMapper;
-		this.relacionamentoChecker = relacionamentoChecker;
-	}
+    public CategoriaService(CategoriaRepository categoriaRepository, UserService userService, CategoriaMapper categoriaMapper, RelacionamentoChecker relacionamentoChecker) {
+        this.categoriaRepository = categoriaRepository;
+        this.userService = userService;
+        this.categoriaMapper = categoriaMapper;
+        this.relacionamentoChecker = relacionamentoChecker;
+    }
 
-	@Transactional
-	public CategoriaResponseDTO create(CategoriaRequestDTO categoriaDTO) {
-		Long userId = SecurityUtils.currentUserId();
-		User user = this.userService.findById(userId);
+    @Transactional
+    public CategoriaResponseDTO create(CategoriaRequestDTO categoriaDTO) {
+        Long userId = SecurityUtils.currentUserId();
+        User user = this.userService.findById(userId);
 
-		String nome = categoriaDTO.nome().trim();
-		ClassificacaoCategoria classificacao = normalizeClassificacao(categoriaDTO);
-		this.validateDuplicate(nome, user.getId(), categoriaDTO.tipoCategoria(), classificacao, null);
+        String nome = categoriaDTO.nome().trim();
+        ClassificacaoCategoria classificacao = normalizeClassificacao(categoriaDTO);
+        this.validateDuplicate(nome, user.getId(), categoriaDTO.tipoCategoria(), classificacao, null);
 
-		Categoria categoria = categoriaMapper.toEntity(categoriaDTO);
-		categoria.setNome(nome);
-		categoria.setClassificacao(classificacao);
-		categoria.setUser(user);
+        Categoria categoria = categoriaMapper.toEntity(categoriaDTO);
+        categoria.setNome(nome);
+        categoria.setClassificacao(classificacao);
+        categoria.setUser(user);
 
-		return categoriaMapper.toResponseDTO(categoriaRepository.save(categoria));
-	}
+        return categoriaMapper.toResponseDTO(categoriaRepository.save(categoria));
+    }
 
-	@Transactional(readOnly = true)
-	public Page<CategoriaResponseDTO> findAll(
-			ClassificacaoCategoria classificacao,
-			NaturezaFinanceira tipoCategoria,
-			String nomeUsuario,
-			String search,
-			Pageable pageable
-	) {
-		Long userId = SecurityUtils.currentUserId();
-		Specification<Categoria> specification = Specification
-				.where(CategoriaSpecification.hasUserId(userId))
-				.and(CategoriaSpecification.hasClassificacao(classificacao))
-				.and(CategoriaSpecification.hasTipoCategoria(tipoCategoria))
-				.and(CategoriaSpecification.hasNomeUsuario(nomeUsuario))
-				.and(CategoriaSpecification.hasSearchTerm(search));
+    @Transactional(readOnly = true)
+    public Page<CategoriaResponseDTO> findAll(
+            ClassificacaoCategoria classificacao,
+            NaturezaFinanceira tipoCategoria,
+            String nomeUsuario,
+            String search,
+            Pageable pageable
+    ) {
+        Long userId = SecurityUtils.currentUserId();
+        Specification<Categoria> specification = Specification
+                .where(CategoriaSpecification.hasUserId(userId))
+                .and(CategoriaSpecification.hasClassificacao(classificacao))
+                .and(CategoriaSpecification.hasTipoCategoria(tipoCategoria))
+                .and(CategoriaSpecification.hasNomeUsuario(nomeUsuario))
+                .and(CategoriaSpecification.hasSearchTerm(search));
 
-		return categoriaRepository.findAll(specification, pageable)
-				.map(categoriaMapper::toResponseDTO);
-	}
+        Page<Categoria> categoriasPage = categoriaRepository.findAll(specification, pageable);
+        List<Long> categoriaIds = categoriasPage.getContent().stream()
+                .map(Categoria::getId)
+                .toList();
 
-	@Transactional(readOnly = true)
-	public Categoria findById(Long id) {
-		Long userId = SecurityUtils.currentUserId();
-		return findByIdAndUser(id, userId);
-	}
+        if (categoriaIds.isEmpty()) {
+            return categoriasPage.map(categoria -> categoriaMapper.toResponseDTO(categoria, false));
+        }
 
-	@Transactional(readOnly = true)
-	public Categoria findEntityByIdAndUser(Long id, Long userId) {
-		return findByIdAndUser(id, userId);
-	}
+        Set<Long> categoriasComRelacionamentos = relacionamentoChecker.findCategoriaIdsWithRelationships(categoriaIds, userId);
 
-	@Transactional
-	public CategoriaResponseDTO update(Long id, CategoriaRequestDTO categoriaDTO) {
-		Long userId = SecurityUtils.currentUserId();
-		Categoria categoria = findByIdAndUser(id, userId);
-		User user = this.userService.findById(userId);
+        return categoriasPage.map(categoria ->
+                categoriaMapper.toResponseDTO(categoria, categoriasComRelacionamentos.contains(categoria.getId())));
+    }
 
-		String nome = categoriaDTO.nome().trim();
-		ClassificacaoCategoria classificacao = normalizeClassificacao(categoriaDTO);
-		validateDuplicate(nome, userId, categoriaDTO.tipoCategoria(), classificacao, id);
+    @Transactional(readOnly = true)
+    public Categoria findById(Long id) {
+        Long userId = SecurityUtils.currentUserId();
+        return findByIdAndUser(id, userId);
+    }
 
-		categoriaMapper.updateCategoriaFromDto(categoriaDTO, categoria);
-		categoria.setNome(nome);
-		categoria.setClassificacao(classificacao);
-		categoria.setUser(user);
+    @Transactional(readOnly = true)
+    public Categoria findEntityByIdAndUser(Long id, Long userId) {
+        return findByIdAndUser(id, userId);
+    }
 
-		return categoriaMapper.toResponseDTO(categoriaRepository.save(categoria));
-	}
+    @Transactional
+    public CategoriaResponseDTO update(Long id, CategoriaRequestDTO categoriaDTO) {
+        Long userId = SecurityUtils.currentUserId();
+        Categoria categoria = findByIdAndUser(id, userId);
+        User user = this.userService.findById(userId);
 
-	@Transactional
-	public void delete(Long id) {
-		Long userId = SecurityUtils.currentUserId();
-		Categoria categoria = findByIdAndUser(id, userId);
+        String nome = categoriaDTO.nome().trim();
+        ClassificacaoCategoria classificacao = normalizeClassificacao(categoriaDTO);
+        validateDuplicate(nome, userId, categoriaDTO.tipoCategoria(), classificacao, id);
 
-		if (relacionamentoChecker.categoriaHasRelationships(id, userId)) {
-			throw new EntityHasRelationshipsException(
-					"A categoria \"" + categoria.getNome() + "\" não pode ser excluída pois está vinculada a uma ou mais transações"
-			);
-		}
+        categoriaMapper.updateCategoriaFromDto(categoriaDTO, categoria);
+        categoria.setNome(nome);
+        categoria.setClassificacao(classificacao);
+        categoria.setUser(user);
 
-		categoriaRepository.delete(categoria);
-	}
+        return categoriaMapper.toResponseDTO(categoriaRepository.save(categoria));
+    }
 
-	private Categoria findByIdAndUser(Long id, Long userId) {
-		return categoriaRepository.findByIdAndUserId(id, userId)
-				.orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
-	}
+    @Transactional
+    public void delete(Long id) {
+        Long userId = SecurityUtils.currentUserId();
+        Categoria categoria = findByIdAndUser(id, userId);
 
-	private ClassificacaoCategoria normalizeClassificacao(CategoriaRequestDTO categoriaDTO) {
-		if (categoriaDTO.tipoCategoria() == NaturezaFinanceira.RECEITA) {
-			if (categoriaDTO.classificacao() != null) {
-				throw new BusinessRuleException("Categorias de receita não podem ter classificação");
-			}
-			return null;
-		}
+        if (relacionamentoChecker.categoriaHasRelationships(id, userId)) {
+            throw new EntityHasRelationshipsException(
+                    "A categoria \"" + categoria.getNome() + "\" não pode ser excluída pois está vinculada a uma ou mais transações"
+            );
+        }
 
-		if (categoriaDTO.classificacao() == null) {
-			throw new BusinessRuleException("A classificação da categoria é obrigatória para despesas");
-		}
+        categoriaRepository.delete(categoria);
+    }
 
-		return categoriaDTO.classificacao();
-	}
+    private Categoria findByIdAndUser(Long id, Long userId) {
+        return categoriaRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada"));
+    }
 
-	private void validateDuplicate(
-			String nome,
-			Long userId,
-			NaturezaFinanceira tipoCategoria,
-			ClassificacaoCategoria classificacao,
-			Long categoriaId
-	) {
-		String normalizedName = nome.toLowerCase();
+    private ClassificacaoCategoria normalizeClassificacao(CategoriaRequestDTO categoriaDTO) {
+        if (categoriaDTO.tipoCategoria() == NaturezaFinanceira.RECEITA) {
+            if (categoriaDTO.classificacao() != null) {
+                throw new BusinessRuleException("Categorias de receita não podem ter classificação");
+            }
+            return null;
+        }
 
-		boolean exists;
-		if (tipoCategoria == NaturezaFinanceira.RECEITA) {
-			exists = categoriaId == null
-					? categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoria(normalizedName, userId, tipoCategoria)
-					: categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndIdNot(normalizedName, userId, tipoCategoria, categoriaId);
-		} else {
-			exists = categoriaId == null
-					? categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndClassificacao(normalizedName, userId, tipoCategoria, classificacao)
-					: categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndClassificacaoAndIdNot(
-							normalizedName,
-							userId,
-							tipoCategoria,
-							classificacao,
-							categoriaId
-					);
-		}
+        if (categoriaDTO.classificacao() == null) {
+            throw new BusinessRuleException("A classificação da categoria é obrigatória para despesas");
+        }
 
-		if (exists) {
-			throw new ConflictException("Já existe uma categoria com este nome para este usuário");
-		}
-	}
+        return categoriaDTO.classificacao();
+    }
+
+    private void validateDuplicate(
+            String nome,
+            Long userId,
+            NaturezaFinanceira tipoCategoria,
+            ClassificacaoCategoria classificacao,
+            Long categoriaId
+    ) {
+        String normalizedName = nome.toLowerCase();
+
+        boolean exists;
+        if (tipoCategoria == NaturezaFinanceira.RECEITA) {
+            exists = categoriaId == null
+                    ? categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoria(normalizedName, userId, tipoCategoria)
+                    : categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndIdNot(normalizedName, userId, tipoCategoria, categoriaId);
+        } else {
+            exists = categoriaId == null
+                    ? categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndClassificacao(normalizedName, userId, tipoCategoria, classificacao)
+                    : categoriaRepository.existsByNomeIgnoreCaseAndUserIdAndTipoCategoriaAndClassificacaoAndIdNot(
+                            normalizedName,
+                            userId,
+                            tipoCategoria,
+                            classificacao,
+                            categoriaId
+                    );
+        }
+
+        if (exists) {
+            throw new ConflictException("Já existe uma categoria com este nome para este usuário");
+        }
+    }
 }

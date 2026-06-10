@@ -132,6 +132,9 @@
     }
 
     @if (paginaConteudo().length > 0) {
+      <div class="list-header">
+        <h2>Lista de Transações</h2>
+      </div>
       <ul class="mt-4 grid gap-2">
         @for (tx of paginaConteudo(); track tx.id) {
           <li>

@@ -19,7 +19,8 @@ public final class TransacaoRecorrenteSpecification {
 
     public static Specification<TransacaoRecorrente> createSpecification(TransacaoRecorrenteFilterCriteria criteria, Long userId) {
         Specification<TransacaoRecorrente> specification = Specification
-            .where(TransacaoRecorrenteSpecification.hasUserId(userId))
+            .where(TransacaoRecorrenteSpecification.fetchAssociations())
+            .and(TransacaoRecorrenteSpecification.hasUserId(userId))
             .and(TransacaoRecorrenteSpecification.hasDataInicioFrom(criteria.getDataInicio()))
             .and(TransacaoRecorrenteSpecification.hasDataInicioTo(criteria.getDataFim()))
             .and(TransacaoRecorrenteSpecification.hasFrequencia(criteria.getFrequencia()))
@@ -32,6 +33,22 @@ public final class TransacaoRecorrenteSpecification {
             .and(TransacaoRecorrenteSpecification.hasTipoPagamento(criteria.getTipoPagamento()))
             .and(TransacaoRecorrenteSpecification.hasSearchTerm(criteria.getQuery()));
         return specification;
+    }
+
+    private static Specification<TransacaoRecorrente> fetchAssociations() {
+        return (root, query, cb) -> {
+            if (!isCountQuery(query)) {
+                root.fetch("categoria", JoinType.LEFT);
+                root.fetch("user", JoinType.LEFT);
+                query.distinct(true);
+            }
+            return null;
+        };
+    }
+
+    private static boolean isCountQuery(jakarta.persistence.criteria.CriteriaQuery<?> query) {
+        Class<?> resultType = query.getResultType();
+        return Long.class.equals(resultType) || long.class.equals(resultType);
     }
 
     private static Specification<TransacaoRecorrente> hasUserId(Long userId) {

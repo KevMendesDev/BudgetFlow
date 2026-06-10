@@ -1,11 +1,16 @@
 package br.com.budgetflow.features.movimentacoes.repository;
 
-import br.com.budgetflow.features.movimentacoes.domain.Transacao;
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
-import java.util.Optional;
+import br.com.budgetflow.features.movimentacoes.domain.Transacao;
 
 public interface TransacaoRepository extends JpaRepository<Transacao, Long>, JpaSpecificationExecutor<Transacao> {
 
@@ -24,6 +29,39 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long>, Jpa
     long countByTransacaoRecorrenteIdAndUserIdAndIdNot(Long transacaoRecorrenteId, Long userId, Long id);
 
     boolean existsByCategoriaIdAndUserId(Long categoriaId, Long userId);
+
+    @Query("""
+            select distinct t.categoria.id
+            from Transacao t
+            where t.user.id = :userId
+              and t.categoria.id in :categoriaIds
+            """)
+    List<Long> findCategoriaIdsByUserIdAndCategoriaIds(
+            @Param("userId") Long userId,
+            @Param("categoriaIds") Collection<Long> categoriaIds
+    );
+
+    @Query("""
+            select distinct t.periodo.id
+            from Transacao t
+            where t.user.id = :userId
+              and t.periodo.id in :periodoIds
+            """)
+    List<Long> findPeriodoIdsByUserIdAndPeriodoIds(
+            @Param("userId") Long userId,
+            @Param("periodoIds") Collection<Long> periodoIds
+    );
+
+    @Query("""
+            select distinct t.transacaoRecorrente.id
+            from Transacao t
+            where t.user.id = :userId
+              and t.transacaoRecorrente.id in :transacaoRecorrenteIds
+            """)
+    List<Long> findTransacaoRecorrenteIdsByUserIdAndTransacaoRecorrenteIds(
+            @Param("userId") Long userId,
+            @Param("transacaoRecorrenteIds") Collection<Long> transacaoRecorrenteIds
+    );
 
     boolean existsByPeriodoIdAndUserId(Long periodoId, Long userId);
 

@@ -18,7 +18,8 @@ public final class TransacaoSpecification {
 
     public static Specification<Transacao> createSpecification (TransacaoFilterCriteria criteria, Long userId, Long effectivePeriodoId) {
         Specification<Transacao> specification = Specification
-            .where(TransacaoSpecification.hasUserId(userId))
+            .where(TransacaoSpecification.fetchAssociations())
+            .and(TransacaoSpecification.hasUserId(userId))
             .and(TransacaoSpecification.hasDataFrom(criteria.getDataInicio()))
             .and(TransacaoSpecification.hasDataTo(criteria.getDataFim()))
             .and(TransacaoSpecification.hasPeriodoId(effectivePeriodoId))
@@ -32,6 +33,24 @@ public final class TransacaoSpecification {
             .and(TransacaoSpecification.hasSearchTerm(criteria.getQuery()));
 
         return specification;
+    }
+
+    private static Specification<Transacao> fetchAssociations() {
+        return (root, query, cb) -> {
+            if (!isCountQuery(query)) {
+                root.fetch("categoria", JoinType.LEFT);
+                root.fetch("periodo", JoinType.LEFT);
+                root.fetch("transacaoRecorrente", JoinType.LEFT);
+                root.fetch("user", JoinType.LEFT);
+                query.distinct(true);
+            }
+            return null;
+        };
+    }
+
+    private static boolean isCountQuery(jakarta.persistence.criteria.CriteriaQuery<?> query) {
+        Class<?> resultType = query.getResultType();
+        return Long.class.equals(resultType) || long.class.equals(resultType);
     }
 
     private static Specification<Transacao> hasUserId(Long userId) {

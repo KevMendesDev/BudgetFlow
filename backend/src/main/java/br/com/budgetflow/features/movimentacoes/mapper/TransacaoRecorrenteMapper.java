@@ -42,8 +42,12 @@ public abstract class TransacaoRecorrenteMapper {
     protected abstract TransacaoRecorrenteResponseDTO toResponseDTOBase(TransacaoRecorrente entity);
 
     public TransacaoRecorrenteResponseDTO toResponseDTO(TransacaoRecorrente entity) {
-        TransacaoRecorrenteResponseDTO transacaoBase = toResponseDTOBase(entity);
         boolean possuiRelacionamentos = relacionamentoChecker.transacaoRecorrenteHasRelationships(entity.getId(), entity.getUser().getId());
+        return toResponseDTO(entity, possuiRelacionamentos);
+    }
+
+    public TransacaoRecorrenteResponseDTO toResponseDTO(TransacaoRecorrente entity, boolean possuiRelacionamentos) {
+        TransacaoRecorrenteResponseDTO transacaoBase = toResponseDTOBase(entity);
         return new TransacaoRecorrenteResponseDTO(
                 transacaoBase.id(), transacaoBase.userId(), transacaoBase.categoriaId(), transacaoBase.categoriaNome(),
                 transacaoBase.classificacaoCategoria(), transacaoBase.descricao(), transacaoBase.valorParcela(), transacaoBase.valorTotal(),

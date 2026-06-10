@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class TransacaoRecorrenteService {
@@ -79,8 +81,25 @@ public class TransacaoRecorrenteService {
         Specification<TransacaoRecorrente> specification = TransacaoRecorrenteSpecification
                 .createSpecification(criteria, userId);
 
-        return transacaoRecorrenteRepository.findAll(specification, pageable)
-                .map(transacaoRecorrenteMapper::toResponseDTO);
+        Page<TransacaoRecorrente> transacoesPage = transacaoRecorrenteRepository.findAll(specification, pageable);
+        List<Long> transacaoRecorrenteIds = transacoesPage.getContent().stream()
+                .map(TransacaoRecorrente::getId)
+                .toList();
+
+        if (transacaoRecorrenteIds.isEmpty()) {
+            return transacoesPage.map(transacaoRecorrente -> transacaoRecorrenteMapper.toResponseDTO(transacaoRecorrente, false));
+        }
+
+        Set<Long> transacoesComRelacionamentos = relacionamentoChecker.findTransacaoRecorrenteIdsWithRelationships(
+                transacaoRecorrenteIds,
+                userId
+        );
+
+        return transacoesPage.map(transacaoRecorrente ->
+                transacaoRecorrenteMapper.toResponseDTO(
+                        transacaoRecorrente,
+                        transacoesComRelacionamentos.contains(transacaoRecorrente.getId())
+                ));
     }
 
     @Transactional(readOnly = true)

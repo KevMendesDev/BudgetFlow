@@ -30,8 +30,12 @@ public abstract class PeriodoFinanceiroMapper {
     protected abstract PeriodoFinanceiroResponseDTO toResponseDTOBase(PeriodoFinanceiro periodoFinanceiro);
 
     public PeriodoFinanceiroResponseDTO toResponseDTO(PeriodoFinanceiro periodoFinanceiro) {
-        PeriodoFinanceiroResponseDTO periodoFinanceiroBase = toResponseDTOBase(periodoFinanceiro);
         boolean possuiRelacionamentos = relacionamentoChecker.periodoHasRelationships(periodoFinanceiro.getId(), periodoFinanceiro.getUser().getId());
+        return toResponseDTO(periodoFinanceiro, possuiRelacionamentos);
+    }
+
+    public PeriodoFinanceiroResponseDTO toResponseDTO(PeriodoFinanceiro periodoFinanceiro, boolean possuiRelacionamentos) {
+        PeriodoFinanceiroResponseDTO periodoFinanceiroBase = toResponseDTOBase(periodoFinanceiro);
         return new PeriodoFinanceiroResponseDTO(
             periodoFinanceiroBase.id(), periodoFinanceiroBase.userId(), periodoFinanceiroBase.dataInicio(), 
             periodoFinanceiroBase.dataFim(), periodoFinanceiroBase.createdAt(), periodoFinanceiroBase.updatedAt(), 
