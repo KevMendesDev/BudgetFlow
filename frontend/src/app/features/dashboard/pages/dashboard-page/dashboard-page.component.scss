@@ -41,15 +41,19 @@
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  min-width: 0;
 }
 
 
 .periodo-field {
+  min-width: 0;
   font-size: 0.8rem;
   color: var(--muted-text);
+  width: min(100%, 28rem);
 }
 
 .periodo-field select {
+  width: 100%;
   border: 1px solid var(--line);
   border-radius: var(--control-radius);
   background-color: rgba(255, 255, 255, 0.04);
@@ -103,5 +107,11 @@
     align-items: flex-start;
   }
 
-  
+  .topbar-actions {
+    width: 100%;
+  }
+
+  .periodo-field {
+    width: 100%;
+  }
 }

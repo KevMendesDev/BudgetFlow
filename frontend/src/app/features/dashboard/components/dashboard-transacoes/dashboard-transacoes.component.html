@@ -30,10 +30,14 @@
   @if (filtrosAbertos()) {
     <section class="bf-panel filters-panel">
       <h2>Filtros</h2>
-      <form class="filters mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12" (submit)="$event.preventDefault()">
-      <label class="grid gap-1 md:col-span-4 xl:col-span-2">
+      <form
+        class="filters mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-[repeat(24,minmax(0,1fr))]"
+        (submit)="$event.preventDefault()"
+      >
+      <label class="bf-label md:col-span-6">
         Categoria
         <input
+          class="bf-input"
           type="text"
           list="categorias-list"
           placeholder="Selecione ou digite"
@@ -47,9 +51,10 @@
         </datalist>
       </label>
 
-      <label class="grid gap-1 md:col-span-4 xl:col-span-2">
+      <label class="bf-label md:col-span-4">
         Classificação
         <select
+          class="bf-input"
           [value]="filtroClassificacao()"
           (change)="filtroClassificacao.set($any($event.target).value)"
         >
@@ -60,9 +65,10 @@
         </select>
       </label>
 
-      <label class="grid gap-1 md:col-span-4 xl:col-span-2">
+      <label class="bf-label md:col-span-4">
         Tipo movimentação
         <select
+          class="bf-input"
           [value]="filtroTipoMovimentacao()"
           (change)="filtroTipoMovimentacao.set($any($event.target).value)"
         >
@@ -73,9 +79,10 @@
         </select>
       </label>
 
-      <label class="grid gap-1 md:col-span-4 xl:col-span-2">
+      <label class="bf-label md:col-span-4">
         Tipo pagamento
         <select
+          class="bf-input"
           [value]="filtroTipoPagamento()"
           (change)="filtroTipoPagamento.set($any($event.target).value)"
         >
@@ -86,9 +93,10 @@
         </select>
       </label>
 
-      <label class="grid gap-1 md:col-span-4 xl:col-span-2">
+      <label class="bf-label md:col-span-4">
         Recorrente
         <select
+          class="bf-input"
           [value]="filtroRecorrente()"
           (change)="filtroRecorrente.set($any($event.target).value)"
         >
@@ -98,7 +106,7 @@
         </select>
       </label>
 
-      <div class="flex md:col-span-4 md:justify-end xl:col-span-2">
+      <div class="flex w-full items-end md:col-span-2 md:justify-end">
         <button type="button" class="btn-secondary w-full md:w-auto" (click)="limparFiltros()">Limpar</button>
       </div>
       </form>
