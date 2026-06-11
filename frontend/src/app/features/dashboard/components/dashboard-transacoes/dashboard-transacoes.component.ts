@@ -22,6 +22,7 @@ import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { formatDate } from '../../../../shared/utils/format.util';
 import { isDesktopViewport } from '../../../../shared/utils/viewport.util';
+import { PageSize } from '../../../../core/models/pagination.models';
 import { TransacaoModalComponent } from '../transacao-modal/transacao-modal.component';
 
 @Component({
@@ -31,8 +32,6 @@ import { TransacaoModalComponent } from '../transacao-modal/transacao-modal.comp
   styleUrl: './dashboard-transacoes.component.scss',
 })
 export class DashboardTransacoesComponent {
-  private static readonly PAGE_SIZE = 20;
-
   private readonly transacoesApi = inject(TransacoesApiService);
   private readonly toast = inject(ToastService);
   private readonly confirmDialog = inject(ConfirmDialogService);
@@ -182,7 +181,7 @@ export class DashboardTransacoesComponent {
     this.syncPageFromInputs(0);
   }
 
-  irPaginaAnterior(): void {
+  goToPreviousPage(): void {
     const atual = this.paginaAtual();
     if (atual <= 0) {
       return;
@@ -197,7 +196,7 @@ export class DashboardTransacoesComponent {
     this.loadPage(atual - 1);
   }
 
-  irProximaPagina(): void {
+  goToNextPage(): void {
     const atual = this.paginaAtual();
     if (atual + 1 >= this.totalPages()) {
       return;
@@ -290,10 +289,10 @@ export class DashboardTransacoesComponent {
 
   private syncPageFromInputs(page: number, transacoes = this.transacoes()): void {
     const totalElements = transacoes.length;
-    const totalPages = Math.max(1, Math.ceil(totalElements / DashboardTransacoesComponent.PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(totalElements / PageSize.DEFAULT));
     const currentPage = Math.min(page, totalPages - 1);
-    const start = currentPage * DashboardTransacoesComponent.PAGE_SIZE;
-    const end = start + DashboardTransacoesComponent.PAGE_SIZE;
+    const start = currentPage * PageSize.DEFAULT;
+    const end = start + PageSize.DEFAULT;
 
     this.errorMessage.set('');
     this.loading.set(false);
@@ -331,7 +330,7 @@ export class DashboardTransacoesComponent {
       dataInicio: periodo.dataInicio,
       dataFim: periodo.dataFim,
       page,
-      size: DashboardTransacoesComponent.PAGE_SIZE,
+      size: PageSize.DEFAULT,
       nomeCategoria: nomeCategoria || undefined,
       classificacaoCategoria: classificacao || undefined,
       tipoMovimentacao: tipoMovimentacao || undefined,

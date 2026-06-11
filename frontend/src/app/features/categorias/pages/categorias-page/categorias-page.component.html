@@ -19,7 +19,7 @@
           <span>Esconder filtros</span>
         }
       </button>
-      <button class="bf-btn-primary" type="button" (click)="openCreateModal()">Criar categoria</button>
+      <button class="btn-create" type="button" (click)="openCreateModal()">Criar categoria</button>
     </div>
 
     @if (filtrosAbertos()) {
@@ -64,7 +64,12 @@
 
     <section class="bf-panel list">
       <div class="list-header">
-        <h2>Lista de categorias</h2>
+        <div>
+          <h2>Lista de categorias</h2>
+          @if (totalElements() > 0) {
+            <small class="muted">{{ totalElements() }} categorias</small>
+          }
+        </div>
       </div>
 
       @if (loading()) {
@@ -133,6 +138,23 @@
             </li>
           }
         </ul>
+
+        @if (totalPages() > 1) {
+          <div class="bf-pagination">
+            <button type="button" class="btn-inline" (click)="goToPreviousPage()" [disabled]="paginaAtual() === 0">
+              Anterior
+            </button>
+            <span>Página {{ paginaAtual() + 1 }} de {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="btn-inline"
+              (click)="goToNextPage()"
+              [disabled]="paginaAtual() + 1 >= totalPages()"
+            >
+              Próxima
+            </button>
+          </div>
+        }
       }
     </section>
   </div>
@@ -186,7 +208,7 @@
           }
 
           <div class="modal-actions">
-            <button class="bf-btn-primary" type="submit" [disabled]="submitting()">
+            <button class="btn-create" type="submit" [disabled]="submitting()">
               {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alterações' : 'Criar categoria' }}
             </button>
           </div>

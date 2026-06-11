@@ -8,6 +8,7 @@ import {
   CLASSIFICACAO_LABELS,
 } from '../../../../core/models/categoria.models';
 import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.models';
+import { PageSize } from '../../../../core/models/pagination.models';
 import {
   FREQUENCIA_LABELS,
   FREQUENCIAS,
@@ -56,6 +57,9 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
   readonly filtrosAbertos = signal(isDesktopViewport());
+  readonly paginaAtual = signal(0);
+  readonly totalPages = signal(0);
+  readonly totalElements = signal(0);
 
   readonly frequencias = FREQUENCIAS;
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
@@ -85,7 +89,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCategorias();
-    this.loadRecorrencias();
+    this.loadRecorrencias(0);
     this.syncCategoriasDisponiveis();
 
     this.filtersForm.valueChanges
@@ -94,7 +98,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
         distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(() => this.loadRecorrencias());
+      .subscribe(() => this.loadRecorrencias(0));
 
     this.form.controls.tipoMovimentacao.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -118,12 +122,12 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   }
 
   applyFilters(): void {
-    this.loadRecorrencias();
+    this.loadRecorrencias(0);
   }
 
   clearFilters(): void {
     this.filtersForm.setValue({ query: '', frequencia: '', tipoMovimentacao: '' }, { emitEvent: false });
-    this.loadRecorrencias();
+    this.loadRecorrencias(0);
   }
 
   openCreateModal(): void {
@@ -185,7 +189,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
         this.submitting.set(false);
         this.toast.show(editingId ? 'Recorrência atualizada.' : 'Recorrência criada.', 'success');
         this.closeModal();
-        this.loadRecorrencias();
+        this.loadRecorrencias(this.paginaAtual());
       },
       error: (err) => {
         this.modalErrorMessage.set(mapApiError(err));
@@ -215,7 +219,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
         next: () => {
           this.deletingId.set(null);
           this.toast.show('Recorrência excluída.', 'success');
-          this.loadRecorrencias();
+          this.loadRecorrencias(this.paginaAtual());
         },
         error: () => {
           this.deletingId.set(null);
@@ -243,11 +247,25 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
     return parts.join(' • ');
   }
 
+  goToPreviousPage(): void {
+    const atual = this.paginaAtual();
+    if (atual > 0) {
+      this.loadRecorrencias(atual - 1);
+    }
+  }
+
+  goToNextPage(): void {
+    const atual = this.paginaAtual();
+    if (atual + 1 < this.totalPages()) {
+      this.loadRecorrencias(atual + 1);
+    }
+  }
+
   private loadCategorias(): void {
     this.loadingCategorias.set(true);
 
     this.categoriasApi
-      .listAll()
+      .listAll({ size: PageSize.LARGE })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (page) => {
@@ -262,7 +280,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
       });
   }
 
-  private loadRecorrencias(): void {
+  private loadRecorrencias(page = this.paginaAtual()): void {
     this.loading.set(true);
     this.errorMessage.set('');
 
@@ -270,6 +288,8 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
 
     this.recorrentesApi
       .listAll({
+        page,
+        size: PageSize.DEFAULT,
         query: filters.query,
         frequencia: filters.frequencia,
         tipoMovimentacao: filters.tipoMovimentacao,
@@ -277,11 +297,24 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (page) => {
+          const totalPages = page.page.totalPages ?? page.totalPages ?? 0;
+          const totalElements = page.page.totalElements ?? page.totalElements ?? 0;
+
+          if (page.content.length === 0 && totalPages > 0 && this.paginaAtual() >= totalPages) {
+            this.loadRecorrencias(totalPages - 1);
+            return;
+          }
+
           this.recorrencias.set(page.content);
+          this.paginaAtual.set(page.page.number ?? page.number ?? 0);
+          this.totalPages.set(totalPages);
+          this.totalElements.set(totalElements);
           this.loading.set(false);
         },
         error: (err) => {
           this.errorMessage.set(mapApiError(err));
+          this.totalPages.set(0);
+          this.totalElements.set(0);
           this.loading.set(false);
         },
       });

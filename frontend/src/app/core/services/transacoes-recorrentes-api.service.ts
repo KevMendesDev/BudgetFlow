@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../config/api.config';
 import { NaturezaFinanceira } from '../models/natureza-financeira.models';
+import { PageSize } from '../models/pagination.models';
 import {
   Frequencia,
   TransacaoRecorrentePageResponse,
@@ -16,14 +17,16 @@ export class TransacoesRecorrentesApiService {
   private readonly http = inject(HttpClient);
 
   listAll(filters?: {
+    page?: number;
+    size?: number;
     query?: string;
     frequencia?: Frequencia | '';
     tipoMovimentacao?: NaturezaFinanceira | '';
   }): Observable<TransacaoRecorrentePageResponse> {
     let params = new HttpParams({
       fromObject: {
-        page: '0',
-        size: '200',
+        page: String(filters?.page ?? 0),
+        size: String(filters?.size ?? PageSize.LARGE),
         sort: 'createdAt,desc',
       },
     });

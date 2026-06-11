@@ -8,16 +8,23 @@ import {
   PeriodoFinanceiroRequest,
   PeriodoFinanceiroResponse,
 } from '../models/periodo-financeiro.models';
+import { PageSize } from '../models/pagination.models';
 
 @Injectable({ providedIn: 'root' })
 export class PeriodosFinanceirosApiService {
   private readonly http = inject(HttpClient);
 
-  listAll(filters?: { q?: string; dataInicio?: string; dataFim?: string }): Observable<PeriodoFinanceiroPageResponse> {
+  listAll(filters?: {
+    page?: number;
+    size?: number;
+    q?: string;
+    dataInicio?: string;
+    dataFim?: string;
+  }): Observable<PeriodoFinanceiroPageResponse> {
     let params = new HttpParams({
       fromObject: {
-        page: '0',
-        size: '200',
+        page: String(filters?.page ?? 0),
+        size: String(filters?.size ?? PageSize.LARGE),
         sort: 'dataInicio,desc',
       },
     });

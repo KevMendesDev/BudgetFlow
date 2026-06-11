@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
+import { PageSize } from '../../../../core/models/pagination.models';
 import { PeriodoFinanceiroResponse } from '../../../../core/models/periodo-financeiro.models';
 import { PeriodosFinanceirosApiService } from '../../../../core/services/periodos-financeiros-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
@@ -34,6 +35,9 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
   readonly filtrosAbertos = signal(isDesktopViewport());
+  readonly paginaAtual = signal(0);
+  readonly totalPages = signal(0);
+  readonly totalElements = signal(0);
   readonly fieldError = fieldError;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
@@ -48,7 +52,7 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadPeriodos();
+    this.loadPeriodos(0);
 
     this.filtersForm.valueChanges
       .pipe(
@@ -56,7 +60,7 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
         distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(() => this.loadPeriodos());
+      .subscribe(() => this.loadPeriodos(0));
   }
 
   toggleFiltros(): void {
@@ -64,12 +68,12 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
   }
 
   applyFilters(): void {
-    this.loadPeriodos();
+    this.loadPeriodos(0);
   }
 
   clearFilters(): void {
     this.filtersForm.setValue({ q: '', dataInicio: '', dataFim: '' }, { emitEvent: false });
-    this.loadPeriodos();
+    this.loadPeriodos(0);
   }
 
   openCreateModal(): void {
@@ -119,7 +123,7 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
         this.submitting.set(false);
         this.toast.show(editingId ? 'Período atualizado.' : 'Período criado.', 'success');
         this.closeModal();
-        this.loadPeriodos();
+        this.loadPeriodos(this.paginaAtual());
       },
       error: (err) => {
         this.modalErrorMessage.set(mapApiError(err));
@@ -149,7 +153,7 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
         next: () => {
           this.deletingId.set(null);
           this.toast.show('Período excluído.', 'success');
-          this.loadPeriodos();
+          this.loadPeriodos(this.paginaAtual());
         },
         error: () => {
           this.deletingId.set(null);
@@ -157,7 +161,21 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
       });
   }
 
-  private loadPeriodos(): void {
+  goToPreviousPage(): void {
+    const atual = this.paginaAtual();
+    if (atual > 0) {
+      this.loadPeriodos(atual - 1);
+    }
+  }
+
+  goToNextPage(): void {
+    const atual = this.paginaAtual();
+    if (atual + 1 < this.totalPages()) {
+      this.loadPeriodos(atual + 1);
+    }
+  }
+
+  private loadPeriodos(page = this.paginaAtual()): void {
     this.loading.set(true);
     this.errorMessage.set('');
 
@@ -165,6 +183,8 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
 
     this.periodosApi
       .listAll({
+        page,
+        size: PageSize.DEFAULT,
         q: filters.q,
         dataInicio: filters.dataInicio,
         dataFim: filters.dataFim,
@@ -172,11 +192,24 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (page) => {
+          const totalPages = page.page.totalPages ?? page.totalPages ?? 0;
+          const totalElements = page.page.totalElements ?? page.totalElements ?? 0;
+
+          if (page.content.length === 0 && totalPages > 0 && this.paginaAtual() >= totalPages) {
+            this.loadPeriodos(totalPages - 1);
+            return;
+          }
+
           this.periodos.set(page.content);
+          this.paginaAtual.set(page.page.number ?? page.number ?? 0);
+          this.totalPages.set(totalPages);
+          this.totalElements.set(totalElements);
           this.loading.set(false);
         },
         error: (err) => {
           this.errorMessage.set(mapApiError(err));
+          this.totalPages.set(0);
+          this.totalElements.set(0);
           this.loading.set(false);
         },
       });

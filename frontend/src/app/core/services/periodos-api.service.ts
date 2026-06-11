@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../config/api.config';
-import { PageResponse } from '../models/pagination.models';
+import { PageResponse, PageSize } from '../models/pagination.models';
 import { PeriodoFinanceiro } from '../models/periodo-financeiro.models';
 
 @Injectable({ providedIn: 'root' })
@@ -14,7 +14,7 @@ export class PeriodosApiService {
     const params = new HttpParams({
       fromObject: {
         page: '0',
-        size: '200',
+        size: String(PageSize.LARGE),
         sort: 'dataInicio,desc',
       },
     });

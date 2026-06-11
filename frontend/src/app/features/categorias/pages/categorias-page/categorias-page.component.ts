@@ -12,6 +12,7 @@ import {
   TIPOS_CATEGORIA,
 } from '../../../../core/models/categoria.models';
 import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.models';
+import { PageSize } from '../../../../core/models/pagination.models';
 import { CategoriasApiService } from '../../../../core/services/categorias-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
@@ -41,6 +42,9 @@ export class CategoriasPageComponent implements OnInit {
   readonly errorMessage = signal('');
   readonly modalErrorMessage = signal('');
   readonly filtrosAbertos = signal(isDesktopViewport());
+  readonly paginaAtual = signal(0);
+  readonly totalPages = signal(0);
+  readonly totalElements = signal(0);
   readonly classificacoes = CLASSIFICACOES;
   readonly tiposCategoria = TIPOS_CATEGORIA;
   readonly fieldError = fieldError;
@@ -66,7 +70,7 @@ export class CategoriasPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadCategorias();
+    this.loadCategorias(0);
 
     this.filtersForm.valueChanges
       .pipe(
@@ -74,7 +78,7 @@ export class CategoriasPageComponent implements OnInit {
         distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(() => this.loadCategorias());
+      .subscribe(() => this.loadCategorias(0));
   }
 
   toggleFiltros(): void {
@@ -82,12 +86,12 @@ export class CategoriasPageComponent implements OnInit {
   }
 
   applyFilters(): void {
-    this.loadCategorias();
+    this.loadCategorias(0);
   }
 
   clearFilters(): void {
     this.filtersForm.setValue({ q: '', classificacao: '', tipoCategoria: '' }, { emitEvent: false });
-    this.loadCategorias();
+    this.loadCategorias(0);
   }
 
   submit(): void {
@@ -119,7 +123,7 @@ export class CategoriasPageComponent implements OnInit {
         this.submitting.set(false);
         this.toast.show(editingId ? 'Categoria atualizada.' : 'Categoria criada.', 'success');
         this.closeModal();
-        this.loadCategorias();
+        this.loadCategorias(this.paginaAtual());
       },
       error: (err) => {
         this.modalErrorMessage.set(mapApiError(err));
@@ -173,7 +177,7 @@ export class CategoriasPageComponent implements OnInit {
             this.resetForm();
           }
 
-          this.loadCategorias();
+          this.loadCategorias(this.paginaAtual());
         },
         error: () => {
           this.deletingId.set(null);
@@ -196,7 +200,21 @@ export class CategoriasPageComponent implements OnInit {
     return this.form.controls.tipoCategoria.value === NaturezaFinanceira.DESPESA;
   }
 
-  private loadCategorias(): void {
+  goToPreviousPage(): void {
+    const atual = this.paginaAtual();
+    if (atual > 0) {
+      this.loadCategorias(atual - 1);
+    }
+  }
+
+  goToNextPage(): void {
+    const atual = this.paginaAtual();
+    if (atual + 1 < this.totalPages()) {
+      this.loadCategorias(atual + 1);
+    }
+  }
+
+  private loadCategorias(page = this.paginaAtual()): void {
     this.loading.set(true);
     this.errorMessage.set('');
 
@@ -204,6 +222,8 @@ export class CategoriasPageComponent implements OnInit {
 
     this.categoriasApi
       .listAll({
+        page,
+        size: PageSize.DEFAULT,
         q: filters.q,
         classificacao: filters.classificacao,
         tipoCategoria: filters.tipoCategoria,
@@ -211,11 +231,24 @@ export class CategoriasPageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (page) => {
+          const totalPages = page.page.totalPages ?? page.totalPages ?? 0;
+          const totalElements = page.page.totalElements ?? page.totalElements ?? 0;
+
+          if (page.content.length === 0 && totalPages > 0 && this.paginaAtual() >= totalPages) {
+            this.loadCategorias(totalPages - 1);
+            return;
+          }
+
           this.categorias.set(page.content);
+          this.paginaAtual.set(page.page.number ?? page.number ?? 0);
+          this.totalPages.set(totalPages);
+          this.totalElements.set(totalElements);
           this.loading.set(false);
         },
         error: (err) => {
           this.errorMessage.set(mapApiError(err));
+          this.totalPages.set(0);
+          this.totalElements.set(0);
           this.loading.set(false);
         },
       });

@@ -1,3 +1,9 @@
+export enum PageSize {
+  DEFAULT = 15,
+  LARGE = 200,
+  BULK = 2000,
+}
+
 export interface PageResponse<T> {
   content: T[];
   totalElements: number;

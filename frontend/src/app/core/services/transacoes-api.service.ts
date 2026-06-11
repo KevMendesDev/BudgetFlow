@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../config/api.config';
 import { NaturezaFinanceira } from '../models/natureza-financeira.models';
-import { PageResponse } from '../models/pagination.models';
+import { PageResponse, PageSize } from '../models/pagination.models';
 import {
   TipoPagamento,
   TransacaoRequest,
@@ -35,7 +35,7 @@ export class TransacoesApiService {
         dataInicio,
         dataFim,
         page: '0',
-        size: '2000',
+        size: String(PageSize.BULK),
         sort: 'data,desc',
       },
     });
@@ -50,7 +50,7 @@ export class TransacoesApiService {
         dataInicio: params.dataInicio,
         dataFim: params.dataFim,
         page: String(params.page ?? 0),
-        size: String(params.size ?? 20),
+        size: String(params.size ?? PageSize.DEFAULT),
         sort: 'data,desc',
       },
     });

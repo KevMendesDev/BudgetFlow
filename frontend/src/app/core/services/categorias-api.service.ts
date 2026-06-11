@@ -10,20 +10,23 @@ import {
   ClassificacaoCategoria,
 } from '../models/categoria.models';
 import { NaturezaFinanceira } from '../models/natureza-financeira.models';
+import { PageSize } from '../models/pagination.models';
 
 @Injectable({ providedIn: 'root' })
 export class CategoriasApiService {
   private readonly http = inject(HttpClient);
 
   listAll(filters?: {
+    page?: number;
+    size?: number;
     q?: string;
     classificacao?: ClassificacaoCategoria | '';
     tipoCategoria?: NaturezaFinanceira | '';
   }): Observable<CategoriaPageResponse> {
     let params = new HttpParams({
       fromObject: {
-        page: '0',
-        size: '200',
+        page: String(filters?.page ?? 0),
+        size: String(filters?.size ?? PageSize.LARGE),
         sort: 'nome,asc',
       },
     });
