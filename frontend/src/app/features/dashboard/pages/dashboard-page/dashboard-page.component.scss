@@ -18,7 +18,7 @@
 
 .error {
   margin-top: 1rem;
-  color: #ff9d9d;
+  color: var(--danger-text);
 }
 
 .loading {
@@ -74,7 +74,7 @@
   width: 100%;
   border: 1px solid var(--line);
   border-radius: var(--control-radius);
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: var(--surface-2);
   color: var(--text);
   min-height: var(--control-height);
   padding: var(--control-padding-y) var(--control-padding-x);
@@ -92,7 +92,7 @@
   border: 1px solid var(--line);
   border-radius: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-2);
 
   p {
     margin: 0;
@@ -111,11 +111,11 @@
 }
 
 .receita strong {
-  color: #5de7ad;
+  color: var(--success-text);
 }
 
 .despesa strong {
-  color: #ff8b8b;
+  color: var(--danger-text);
 }
 
 

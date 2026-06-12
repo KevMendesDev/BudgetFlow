@@ -19,7 +19,7 @@
   margin-top: 1rem;
   border: 1px solid var(--line);
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-3);
   padding: 1rem;
 
   ul {
@@ -32,7 +32,7 @@
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    border: 1px solid rgba(174, 185, 210, 0.2);
+    border: 1px solid var(--row-line);
     border-radius: 0.8rem;
     padding: 0.75rem;
   }
@@ -57,15 +57,15 @@
 }
 
 .tx-status-badge--pendente {
-  background: rgba(255, 91, 91, 0.16);
-  border-color: rgba(255, 91, 91, 0.28);
-  color: #ff8b8b;
+  background: var(--danger-surface);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
 }
 
 .tx-status-badge--executado {
-  background: rgba(18, 113, 201, 0.16);
-  border-color: rgba(18, 113, 201, 0.28);
-  color: #7e9aed;
+  background: var(--info-surface);
+  border-color: var(--info-border);
+  color: var(--info-text-soft);
 }
 
 .head-actions {
@@ -96,17 +96,17 @@
 
 .error {
   margin-top: 0.75rem;
-  color: #ff9d9d;
+  color: var(--danger-text);
 }
 
 .btn-primary {
   border: 1px solid var(--brand-green);
   background: linear-gradient(130deg, var(--brand-green), #6af0b2);
-  color: #06130c;
+  color: var(--brand-contrast);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-3);
 }
 
 .btn-icon {
@@ -120,7 +120,7 @@
 
   &:hover {
     color: var(--text);
-    border-color: rgba(174, 185, 210, 0.45);
+    border-color: var(--line-strong);
   }
 
   svg {
@@ -130,8 +130,8 @@
 }
 
 .btn-inline.danger {
-  border-color: rgba(255, 155, 155, 0.35);
-  color: #ffb1b1;
+  border-color: var(--danger-border);
+  color: var(--danger-text-soft);
 }
 
 .btn-inline:disabled {
@@ -146,17 +146,17 @@
 }
 
 span.receita {
-  color: #5de7ad;
+  color: var(--success-text);
   font-weight: 600;
 }
 
 span.despesa {
-  color: #ff8b8b;
+  color: var(--danger-text);
   font-weight: 600;
 }
 
 .skeleton-list li {
-  border-color: rgba(174, 185, 210, 0.16);
+  border-color: var(--row-line-soft);
 }
 
 @media (max-width: 800px) {

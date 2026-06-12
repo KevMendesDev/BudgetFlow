@@ -1,6 +1,8 @@
 import { loadRuntimeConfig } from './app/core/config/runtime-config';
+import { applyInitialTheme } from './app/core/services/theme.service';
 
 async function main(): Promise<void> {
+  applyInitialTheme();
   await loadRuntimeConfig();
 
   const [{ bootstrapApplication }, { appConfig }, { App }] = await Promise.all([

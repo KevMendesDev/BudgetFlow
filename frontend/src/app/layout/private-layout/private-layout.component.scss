@@ -14,6 +14,7 @@
   min-height: 100dvh;
   display: grid;
   grid-template-columns: 17rem minmax(0, 1fr);
+  align-items: start;
 }
 
 .private-shell.collapsed {
@@ -21,8 +22,12 @@
 }
 
 .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
   border-right: 1px solid var(--line);
-  background: rgba(8, 12, 18, 0.88);
+  background: var(--surface-sidebar);
   backdrop-filter: blur(8px);
   padding: 1.15rem 0.9rem;
   display: flex;
@@ -72,24 +77,21 @@
 .collapse-btn {
   border: 1px solid var(--line);
   border-radius: 0.55rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   color: var(--muted-text);
   padding: 0.2rem 0.45rem;
   cursor: pointer;
 }
 
-.collapse-text {
-  display: none;
-}
-
 .collapse-icon {
-  display: inline-block;
   font-size: 1.05rem;
   line-height: 1;
 }
 
 .menu {
   display: grid;
+  align-content: start;
+  flex: 1;
   gap: 0.45rem;
 }
 
@@ -102,7 +104,7 @@
   border: 1px solid transparent;
   border-radius: 0.65rem;
   padding: 0.58rem 0.7rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-1);
 }
 
 .item-icon {
@@ -126,7 +128,7 @@
 }
 
 .menu a.active {
-  color: #06130c;
+  color: var(--brand-contrast);
   border-color: transparent;
   background: linear-gradient(130deg, var(--brand-green), #6af0b2);
 }
@@ -138,7 +140,7 @@
   justify-content: center;
   border: 1px solid var(--line);
   border-radius: 0.7rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-2);
   color: var(--text);
   padding: 0.58rem 0.95rem;
   cursor: pointer;
@@ -161,13 +163,13 @@
   justify-content: center;
 }
 
-.sidebar.collapsed .brand-main {
-  justify-content: center;
-}
-
 .sidebar.collapsed .menu a {
   justify-content: center;
   padding-inline: 0.5rem;
+}
+
+.sidebar.collapsed .sidebar-theme {
+  display: none;
 }
 
 .sidebar.collapsed .logout {
@@ -185,8 +187,10 @@
     border-bottom: 1px solid var(--line);
     position: sticky;
     top: 0;
+    height: auto;
     z-index: 10;
-    background: rgba(8, 12, 18, 0.95);
+    overflow: visible;
+    background: var(--surface-sidebar-strong);
   }
 
   .menu {
@@ -226,20 +230,13 @@
     padding: 0.25rem 0.6rem;
   }
 
-  .collapse-text {
-    display: none;
-  }
-
-  .collapse-icon {
-    display: inline-block;
-  }
-
   .logout {
     margin-top: 0.35rem;
   }
 
   .sidebar.collapsed .menu,
-  .sidebar.collapsed .logout {
+  .sidebar.collapsed .logout,
+  .sidebar.collapsed .sidebar-theme {
     display: none;
   }
 }
