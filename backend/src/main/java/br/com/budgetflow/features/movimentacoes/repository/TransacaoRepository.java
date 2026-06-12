@@ -28,6 +28,10 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long>, Jpa
 
     long countByTransacaoRecorrenteIdAndUserIdAndIdNot(Long transacaoRecorrenteId, Long userId, Long id);
 
+    long countByTransacaoRecorrenteIdAndUserIdAndDataLessThanEqual(Long transacaoRecorrenteId, Long userId, LocalDate data);
+
+    long countByTransacaoRecorrenteIdAndUserIdAndDataLessThanEqualAndIdNot(Long transacaoRecorrenteId, Long userId, LocalDate data, Long id);
+
     boolean existsByCategoriaIdAndUserId(Long categoriaId, Long userId);
 
     @Query("""
@@ -68,4 +72,8 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long>, Jpa
     boolean existsByTransacaoRecorrenteIdAndUserId(Long transacaoRecorrenteId, Long userId);
 
     Optional<Transacao> findByIdAndUserId(Long id, Long userId);
+
+    Optional<Transacao> findFirstByTransacaoRecorrenteIdAndUserIdOrderByDataDescIdDesc(Long transacaoRecorrenteId, Long userId);
+
+    Optional<Transacao> findFirstByTransacaoRecorrenteIdAndUserIdAndIdNotOrderByDataDescIdDesc(Long transacaoRecorrenteId, Long userId, Long id);
 }

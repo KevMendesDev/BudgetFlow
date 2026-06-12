@@ -1,7 +1,6 @@
 package br.com.budgetflow.common.enums;
 
 public enum Frequencia {
-    DIARIO("Diário"),
     SEMANAL("Semanal"),
     MENSAL("Mensal"),
     ANUAL("Anual");

@@ -1,13 +1,15 @@
 import { PageResponse } from './pagination.models';
 
 export interface PeriodoFinanceiroRequest {
-  dataInicio: string;
-  dataFim: string;
+  mes: number;
+  ano: number;
 }
 
 export interface PeriodoFinanceiroResponse {
   id: number;
   userId: number;
+  mes: number;
+  ano: number;
   dataInicio: string;
   dataFim: string;
   createdAt: string;

@@ -153,6 +153,13 @@
                 @if (parcelaInfo(tx)) {
                   • Parcela {{ parcelaInfo(tx) }}
                 }
+                <span
+                  class="tx-status-badge"
+                  [class.tx-status-badge--pendente]="tx.status === 'PENDENTE'"
+                  [class.tx-status-badge--executado]="tx.status === 'EXECUTADO'"
+                >
+                  Pagamento {{ statusLabels[tx.status] }}
+                </span>
               </small>
             </div>
             <div class="grid w-full justify-items-stretch gap-2 min-[801px]:w-auto min-[801px]:justify-items-end">

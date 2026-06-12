@@ -1,11 +1,16 @@
 package br.com.budgetflow.features.periodos.mapper;
 
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import br.com.budgetflow.common.service.RelacionamentoChecker;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.periodos.dto.PeriodoFinanceiroRequestDTO;
 import br.com.budgetflow.features.periodos.dto.PeriodoFinanceiroResponseDTO;
-import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
 public abstract class PeriodoFinanceiroMapper {
@@ -16,12 +21,16 @@ public abstract class PeriodoFinanceiroMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "user", ignore = true)
+    @Mapping(target = "dataInicio", ignore = true)
+    @Mapping(target = "dataFim", ignore = true)
     public abstract PeriodoFinanceiro toEntity(PeriodoFinanceiroRequestDTO dto);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "user", ignore = true)
+    @Mapping(target = "dataInicio", ignore = true)
+    @Mapping(target = "dataFim", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     public abstract void updatePeriodoFromDto(PeriodoFinanceiroRequestDTO dto, @MappingTarget PeriodoFinanceiro entity);
 
@@ -37,8 +46,8 @@ public abstract class PeriodoFinanceiroMapper {
     public PeriodoFinanceiroResponseDTO toResponseDTO(PeriodoFinanceiro periodoFinanceiro, boolean possuiRelacionamentos) {
         PeriodoFinanceiroResponseDTO periodoFinanceiroBase = toResponseDTOBase(periodoFinanceiro);
         return new PeriodoFinanceiroResponseDTO(
-            periodoFinanceiroBase.id(), periodoFinanceiroBase.userId(), periodoFinanceiroBase.dataInicio(), 
-            periodoFinanceiroBase.dataFim(), periodoFinanceiroBase.createdAt(), periodoFinanceiroBase.updatedAt(), 
+            periodoFinanceiroBase.id(), periodoFinanceiroBase.userId(), periodoFinanceiroBase.mes(), periodoFinanceiroBase.ano(),
+            periodoFinanceiroBase.dataInicio(), periodoFinanceiroBase.dataFim(), periodoFinanceiroBase.createdAt(), periodoFinanceiroBase.updatedAt(),
             possuiRelacionamentos
         );
     }

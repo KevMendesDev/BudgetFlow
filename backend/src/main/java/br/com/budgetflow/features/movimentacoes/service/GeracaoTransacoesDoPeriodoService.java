@@ -1,17 +1,20 @@
 package br.com.budgetflow.features.movimentacoes.service;
 
-import br.com.budgetflow.features.movimentacoes.domain.Transacao;
-import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
-import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
-import br.com.budgetflow.features.movimentacoes.repository.TransacaoRepository;
-import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
-import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.budgetflow.common.enums.StatusTransacao;
+import br.com.budgetflow.features.movimentacoes.domain.Transacao;
+import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
+import br.com.budgetflow.features.movimentacoes.dto.SincronizacaoRecorrentesResponseDTO;
+import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
+import br.com.budgetflow.features.movimentacoes.repository.TransacaoRepository;
+import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
+import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 
 @Service
 public class GeracaoTransacoesDoPeriodoService {
@@ -27,68 +30,97 @@ public class GeracaoTransacoesDoPeriodoService {
     }
 
     @Transactional
-    public List<Transacao> gerarParaPeriodo(PeriodoFinanceiro periodo) {
+    public SincronizacaoRecorrentesResponseDTO gerarParaPeriodo(PeriodoFinanceiro periodo) {
         Long userId = periodo.getUser().getId();
         List<TransacaoRecorrente> recorrentes = recorrenteRepository.findAllByUserId(userId);
-        List<Transacao> geradas = new ArrayList<>();
-
-        List<Transacao> pendentes = new ArrayList<>();
+        List<Transacao> transacoesPendentes = new ArrayList<>();
+        List<String> recorrentesPendentes = new ArrayList<>();
+        int ignoradasSemValor = 0;
 
         for (TransacaoRecorrente recorrente : recorrentes) {
-            List<LocalDate> datas = calcularDatas(recorrente, periodo);
-            for (LocalDate data : datas) {
-                if (!transacaoRepository.existsByTransacaoRecorrenteIdAndDataAndUserId(recorrente.getId(), data, userId)) {
-                    Transacao transacao = new Transacao();
-                    transacao.setUser(recorrente.getUser());
-                    transacao.setCategoria(recorrente.getCategoria());
-                    transacao.setPeriodo(periodo);
-                    transacao.setTransacaoRecorrente(recorrente);
-                    transacao.setDescricao(recorrente.getDescricao());
-                    transacao.setValor(recorrente.getValor());
-                    transacao.setTipoMovimentacao(recorrente.getTipoMovimentacao());
-                    transacao.setTipoPagamento(recorrente.getTipoPagamento());
-                    transacao.setData(data);
-                    pendentes.add(transacao);
+            if (recorrente.getValor() == null) {
+                ignoradasSemValor++;
+                continue;
+            }
+
+            ResultadoCalculo resultado = calcularDatas(recorrente, periodo, userId);
+            if (resultado.pendenteEmPeriodoAnterior()) {
+                recorrentesPendentes.add(recorrente.getDescricao());
+                continue;
+            }
+
+            for (LocalDate data : resultado.datas()) {
+                if (transacaoRepository.existsByTransacaoRecorrenteIdAndDataAndUserId(recorrente.getId(), data, userId)) {
+                    continue;
                 }
+
+                Transacao transacao = new Transacao();
+                transacao.setUser(recorrente.getUser());
+                transacao.setCategoria(recorrente.getCategoria());
+                transacao.setPeriodo(periodo);
+                transacao.setTransacaoRecorrente(recorrente);
+                transacao.setDescricao(recorrente.getDescricao());
+                transacao.setValor(recorrente.getValor());
+                transacao.setTipoMovimentacao(recorrente.getTipoMovimentacao());
+                transacao.setTipoPagamento(recorrente.getTipoPagamento());
+                transacao.setData(data);
+                transacao.setStatus(StatusTransacao.PENDENTE);
+                transacoesPendentes.add(transacao);
             }
         }
 
-        geradas.addAll(transacaoRepository.saveAll(pendentes));
-        return geradas;
+        List<Transacao> transacoesGeradas = transacaoRepository.saveAll(transacoesPendentes);
+        String mensagem = "Sincronização concluída: "
+                + transacoesGeradas.size() + " transações geradas, "
+                + ignoradasSemValor + " recorrentes sem valor e "
+                + recorrentesPendentes.size() + " pendentes em períodos anteriores.";
+
+        return new SincronizacaoRecorrentesResponseDTO(
+                transacoesGeradas.size(),
+                ignoradasSemValor,
+                recorrentesPendentes,
+                mensagem
+        );
     }
 
-    private List<LocalDate> calcularDatas(TransacaoRecorrente recorrente, PeriodoFinanceiro periodo) {
+    private ResultadoCalculo calcularDatas(TransacaoRecorrente recorrente, PeriodoFinanceiro periodo, Long userId) {
+        LocalDate proximaEsperada = transacaoRepository
+                .findFirstByTransacaoRecorrenteIdAndUserIdOrderByDataDescIdDesc(recorrente.getId(), userId)
+                .map(transacao -> RecorrenciaUtils.calcularProximaDataMinima(transacao.getData(), recorrente.getFrequencia()))
+                .orElse(recorrente.getDataInicio());
+
+        if (proximaEsperada.isBefore(periodo.getDataInicio())) {
+            return new ResultadoCalculo(List.of(), true);
+        }
+
+        if (proximaEsperada.isAfter(periodo.getDataFim())) {
+            return new ResultadoCalculo(List.of(), false);
+        }
+
         List<LocalDate> datas = new ArrayList<>();
-        LocalDate periodoInicio = periodo.getDataInicio();
-        LocalDate periodoFim = periodo.getDataFim();
-        LocalDate recorrenteInicio = recorrente.getDataInicio();
-        LocalDate recorrenteFim = recorrente.getDataFim();
-
-        long indiceInicial = 0;
-        long parcelasJaGeradas = transacaoRepository.countByTransacaoRecorrenteId(recorrente.getId());
-        if (parcelasJaGeradas > 0) {
-            indiceInicial = parcelasJaGeradas;
-        }
-
+        LocalDate dataAtual = proximaEsperada;
         Integer totalParcelas = recorrente.getTotalParcelas();
-        long limiteOcorrencias = totalParcelas == null ? Long.MAX_VALUE : totalParcelas;
+        long parcelasLancadas = transacaoRepository.countByTransacaoRecorrenteIdAndUserId(recorrente.getId(), userId);
 
-        for (long i = indiceInicial; i < limiteOcorrencias; i++) {
-            LocalDate dataOcorrencia = RecorrenciaUtils.calcularDataOcorrencia(recorrenteInicio, recorrente.getFrequencia(), i);
-
-            if (recorrenteFim != null && dataOcorrencia.isAfter(recorrenteFim)) {
+        while (!dataAtual.isAfter(periodo.getDataFim())) {
+            if (recorrente.getDataFim() != null && dataAtual.isAfter(recorrente.getDataFim())) {
                 break;
             }
 
-            if (dataOcorrencia.isAfter(periodoFim)) {
+            if (totalParcelas != null && parcelasLancadas + datas.size() >= totalParcelas) {
                 break;
             }
 
-            if (!dataOcorrencia.isBefore(periodoInicio) && !dataOcorrencia.isBefore(recorrenteInicio)) {
-                datas.add(dataOcorrencia);
+            if (!dataAtual.isBefore(periodo.getDataInicio())) {
+                datas.add(dataAtual);
             }
+
+            dataAtual = RecorrenciaUtils.calcularProximaDataMinima(dataAtual, recorrente.getFrequencia());
         }
 
-        return datas;
+        return new ResultadoCalculo(datas, false);
+    }
+
+    private record ResultadoCalculo(List<LocalDate> datas, boolean pendenteEmPeriodoAnterior) {
     }
 }

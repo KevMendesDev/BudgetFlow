@@ -1,13 +1,26 @@
 package br.com.budgetflow.features.movimentacoes.domain;
 
+import java.time.LocalDate;
+
+import br.com.budgetflow.common.enums.StatusTransacao;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -39,6 +52,10 @@ public class Transacao extends Movimentacao {
 
     @Column(nullable = false)
     private LocalDate data;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private StatusTransacao status;
 
     @Override
     public int hashCode() {

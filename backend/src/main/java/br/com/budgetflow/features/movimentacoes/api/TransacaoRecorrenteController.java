@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,9 +19,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/transacoes-recorrentes")
@@ -56,6 +60,15 @@ public class TransacaoRecorrenteController {
     public ResponseEntity<TransacaoRecorrenteResponseDTO> findById(@PathVariable Long id) {
         TransacaoRecorrenteResponseDTO transacaoRecorrente = transacaoRecorrenteService.findById(id);
         return ResponseEntity.ok(transacaoRecorrente);
+    }
+
+    @GetMapping("/disponiveis-para-lancamento")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<List<TransacaoRecorrenteResponseDTO>> findDisponiveisParaLancamento(
+            @RequestParam Long periodoId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data
+    ) {
+        return ResponseEntity.ok(transacaoRecorrenteService.findDisponiveisParaLancamento(periodoId, data));
     }
 
     @PutMapping("/{id}")

@@ -1,5 +1,17 @@
 package br.com.budgetflow.features.periodos.service;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.budgetflow.common.exceptions.ConflictException;
 import br.com.budgetflow.common.exceptions.EntityHasRelationshipsException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.common.service.RelacionamentoChecker;
@@ -13,16 +25,6 @@ import br.com.budgetflow.features.periodos.repository.specification.PeriodoFinan
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.service.UserService;
 import br.com.budgetflow.security.SecurityUtils;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Set;
 
 @Service
 public class PeriodoFinanceiroService {
@@ -46,12 +48,16 @@ public class PeriodoFinanceiroService {
 
     @Transactional
     public PeriodoFinanceiroResponseDTO create(PeriodoFinanceiroRequestDTO periodoDTO) {
-        DateRangeUtils.validateRange(periodoDTO.dataInicio(), periodoDTO.dataFim());
-
-        User user = this.userService.findById(SecurityUtils.currentUserId());
+        Long userId = SecurityUtils.currentUserId();
+        User user = this.userService.findById(userId);
+        LocalDate dataInicio = buildDataInicio(periodoDTO);
+        LocalDate dataFim = buildDataFim(periodoDTO);
+        validateDuplicidade(userId, dataInicio, null);
 
         PeriodoFinanceiro periodo = periodoFinanceiroMapper.toEntity(periodoDTO);
         periodo.setUser(user);
+        periodo.setDataInicio(dataInicio);
+        periodo.setDataFim(dataFim);
 
         return periodoFinanceiroMapper.toResponseDTO(periodoFinanceiroRepository.save(periodo));
     }
@@ -100,16 +106,19 @@ public class PeriodoFinanceiroService {
 
     @Transactional
     public PeriodoFinanceiroResponseDTO update(Long id, PeriodoFinanceiroRequestDTO periodoDTO) {
-        DateRangeUtils.validateRange(periodoDTO.dataInicio(), periodoDTO.dataFim());
-
         Long userId = SecurityUtils.currentUserId();
         PeriodoFinanceiro periodo = periodoFinanceiroRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Período financeiro não encontrado"));
+        LocalDate dataInicio = buildDataInicio(periodoDTO);
+        LocalDate dataFim = buildDataFim(periodoDTO);
+        validateDuplicidade(userId, dataInicio, id);
 
         User user = this.userService.findById(userId);
 
         periodoFinanceiroMapper.updatePeriodoFromDto(periodoDTO, periodo);
         periodo.setUser(user);
+        periodo.setDataInicio(dataInicio);
+        periodo.setDataFim(dataFim);
 
         return periodoFinanceiroMapper.toResponseDTO(periodoFinanceiroRepository.save(periodo));
     }
@@ -149,5 +158,23 @@ public class PeriodoFinanceiroService {
                 .findFirstByUserIdAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(userId, LocalDate.now(), LocalDate.now())
                 .map(PeriodoFinanceiro::getId)
                 .orElse(null);
+    }
+
+    private LocalDate buildDataInicio(PeriodoFinanceiroRequestDTO periodoDTO) {
+        return YearMonth.of(periodoDTO.ano(), periodoDTO.mes()).atDay(1);
+    }
+
+    private LocalDate buildDataFim(PeriodoFinanceiroRequestDTO periodoDTO) {
+        return YearMonth.of(periodoDTO.ano(), periodoDTO.mes()).atEndOfMonth();
+    }
+
+    private void validateDuplicidade(Long userId, LocalDate dataInicio, Long currentId) {
+        boolean duplicado = currentId == null
+                ? periodoFinanceiroRepository.existsByUserIdAndDataInicio(userId, dataInicio)
+                : periodoFinanceiroRepository.existsByUserIdAndDataInicioAndIdNot(userId, dataInicio, currentId);
+
+        if (duplicado) {
+            throw new ConflictException("Já existe um período financeiro para este mês e ano");
+        }
     }
 }

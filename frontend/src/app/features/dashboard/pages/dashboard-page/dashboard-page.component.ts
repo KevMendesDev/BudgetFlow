@@ -12,7 +12,8 @@ import { TransacoesApiService } from '../../../../core/services/transacoes-api.s
 import { TransacoesRecorrentesApiService } from '../../../../core/services/transacoes-recorrentes-api.service';
 import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
-import { formatDate, toIsoDate } from '../../../../shared/utils/format.util';
+import { formatMonthYear, toIsoDate } from '../../../../shared/utils/format.util';
+import { ToastService } from '../../../../core/services/toast.service';
 import { DashboardTransacoesComponent } from '../../components/dashboard-transacoes/dashboard-transacoes.component';
 import { DashboardResumoCategoriasComponent } from '../../components/dashboard-resumo-categorias/dashboard-resumo-categorias.component';
 
@@ -28,6 +29,7 @@ export class DashboardPageComponent implements OnInit {
   private readonly session = inject(SessionService);
   private readonly transacoesApi = inject(TransacoesApiService);
   private readonly transacoesRecorrentesApi = inject(TransacoesRecorrentesApiService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly user = computed(() => this.session.user());
@@ -67,10 +69,8 @@ export class DashboardPageComponent implements OnInit {
     this.loadPeriodos();
   }
 
-  formatDate = formatDate;
-
   formatPeriodo(periodo: PeriodoFinanceiro): string {
-    return `${formatDate(periodo.dataInicio)} até ${formatDate(periodo.dataFim)}`;
+    return formatMonthYear(periodo.mes, periodo.ano);
   }
 
   onPeriodoChange(rawPeriodoId: string): void {
@@ -89,6 +89,27 @@ export class DashboardPageComponent implements OnInit {
 
   onTransacoesChanged(): void {
     this.reloadSelectedPeriodo();
+  }
+
+  onSincronizarRecorrentes(): void {
+    const periodo = this.selectedPeriodo();
+    if (!periodo) {
+      return;
+    }
+
+    this.transacoesApi
+      .sincronizarRecorrentes(periodo.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.toast.show(response.mensagem, 'success');
+          this.reloadSelectedPeriodo();
+          this.loadRecorrentes();
+        },
+        error: (err) => {
+          this.errorMessage.set(mapApiError(err));
+        },
+      });
   }
 
   private loadPeriodos(): void {

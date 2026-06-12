@@ -1,6 +1,7 @@
 package br.com.budgetflow.features.movimentacoes.api;
 
 import br.com.budgetflow.features.movimentacoes.criteria.TransacaoFilterCriteria;
+import br.com.budgetflow.features.movimentacoes.dto.SincronizacaoRecorrentesResponseDTO;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoRequestDTO;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoResponseDTO;
 import br.com.budgetflow.features.movimentacoes.service.TransacaoService;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -66,6 +68,12 @@ public class TransacaoController {
     ) {
         TransacaoResponseDTO updatedTransacao = transacaoService.update(id, requestDTO);
         return ResponseEntity.ok(updatedTransacao);
+    }
+
+    @PostMapping("/sincronizar-recorrentes")
+    @PreAuthorize("hasAnyRole('USER')")
+    public ResponseEntity<SincronizacaoRecorrentesResponseDTO> sincronizarRecorrentes(@RequestParam Long periodoId) {
+        return ResponseEntity.ok(transacaoService.sincronizarRecorrentes(periodoId));
     }
 
     @DeleteMapping("/{id}")

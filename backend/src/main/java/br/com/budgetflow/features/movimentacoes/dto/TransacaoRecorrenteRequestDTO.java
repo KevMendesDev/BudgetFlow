@@ -20,7 +20,6 @@ public record TransacaoRecorrenteRequestDTO(
         @Size(max = 255, message = "A descrição deve conter no máximo 255 caracteres")
         String descricao,
 
-        @NotNull(message = "O valor da parcela é obrigatório")
         @DecimalMin(value = "0.01", message = "O valor da parcela deve ser maior que zero")
         BigDecimal valorParcela,
 
