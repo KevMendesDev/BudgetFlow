@@ -1,0 +1,80 @@
+<main class="dashboard-wrap">
+  <div class="dashboard-container">
+    <header class="topbar">
+      <div>
+        <h1>Olá, {{ user()?.nome }}</h1>
+      </div>
+      <div class="topbar-actions">
+        <button
+          type="button"
+          class="btn-sync-dashboard"
+          (click)="onSincronizarRecorrentes()"
+          [disabled]="!selectedPeriodo()"
+        >
+          Sincronizar recorrentes
+        </button>
+        <label class="periodo-field grid gap-1" for="periodoSelect">
+          Período selecionado
+          <select
+            id="periodoSelect"
+            [value]="selectedPeriodoId() ?? ''"
+            [disabled]="loadingPeriodos() || periodos().length === 0"
+            (change)="onPeriodoChange($any($event.target).value)"
+          >
+            @for (periodo of periodos(); track periodo.id) {
+              <option [value]="periodo.id" [selected]="periodo.id === selectedPeriodoId()">{{ formatPeriodo(periodo) }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    </header>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    @if (loading()) {
+      <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3" aria-label="Carregando cards de resumo">
+        @for (item of skeletonCards; track item) {
+          <article class="card">
+            <p class="bf-skeleton-line h-3 w-28"></p>
+            <strong class="bf-skeleton-line mt-3 block h-6 w-36"></strong>
+          </article>
+        }
+      </section>
+    } @else {
+      @if (!selectedPeriodo()) {
+        <p class="muted loading">Não existem períodos financeiros cadastrados.</p>
+      }
+
+      <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <article class="card saldo">
+          <p>Saldo</p>
+          <strong>{{ resumo().saldo | currencyBRL }}</strong>
+        </article>
+        <article class="card receita">
+          <p>Receitas</p>
+          <strong>{{ resumo().receitas | currencyBRL }}</strong>
+        </article>
+        <article class="card despesa">
+          <p>Despesas</p>
+          <strong>{{ resumo().despesas | currencyBRL }}</strong>
+        </article>
+      </section>
+
+      <app-dashboard-resumo-categorias
+        [categorias]="categorias()"
+        [transacoes]="transacoes()"
+        [selectedPeriodo]="selectedPeriodo()"
+      />
+
+      <app-dashboard-transacoes
+        [categorias]="categorias()"
+        [recorrentes]="recorrentes()"
+        [transacoes]="transacoes()"
+        [selectedPeriodo]="selectedPeriodo()"
+        (changed)="onTransacoesChanged()"
+      />
+    }
+  </div>
+</main>

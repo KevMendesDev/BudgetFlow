@@ -2,6 +2,7 @@ package br.com.budgetflow.features.periodos.domain;
 
 import br.com.budgetflow.features.users.domain.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,19 +26,14 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class PeriodoFinanceiro {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE,  generator = "sequence_generator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_generator")
+    @SequenceGenerator(name = "sequence_generator", sequenceName = "sequence_generator", allocationSize = 1)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @Column(nullable = false)
-    private Integer mes;
-
-    @Column(nullable = false)
-    private Integer ano;
 
     @Column(name = "data_inicio", nullable = false)
     private LocalDate dataInicio;
@@ -52,6 +48,15 @@ public class PeriodoFinanceiro {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    
+    public Integer getMes() {
+        return dataInicio.getMonthValue();
+    }
+
+    public Integer getAno() {
+        return dataInicio.getYear();
+    }
 
     @Override
     public int hashCode() {
@@ -80,7 +85,7 @@ public class PeriodoFinanceiro {
 
     @Override
     public String toString() {
-        return "PeriodoFinanceiro [id=" + id + ", mes=" + mes + ", ano=" + ano + ", dataInicio="
+        return "PeriodoFinanceiro [id=" + id + ", mes=" + getMes() + ", ano=" + getAno() + ", dataInicio="
                 + dataInicio + ", dataFim=" + dataFim + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
     }
 }

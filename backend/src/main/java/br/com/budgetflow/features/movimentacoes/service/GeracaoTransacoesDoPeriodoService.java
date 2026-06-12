@@ -1,18 +1,20 @@
 package br.com.budgetflow.features.movimentacoes.service;
 
-import br.com.budgetflow.common.enums.Frequencia;
-import br.com.budgetflow.features.movimentacoes.domain.Transacao;
-import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
-import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
-import br.com.budgetflow.features.movimentacoes.repository.TransacaoRepository;
-import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.MonthDay;
-import java.util.ArrayList;
-import java.util.List;
+import br.com.budgetflow.common.enums.StatusTransacao;
+import br.com.budgetflow.features.movimentacoes.domain.Transacao;
+import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
+import br.com.budgetflow.features.movimentacoes.dto.SincronizacaoRecorrentesResponseDTO;
+import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
+import br.com.budgetflow.features.movimentacoes.repository.TransacaoRepository;
+import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
+import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 
 @Service
 public class GeracaoTransacoesDoPeriodoService {
@@ -28,109 +30,97 @@ public class GeracaoTransacoesDoPeriodoService {
     }
 
     @Transactional
-    public List<Transacao> gerarParaPeriodo(PeriodoFinanceiro periodo) {
-        List<TransacaoRecorrente> recorrentes = recorrenteRepository.findAll();
-        List<Transacao> geradas = new ArrayList<>();
+    public SincronizacaoRecorrentesResponseDTO gerarParaPeriodo(PeriodoFinanceiro periodo) {
+        Long userId = periodo.getUser().getId();
+        List<TransacaoRecorrente> recorrentes = recorrenteRepository.findAllByUserId(userId);
+        List<Transacao> transacoesPendentes = new ArrayList<>();
+        List<String> recorrentesPendentes = new ArrayList<>();
+        int ignoradasSemValor = 0;
 
         for (TransacaoRecorrente recorrente : recorrentes) {
-            List<LocalDate> datas = calcularDatas(recorrente, periodo);
-            for (LocalDate data : datas) {
-                if (!transacaoRepository.existsByTransacaoRecorrenteIdAndData(recorrente.getId(), data)) {
-                    Transacao transacao = new Transacao();
-                    transacao.setUser(recorrente.getUser());
-                    transacao.setCategoria(recorrente.getCategoria());
-                    transacao.setPeriodo(periodo);
-                    transacao.setTransacaoRecorrente(recorrente);
-                    transacao.setDescricao(recorrente.getDescricao());
-                    transacao.setValor(recorrente.getValor());
-                    transacao.setTipoMovimentacao(recorrente.getTipoMovimentacao());
-                    transacao.setTipoPagamento(recorrente.getTipoPagamento());
-                    transacao.setData(data);
-                    geradas.add(transacaoRepository.save(transacao));
+            if (recorrente.getValor() == null) {
+                ignoradasSemValor++;
+                continue;
+            }
+
+            ResultadoCalculo resultado = calcularDatas(recorrente, periodo, userId);
+            if (resultado.pendenteEmPeriodoAnterior()) {
+                recorrentesPendentes.add(recorrente.getDescricao());
+                continue;
+            }
+
+            for (LocalDate data : resultado.datas()) {
+                if (transacaoRepository.existsByTransacaoRecorrenteIdAndDataAndUserId(recorrente.getId(), data, userId)) {
+                    continue;
                 }
+
+                Transacao transacao = new Transacao();
+                transacao.setUser(recorrente.getUser());
+                transacao.setCategoria(recorrente.getCategoria());
+                transacao.setPeriodo(periodo);
+                transacao.setTransacaoRecorrente(recorrente);
+                transacao.setDescricao(recorrente.getDescricao());
+                transacao.setValor(recorrente.getValor());
+                transacao.setTipoMovimentacao(recorrente.getTipoMovimentacao());
+                transacao.setTipoPagamento(recorrente.getTipoPagamento());
+                transacao.setData(data);
+                transacao.setStatus(StatusTransacao.PENDENTE);
+                transacoesPendentes.add(transacao);
             }
         }
-        return geradas;
+
+        List<Transacao> transacoesGeradas = transacaoRepository.saveAll(transacoesPendentes);
+        String mensagem = "Sincronização concluída: "
+                + transacoesGeradas.size() + " transações geradas, "
+                + ignoradasSemValor + " recorrentes sem valor e "
+                + recorrentesPendentes.size() + " pendentes em períodos anteriores.";
+
+        return new SincronizacaoRecorrentesResponseDTO(
+                transacoesGeradas.size(),
+                ignoradasSemValor,
+                recorrentesPendentes,
+                mensagem
+        );
     }
 
-    private List<LocalDate> calcularDatas(TransacaoRecorrente recorrente, PeriodoFinanceiro periodo) {
+    private ResultadoCalculo calcularDatas(TransacaoRecorrente recorrente, PeriodoFinanceiro periodo, Long userId) {
+        LocalDate proximaEsperada = transacaoRepository
+                .findFirstByTransacaoRecorrenteIdAndUserIdOrderByDataDescIdDesc(recorrente.getId(), userId)
+                .map(transacao -> RecorrenciaUtils.calcularProximaDataMinima(transacao.getData(), recorrente.getFrequencia()))
+                .orElse(recorrente.getDataInicio());
+
+        if (proximaEsperada.isBefore(periodo.getDataInicio())) {
+            return new ResultadoCalculo(List.of(), true);
+        }
+
+        if (proximaEsperada.isAfter(periodo.getDataFim())) {
+            return new ResultadoCalculo(List.of(), false);
+        }
+
         List<LocalDate> datas = new ArrayList<>();
-        LocalDate periodoInicio = periodo.getDataInicio();
-        LocalDate periodoFim = periodo.getDataFim();
-        LocalDate recorrenteInicio = recorrente.getDataInicio();
-        LocalDate recorrenteFim = recorrente.getDataFim();
+        LocalDate dataAtual = proximaEsperada;
+        Integer totalParcelas = recorrente.getTotalParcelas();
+        long parcelasLancadas = transacaoRepository.countByTransacaoRecorrenteIdAndUserId(recorrente.getId(), userId);
 
-        Frequencia freq = recorrente.getFrequencia();
+        while (!dataAtual.isAfter(periodo.getDataFim())) {
+            if (recorrente.getDataFim() != null && dataAtual.isAfter(recorrente.getDataFim())) {
+                break;
+            }
 
-        switch (freq) {
-            case DIARIO -> {
-                // Start from the later of periodoInicio and recorrenteInicio to avoid unnecessary iteration
-                LocalDate current = recorrenteInicio.isAfter(periodoInicio) ? recorrenteInicio : periodoInicio;
-                int parcelas = 0;
-                while (!current.isAfter(periodoFim)) {
-                    if (dentroDaJanela(current, recorrenteInicio, recorrenteFim)
-                            && dentroDoLimiteParcelas(recorrente, parcelas)) {
-                        datas.add(current);
-                        parcelas++;
-                    }
-                    current = current.plusDays(1);
-                }
+            if (totalParcelas != null && parcelasLancadas + datas.size() >= totalParcelas) {
+                break;
             }
-            case SEMANAL -> {
-                // Align weekly cadence with recorrenteInicio's day of week;
-                // find the first occurrence on or after periodoInicio
-                LocalDate firstOccurrence = recorrenteInicio;
-                if (firstOccurrence.isBefore(periodoInicio)) {
-                    long daysDiff = java.time.temporal.ChronoUnit.DAYS.between(firstOccurrence, periodoInicio);
-                    long weeksToAdd = (daysDiff + 6) / 7;
-                    firstOccurrence = recorrenteInicio.plusWeeks(weeksToAdd);
-                }
-                LocalDate current = firstOccurrence;
-                int parcelas = 0;
-                while (!current.isAfter(periodoFim)) {
-                    if (dentroDaJanela(current, recorrenteInicio, recorrenteFim)
-                            && dentroDoLimiteParcelas(recorrente, parcelas)) {
-                        datas.add(current);
-                        parcelas++;
-                    }
-                    current = current.plusWeeks(1);
-                }
+
+            if (!dataAtual.isBefore(periodo.getDataInicio())) {
+                datas.add(dataAtual);
             }
-            case MENSAL -> {
-                LocalDate firstDay = periodoInicio;
-                if (dentroDaJanela(firstDay, recorrenteInicio, recorrenteFim)
-                        && dentroDoLimiteParcelas(recorrente, 0)) {
-                    datas.add(firstDay);
-                }
-            }
-            case ANUAL -> {
-                MonthDay recorrenteMonthDay = MonthDay.of(recorrenteInicio.getMonth(), recorrenteInicio.getDayOfMonth());
-                int ano = periodoInicio.getYear();
-                LocalDate candidata;
-                try {
-                    candidata = recorrenteMonthDay.atYear(ano);
-                } catch (Exception e) {
-                    // Feb 29 in non-leap year -> Feb 28
-                    candidata = LocalDate.of(ano, recorrenteInicio.getMonth(), 28);
-                }
-                if (!candidata.isBefore(periodoInicio) && !candidata.isAfter(periodoFim)
-                        && dentroDaJanela(candidata, recorrenteInicio, recorrenteFim)
-                        && dentroDoLimiteParcelas(recorrente, 0)) {
-                    datas.add(candidata);
-                }
-            }
+
+            dataAtual = RecorrenciaUtils.calcularProximaDataMinima(dataAtual, recorrente.getFrequencia());
         }
-        return datas;
+
+        return new ResultadoCalculo(datas, false);
     }
 
-    private boolean dentroDaJanela(LocalDate data, LocalDate inicio, LocalDate fim) {
-        if (data.isBefore(inicio)) return false;
-        if (fim != null && data.isAfter(fim)) return false;
-        return true;
-    }
-
-    private boolean dentroDoLimiteParcelas(TransacaoRecorrente recorrente, int parcelasJaGeradas) {
-        if (recorrente.getTotalParcelas() == null) return true;
-        return parcelasJaGeradas < recorrente.getTotalParcelas();
+    private record ResultadoCalculo(List<LocalDate> datas, boolean pendenteEmPeriodoAnterior) {
     }
 }

@@ -1,0 +1,6 @@
+@if (message()) {
+  <aside class="toast" [class.toast-error]="message()?.type === 'error'" [class.toast-success]="message()?.type === 'success'" [class.toast-info]="message()?.type === 'info'">
+    <p class="m-0 text-sm">{{ message()?.text }}</p>
+    <button class="cursor-pointer bg-transparent p-0 opacity-80" (click)="close()" type="button" aria-label="Fechar aviso">x</button>
+  </aside>
+}

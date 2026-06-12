@@ -1,0 +1,11 @@
+@if (dialog.isOpen()) {
+  <div class="confirm-backdrop" (click)="dialog.resolve(false)" role="dialog" aria-modal="true">
+    <div class="confirm-card bf-panel" (click)="$event.stopPropagation()">
+      <p class="confirm-message">{{ dialog.message() }}</p>
+      <div class="confirm-actions">
+        <button type="button" class="btn-cancel" (click)="dialog.resolve(false)">Cancelar</button>
+        <button type="button" class="btn-confirm" (click)="dialog.resolve(true)">Confirmar</button>
+      </div>
+    </div>
+  </div>
+}

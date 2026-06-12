@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0004-01-add-status-transacoes" author="codex">
+        <addColumn tableName="transacoes">
+            <column name="status" type="VARCHAR(20)" defaultValue="EXECUTADO">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="0004-02-allow-null-valor-recorrente" author="codex">
+        <dropNotNullConstraint tableName="transacoes_recorrentes" columnName="valor" columnDataType="NUMERIC(19,2)"/>
+    </changeSet>
+
+    <changeSet id="0004-03-unique-periodo-mensal" author="codex">
+        <addUniqueConstraint
+                tableName="periodos_financeiros"
+                columnNames="user_id, data_inicio"
+                constraintName="uk_periodos_financeiros_user_data_inicio"/>
+    </changeSet>
+</databaseChangeLog>

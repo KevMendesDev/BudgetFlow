@@ -1,0 +1,41 @@
+<section class="modal-backdrop" (click)="close()" aria-label="Fechar modal">
+  <div class="modal-card bf-panel" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <h2>{{ editingPeriodo() ? 'Editar período' : 'Criar período' }}</h2>
+      <button class="btn-secondary" type="button" (click)="close()" [disabled]="submitting()">Fechar</button>
+    </div>
+
+    @if (errorMessage()) {
+      <p class="error modal-error">{{ errorMessage() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid gap-3" novalidate>
+      <label class="bf-label">
+        Mês
+        <select class="bf-input" formControlName="mes">
+          <option value="">Selecione</option>
+          @for (month of monthOptions; track month.value) {
+            <option [value]="month.value">{{ month.label }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.mes, 'Mês')) {
+          <small class="bf-error">{{ fieldError(form.controls.mes, 'Mês') }}</small>
+        }
+      </label>
+
+      <label class="bf-label">
+        Ano
+        <input class="bf-input" type="number" min="2000" max="2100" step="1" formControlName="ano" />
+        @if (fieldError(form.controls.ano, 'Ano')) {
+          <small class="bf-error">{{ fieldError(form.controls.ano, 'Ano') }}</small>
+        }
+      </label>
+
+      <div class="modal-actions">
+        <button class="btn-create" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Salvando...' : editingPeriodo() ? 'Salvar alterações' : 'Criar período' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

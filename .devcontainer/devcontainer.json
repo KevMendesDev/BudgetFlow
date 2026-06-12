@@ -1,68 +1,64 @@
 {
-  "name": "BudgetFlow DevContainer",
+  "name": "Rotas",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".."
-  },
-  "workspaceFolder": "/workspaces/BudgetFlow",
-  "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
+    "args": {
+      "VARIANT": "21",
+      "NODE_VERSION": "22",
+      "HTTP_PROXY": "${localEnv:HTTP_PROXY}",
+      "HTTPS_PROXY": "${localEnv:HTTPS_PROXY}",
+      "http_proxy": "${localEnv:http_proxy}",
+      "https_proxy": "${localEnv:https_proxy}",
+      "NO_PROXY": "${localEnv:NO_PROXY}"
     }
   },
+  "runArgs": ["--name", "budgetflow_container", "--volume", "${env:HOME}/.m2:/home/vscode/.m2"],
+
   "remoteEnv": {
     "HTTP_PROXY": "${localEnv:http_proxy}",
     "HTTPS_PROXY": "${localEnv:https_proxy}",
     "NO_PROXY": "${localEnv:NO_PROXY}",
     "http_proxy": "${localEnv:http_proxy}",
     "https_proxy": "${localEnv:https_proxy}",
-    "no_proxy": "${localEnv:no_proxy}",
-    "MAVEN_OPTS": "--enable-native-access=ALL-UNNAMED"
+    "no_proxy": "${localEnv:no_proxy}"
   },
-  "mounts": [
-    // "source=${localEnv:HOME}/.m2,target=/home/vscode/.m2,type=bind"
-    "source=maven-cache-v2,target=/home/vscode/.m2,type=volume"
-  ],
-  "forwardPorts": [8080, 4200, 5432],
-  "portsAttributes": {
-    "8080": {
-      "label": "BudgetFlow API (Spring Boot)",
-      "onAutoForward": "notify"
-    },
-    "4200": {
-      "label": "Angular Dev Server",
-      "onAutoForward": "openPreview"
-    },
-    "5432": {
-      "label": "PostgreSQL (Docker Compose)",
-      "onAutoForward": "silent"
-    }
+
+  "containerEnv": {
+    "SPRING_DATASOURCE_URL": "jdbc:postgresql://172.17.0.1:5434/budgetflow",
+    "SPRING_DATASOURCE_USERNAME": "postgres",
+    "SPRING_DATASOURCE_PASSWORD": "postgres",
+    "SPRING_DOCKER_COMPOSE_ENABLED": "false",
+    "JWT_SECRET": "dev-only-change-me-with-at-least-32-chars",
+    "SPRING_PROFILES_ACTIVE": "dev"
   },
+
   "customizations": {
     "vscode": {
-      "extensions": [
-        "vscjava.vscode-java-pack",
-        "vscjava.vscode-maven",
-        "redhat.java",
-        "vmware.vscode-spring-boot",
-        "ms-azuretools.vscode-docker",
-        "Angular.ng-template",
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode"
-      ],
       "settings": {
-        "java.configuration.updateBuildConfiguration": "interactive",
-        "java.compile.nullAnalysis.mode": "automatic",
-        "terminal.integrated.defaultProfile.linux": "bash",
-        "java.configuration.maven.userSettings": "/home/vscode/.m2/settings.xml",
-        "http.proxy": "${localEnv:http_proxy}",
-        "http.proxySupport": "override",
-        "http.systemCertificates": true,
-        "http.proxyStrictSSL": false
-      }
+        "java.jdt.ls.java.home": "/docker-java-home"
+      },
+      "extensions": [
+        "angular.ng-template",
+        "christian-kohler.npm-intellisense",
+        "firsttris.vscode-jest-runner",
+        "ms-vscode.vscode-typescript-tslint-plugin",
+        "dbaeumer.vscode-eslint",
+        "vscjava.vscode-java-pack",
+        "pivotal.vscode-boot-dev-pack",
+        "esbenp.prettier-vscode"
+      ]
     }
   },
-  "postCreateCommand": "bash -lc 'set -e; mkdir -p /home/vscode/.m2/wrapper; test -w /home/vscode/.m2; npm install -g @angular/cli@latest; npm install -g npm@11.11.1'",
-  "postStartCommand": "bash -lc 'cd /workspaces/BudgetFlow/backend && ./mvnw -q -DskipTests dependency:go-offline || echo \"Falha ao baixar dependencias Maven\"'"
+
+  "forwardPorts": [4200, 8080, 5432],
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/stuartleeks/dev-container-features/shell-history:0": {},
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "dockerDashComposeVersion": "none"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12.4"
+    }
+  }
 }

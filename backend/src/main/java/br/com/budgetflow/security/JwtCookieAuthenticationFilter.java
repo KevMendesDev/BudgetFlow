@@ -17,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Component
 public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
@@ -36,13 +37,21 @@ public class JwtCookieAuthenticationFilter extends OncePerRequestFilter {
             try {
                 Claims claims = jwtService.parseToken(token);
                 String userId = claims.getSubject();
-                String roles = claims.get("roles", String.class);
+                Object rolesClaim = claims.get("roles");
 
-                List<SimpleGrantedAuthority> authorities = (roles != null && !roles.isBlank())
-                        ? Arrays.stream(roles.split("\\s*,\\s*"))
-                                .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
-                                .toList()
-                        : List.of();
+                Stream<String> rolesStream;
+                if (rolesClaim instanceof List<?> list) {
+                    rolesStream = list.stream().map(String::valueOf);
+                } else if (rolesClaim instanceof String rolesString) {
+                    rolesStream = Arrays.stream(rolesString.split("\\s*,\\s*"));
+                } else {
+                    rolesStream = Stream.empty();
+                }
+
+                List<SimpleGrantedAuthority> authorities = rolesStream
+                        .filter(r -> !r.isBlank())
+                        .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+                        .toList();
 
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(userId, null, authorities);

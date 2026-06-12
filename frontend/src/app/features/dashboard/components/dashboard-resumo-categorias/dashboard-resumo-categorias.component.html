@@ -1,0 +1,77 @@
+<section class="resumo">
+  <div class="resumo-head">
+    <div>
+      <h2>Resumo por categoria</h2>
+      <p class="muted">Receitas e despesas agrupadas no período.</p>
+    </div>
+    <button type="button" class="btn-toggle" (click)="toggle()">
+      {{ aberto() ? 'Ocultar' : 'Mostrar' }}
+    </button>
+  </div>
+
+  @if (aberto()) {
+    @if (resumoCategorias().length === 0) {
+      <p class="muted">Sem despesas no período selecionado.</p>
+    } @else {
+      <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        @for (item of resumoCategorias(); track item.nome + item.classificacao) {
+          <article class="categoria-card">
+            <header>
+              <div>
+                <strong>{{ item.nome }}</strong>
+                <small>{{ classificacaoLabels[item.classificacao] }}</small>
+              </div>
+              <span>{{ item.total | currencyBRL }}</span>
+            </header>
+            <div class="categoria-chart">
+              <canvas
+                baseChart
+                [type]="categoriaChartType"
+                [data]="categoriaChartData(item)"
+                [options]="categoriaChartOptions()"
+              ></canvas>
+              <span class="categoria-percent flex items-center justify-center">{{ item.percentualLucro | number: '1.0-0' }}%</span>
+            </div>
+            <small>Percentual do lucro gasto</small>
+          </article>
+        }
+      </div>
+    }
+
+    <div class="chart-block">
+      <div class="chart-head">
+        <h3>Gastos por dia</h3>
+        <div class="legend">
+          @for (item of categoriasLegenda(); track item.nome) {
+            <span class="legend-item">
+              <i [style.background]="item.color"></i>
+              {{ item.nome }}
+            </span>
+          }
+        </div>
+      </div>
+      <div class="daily-chart">
+        <canvas
+          baseChart
+          [type]="barChartType"
+          [data]="dailyChartData()"
+          [options]="dailyChartOptions()"
+        ></canvas>
+      </div>
+    </div>
+
+    <div class="chart-block">
+      <div class="chart-head">
+        <h3>Gastos por classificação</h3>
+      </div>
+      <div class="classificacao-chart">
+        <canvas
+          baseChart
+          [type]="doughnutChartType"
+          [data]="classificacaoChartData()"
+          [options]="classificacaoChartOptions()"
+        ></canvas>
+      </div>
+    </div>
+  }
+</section>

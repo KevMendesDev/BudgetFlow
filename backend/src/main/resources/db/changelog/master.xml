@@ -7,4 +7,6 @@
 
     <include file="classpath:db/changelog/0001-initial-schema.xml"/>
     <include file="classpath:db/changelog/0002-auth-refresh-tokens.xml"/>
+    <include file="classpath:db/changelog/0003-add-column-categorias-tipo.xml"/>
+    <include file="classpath:db/changelog/0004-periodos-transacoes-recorrencias.xml"/>
 </databaseChangeLog>

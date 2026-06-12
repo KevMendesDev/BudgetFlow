@@ -1,11 +1,14 @@
 package br.com.budgetflow.features.users.domain;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -29,7 +32,8 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_generator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @SequenceGenerator(name = "sequence_generator", sequenceName = "sequence_generator", allocationSize = 1)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @Column(nullable = false)
@@ -46,8 +50,11 @@ public class User {
     @Column(nullable = false)
     private String senha;
 
-    @Column(nullable = false)
-    private String roles = "USER";
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role")
+    private Set<Role> roles = new HashSet<>(Set.of(Role.USER));
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -56,6 +63,18 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public User(String nome, String email, String cpf, String telefone, String senha) {
+        this.nome = nome;
+        this.email = email;
+        this.cpf = cpf;
+        this.telefone = telefone;
+        this.senha = senha;
+    }
+
+    public User(Set<Role> roles){
+        this.roles = roles;
+    }
 
     @Override
     public int hashCode() {
@@ -84,7 +103,8 @@ public class User {
 
     @Override
     public String toString() {
-        return "User [id=" + id + ", nome=" + nome + ", email=" + email + ", cpf=" + cpf + ", telefone=" + telefone + ", senha="
-                + senha + ", roles=" + roles + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
+        return "User [id=" + id + ", nome=" + nome + ", email=" + email + ", cpf=" + cpf
+                + ", telefone=" + telefone + ", roles=" + roles
+                + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
     }
 }

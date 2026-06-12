@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="0003-add-column-categorias-tipo" author="kevin">
+        <addColumn tableName="categorias">
+            <column name="tipo_categoria" type="VARCHAR(50)" defaultValue="DESPESA"/>
+        </addColumn>
+
+        <update tableName="categorias">
+            <column name="tipo_categoria" value="DESPESA"/>
+            <where>tipo_categoria IS NULL</where>
+        </update>
+
+        <addNotNullConstraint
+                tableName="categorias"
+                columnName="tipo_categoria"
+                columnDataType="VARCHAR(50)"/>
+
+        <dropDefaultValue
+                tableName="categorias"
+                columnName="tipo_categoria"
+                columnDataType="VARCHAR(50)"/>
+
+        <dropUniqueConstraint
+                tableName="categorias"
+                constraintName="uk_categorias_nome_user_classificacao"/>
+
+        <dropNotNullConstraint
+                tableName="categorias"
+                columnName="classificacao"
+                columnDataType="VARCHAR(50)"/>
+
+        <addUniqueConstraint
+                tableName="categorias"
+                columnNames="nome, user_id, tipo_categoria, classificacao"
+                constraintName="uk_categorias_nome_user_tipo_classificacao"/>
+    </changeSet>
+</databaseChangeLog>

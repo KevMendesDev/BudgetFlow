@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    show-sql: ${DEVELOPMENT:true}
+  docker:
+    compose:
+      enabled: true
+      file: src/main/docker/postgresql.yml
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:dev-only-change-me-with-at-least-32-chars}
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}

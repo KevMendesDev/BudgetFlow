@@ -1,18 +1,16 @@
-FROM mcr.microsoft.com/devcontainers/java:25-bookworm
+ARG VARIANT="21"
+FROM mcr.microsoft.com/devcontainers/java:1-${VARIANT}
 
-ARG DEBIAN_FRONTEND=noninteractive
+RUN rm -f /etc/apt/sources.list.d/yarn.list \
+    && rm -f /usr/share/keyrings/yarnkey.gpg \
+    && rm -f /etc/apt/trusted.gpg.d/yarn.gpg
 
-RUN rm -f /etc/apt/sources.list.d/yarn.list /etc/apt/sources.list.d/yarn.list.save \
-    && find /etc/apt -type f -name "*.list" -exec sed -i '/dl\.yarnpkg\.com\/debian/d' {} + \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-        curl \
-        git \
-        jq \
-        unzip \
-    && rm -rf /var/lib/apt/lists/*
+ARG INSTALL_MAVEN="false"
+ARG MAVEN_VERSION=""
+ARG INSTALL_GRADLE="false"
+ARG GRADLE_VERSION=""
+RUN if [ "${INSTALL_MAVEN}" = "true" ]; then su vscode -c "umask 0002 && . /usr/local/sdkman/bin/sdkman-init.sh && sdk install maven \"${MAVEN_VERSION}\""; fi \
+    && if [ "${INSTALL_GRADLE}" = "true" ]; then su vscode -c "umask 0002 && . /usr/local/sdkman/bin/sdkman-init.sh && sdk install gradle \"${GRADLE_VERSION}\""; fi
 
-RUN mkdir -p /home/vscode/.m2 \
-    && chown -R vscode:vscode /home/vscode/.m2
-
-WORKDIR /workspaces/BudgetFlow
+ARG NODE_VERSION="none"
+RUN if [ "${NODE_VERSION}" != "none" ]; then su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1"; fi

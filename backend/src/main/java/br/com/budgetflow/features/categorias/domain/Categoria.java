@@ -5,8 +5,11 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import br.com.budgetflow.common.enums.ClassificacaoCategoria;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.features.users.domain.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,22 +21,30 @@ import lombok.Setter;
 @Table(
         name = "categorias",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_categorias_descricao", columnNames = "descricao")
+                @UniqueConstraint(
+                        name = "uk_categorias_nome_user_tipo_classificacao",
+                        columnNames = {"nome", "user_id", "tipo_categoria", "classificacao"}
+                )
         }
 )
 public class Categoria {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE,  generator = "sequence_generator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequence_generator")
+    @SequenceGenerator(name = "sequence_generator", sequenceName = "sequence_generator", allocationSize = 1)
+    @Setter(AccessLevel.NONE)
     private Long id;
 
-    @Column(nullable = false)
-    private String descricao;
+    @Column(nullable = false, length = 100)
+    private String nome;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Column(length = 50)
     private ClassificacaoCategoria classificacao;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_categoria", nullable = false, length = 50)
+    private NaturezaFinanceira tipoCategoria;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -74,7 +85,7 @@ public class Categoria {
 
     @Override
     public String toString() {
-        return "Categoria [id=" + id + ", descricao=" + descricao + ", classificacao=" + classificacao + ", createdAt="
-                + createdAt + ", updatedAt=" + updatedAt + "]";
+        return "Categoria [id=" + id + ", nome=" + nome + ", classificacao=" + classificacao + ", createdAt="
+                + createdAt + ", updatedAt=" + updatedAt + ", tipoCategoria=" + tipoCategoria + "]";
     }
 }

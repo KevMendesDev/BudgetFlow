@@ -1,0 +1,156 @@
+<main class="crud-wrap">
+  <div class="crud-container">
+    <header>
+      <p class="eyebrow">CRUD</p>
+      <h1>Períodos financeiros</h1>
+      <p class="muted">Gerencie períodos com criação, edição, listagem e exclusão.</p>
+    </header>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    <div class="crud-toolbar">
+      <button type="button" class="filters-toggle" (click)="toggleFiltros()">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="icon-filter">
+          <path d="M4 5h16M7 12h10M10 19h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        @if (filtrosAbertos()) {
+          <span>Esconder filtros</span>
+        }
+      </button>
+      <button class="btn-create" type="button" (click)="openCreateModal()">Criar período</button>
+    </div>
+
+    @if (filtrosAbertos()) {
+      <section class="bf-panel filters">
+        <h2>Filtros</h2>
+        <form
+          [formGroup]="filtersForm"
+          class="mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12"
+          novalidate
+        >
+          <label class="bf-label md:col-span-4">
+            Busca
+            <input class="bf-input" type="text" formControlName="q" placeholder="Ex: 2026-01" />
+          </label>
+
+          <label class="bf-label md:col-span-3">
+            Data início
+            <input class="bf-input" type="date" formControlName="dataInicio" />
+          </label>
+
+          <label class="bf-label md:col-span-3">
+            Data fim
+            <input class="bf-input" type="date" formControlName="dataFim" />
+          </label>
+
+          <div class="flex md:col-span-2 md:justify-end">
+            <button class="btn-secondary w-full md:w-auto" type="button" (click)="clearFilters()" [disabled]="loading()">Limpar</button>
+          </div>
+        </form>
+      </section>
+    }
+
+    <section class="bf-panel list">
+      <div class="list-header">
+        <div>
+          <h2>Lista de períodos</h2>
+          @if (totalElements() > 0) {
+            <small class="muted">{{ totalElements() }} períodos</small>
+          }
+        </div>
+      </div>
+
+      @if (loading()) {
+        <div class="mt-4 grid gap-2" aria-label="Carregando períodos">
+          @for (row of [1, 2, 3, 4, 5]; track row) {
+            <p class="bf-skeleton-line h-11 w-full"></p>
+          }
+        </div>
+      } @else if (periodos().length === 0) {
+        <p class="muted">Nenhum período encontrado com os filtros atuais.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Período</th>
+                <th>Criado em</th>
+                <th class="actions-col">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (periodo of periodos(); track periodo.id) {
+                <tr>
+                  <td>{{ formatMonthYear(periodo.mes, periodo.ano) }}</td>
+                  <td>{{ periodo.createdAt.slice(0, 10) | dateBR }}</td>
+                  <td class="actions-col">
+                    <button type="button" class="btn-secondary" (click)="startEdit(periodo)">Editar</button>
+                    <button
+                      type="button"
+                      class="btn-danger"
+                      (click)="deletePeriodo(periodo)"
+                      [disabled]="deletingId() === periodo.id || periodo.possuiRelacionamentos"
+                      [title]="periodo.possuiRelacionamentos ? 'Período vinculado a uma ou mais transações' : ''"
+                    >
+                      {{ deletingId() === periodo.id ? 'Excluindo...' : 'Excluir' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <ul class="cards-list">
+          @for (periodo of periodos(); track periodo.id) {
+            <li class="card-item">
+              <div class="card-main">
+                <strong>{{ formatMonthYear(periodo.mes, periodo.ano) }}</strong>
+                <small class="card-muted">Criado em {{ periodo.createdAt.slice(0, 10) | dateBR }}</small>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn-secondary" (click)="startEdit(periodo)">Editar</button>
+                <button
+                  type="button"
+                  class="btn-danger"
+                  (click)="deletePeriodo(periodo)"
+                  [disabled]="deletingId() === periodo.id || periodo.possuiRelacionamentos"
+                  [title]="periodo.possuiRelacionamentos ? 'Período vinculado a uma ou mais transações' : ''"
+                >
+                  {{ deletingId() === periodo.id ? 'Excluindo...' : 'Excluir' }}
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+
+        @if (totalPages() > 1) {
+          <div class="bf-pagination">
+            <button type="button" class="btn-inline" (click)="goToPreviousPage()" [disabled]="paginaAtual() === 0">
+              Anterior
+            </button>
+            <span>Página {{ paginaAtual() + 1 }} de {{ totalPages() }}</span>
+            <button
+              type="button"
+              class="btn-inline"
+              (click)="goToNextPage()"
+              [disabled]="paginaAtual() + 1 >= totalPages()"
+            >
+              Próxima
+            </button>
+          </div>
+        }
+      }
+    </section>
+  </div>
+
+  @if (modalOpen()) {
+    <app-periodo-financeiro-modal
+      [editingPeriodo]="editingPeriodo()"
+      (closed)="closeModal()"
+      (saved)="onPeriodoSaved()"
+    />
+  }
+</main>

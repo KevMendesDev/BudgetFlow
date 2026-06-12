@@ -1,0 +1,139 @@
+.dashboard-wrap {
+  min-height: 100dvh;
+  background:
+    radial-gradient(60rem 30rem at 0 0, rgba(18, 201, 120, 0.14), transparent 55%),
+    var(--bg);
+}
+
+.dashboard-container {
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+@media (min-width: 1024px) {
+  .dashboard-container {
+    width: var(--content-width-desktop);
+    margin-inline: auto;
+  }
+}
+
+.error {
+  margin-top: 1rem;
+  color: var(--danger-text);
+}
+
+.loading {
+  margin-top: 1rem;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+
+  h1 {
+    margin: 0;
+    font-family: var(--font-display);
+  }
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: end;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.btn-sync-dashboard {
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) 1.1rem;
+  border: 0;
+  border-radius: var(--control-radius);
+  background: #0077ff;
+  color: #edf1f5;
+  font-size: var(--control-font-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn-sync-dashboard:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+
+.periodo-field {
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--muted-text);
+  width: min(100%, 28rem);
+}
+
+.periodo-field select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background-color: var(--surface-2);
+  color: var(--text);
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) var(--control-padding-x);
+  padding-right: 2.5rem;
+  font-size: var(--control-font-size);
+  line-height: 1.2;
+}
+
+.muted {
+  margin: 0;
+  color: var(--muted-text);
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: var(--surface-2);
+
+  p {
+    margin: 0;
+    color: var(--muted-text);
+    font-size: 0.84rem;
+  }
+
+  strong {
+    margin-top: 0.5rem;
+    display: block;
+  }
+}
+
+.saldo strong {
+  color: var(--text);
+}
+
+.receita strong {
+  color: var(--success-text);
+}
+
+.despesa strong {
+  color: var(--danger-text);
+}
+
+
+@media (max-width: 800px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .topbar-actions {
+    width: 100%;
+  }
+
+  .periodo-field {
+    width: 100%;
+  }
+
+  .btn-sync-dashboard {
+    width: 100%;
+  }
+}

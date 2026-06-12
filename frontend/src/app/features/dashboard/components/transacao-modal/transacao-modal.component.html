@@ -1,0 +1,107 @@
+<section class="modal-backdrop" (click)="close()" aria-label="Fechar modal">
+  <div class="modal-card modal-wide bf-panel" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <h2>{{ editingId() ? 'Editar transação' : 'Cadastrar transação' }}</h2>
+      <button type="button" class="btn-secondary" (click)="close()" [disabled]="submitting()">Fechar</button>
+    </div>
+
+    @if (errorMessage()) {
+      <p class="error modal-error">{{ errorMessage() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-12" novalidate>
+      
+      <label class="bf-label md:col-span-6">
+        Transação recorrente (opcional)
+        <select class="bf-input" formControlName="transacaoRecorrenteId" (change)="onRecorrenteChange($any($event.target).value)">
+          <option value="">Manual</option>
+          @for (rec of recorrentesDisponiveis(); track rec.id) {
+            <option [value]="rec.id">{{ recorrenteOptionLabel(rec) }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Valor
+        <input class="bf-input" type="number" min="0.01" step="0.01" formControlName="valor" [disabled]="!isManualMode()" />
+        @if (fieldError(form.controls.valor, 'Valor')) {
+          <small class="bf-error">{{ fieldError(form.controls.valor, 'Valor') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Tipo de movimentação
+        <select class="bf-input" formControlName="tipoMovimentacao" [disabled]="!isManualMode()">
+          <option value="">Selecione</option>
+          @for (tipo of tiposMovimentacao; track tipo.value) {
+            <option [value]="tipo.value">{{ tipo.label }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.tipoMovimentacao, 'Tipo de movimentação')) {
+          <small class="bf-error">{{ fieldError(form.controls.tipoMovimentacao, 'Tipo de movimentação') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Status do Pagamento
+        <select class="bf-input" formControlName="status">
+          @for (item of statusOptions; track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="bf-label md:col-span-12">
+        Descrição
+        <input class="bf-input" type="text" formControlName="descricao" [disabled]="!isManualMode()" placeholder="Ex: Mercado" />
+        @if (fieldError(form.controls.descricao, 'Descrição')) {
+          <small class="bf-error">{{ fieldError(form.controls.descricao, 'Descrição') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Categoria
+        <select
+          class="bf-input"
+          formControlName="categoriaId"
+          [disabled]="!isManualMode() || !form.controls.tipoMovimentacao.value"
+        >
+          <option value="">{{ form.controls.tipoMovimentacao.value ? 'Selecione' : 'Selecione o tipo de movimentação' }}</option>
+          @for (categoria of categoriasDisponiveis(); track categoria.id) {
+            <option [value]="categoria.id">{{ categoriaOptionLabel(categoria) }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.categoriaId, 'Categoria')) {
+          <small class="bf-error">{{ fieldError(form.controls.categoriaId, 'Categoria') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Tipo de pagamento
+        <select class="bf-input" formControlName="tipoPagamento" [disabled]="!isManualMode()">
+          <option value="">Selecione</option>
+          @for (tipo of tiposPagamento; track tipo.value) {
+            <option [value]="tipo.value">{{ tipo.label }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.tipoPagamento, 'Tipo de pagamento')) {
+          <small class="bf-error">{{ fieldError(form.controls.tipoPagamento, 'Tipo de pagamento') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Data
+        <input class="bf-input" type="date" formControlName="data" />
+        @if (fieldError(form.controls.data, 'Data')) {
+          <small class="bf-error">{{ fieldError(form.controls.data, 'Data') }}</small>
+        }
+      </label>
+
+      <div class="modal-actions md:col-span-12">
+        <button class="btn-create" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alterações' : 'Salvar transação' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

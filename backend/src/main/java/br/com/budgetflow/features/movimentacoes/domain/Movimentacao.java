@@ -1,6 +1,6 @@
 package br.com.budgetflow.features.movimentacoes.domain;
 
-import br.com.budgetflow.common.enums.TipoMovimentacao;
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.common.enums.TipoPagamento;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.users.domain.User;
@@ -32,12 +32,12 @@ public abstract class Movimentacao {
     @Column(nullable = false)
     private String descricao;
 
-    @Column(nullable = false, precision = 19, scale = 2)
+    @Column(precision = 19, scale = 2)
     private BigDecimal valor;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_movimentacao", nullable = false, length = 50)
-    private TipoMovimentacao tipoMovimentacao;
+    private NaturezaFinanceira tipoMovimentacao;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_pagamento", nullable = false, length = 50)
