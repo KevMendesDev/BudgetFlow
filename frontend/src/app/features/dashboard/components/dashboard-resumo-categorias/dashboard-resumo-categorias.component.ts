@@ -1,4 +1,5 @@
-import { Component, computed, input, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { Chart, ChartData, ChartOptions } from 'chart.js';
 import { NgChartsModule } from 'ng2-charts';
@@ -13,6 +14,7 @@ import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.mo
 import { TransacaoResponse } from '../../../../core/models/transacao.models';
 import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { formatDate, toIsoDate } from '../../../../shared/utils/format.util';
+import { ThemeService } from '../../../../core/services/theme.service';
 
 interface CategoriaResumo {
   nome: string;
@@ -39,6 +41,9 @@ export class DashboardResumoCategoriasComponent {
   static {
     Chart.register(ChartDataLabels);
   }
+  private readonly document = inject(DOCUMENT);
+  private readonly theme = inject(ThemeService);
+
   readonly categorias = input.required<CategoriaResponse[]>();
   readonly transacoes = input.required<TransacaoResponse[]>();
   readonly selectedPeriodo = input<PeriodoFinanceiro | null>(null);
@@ -83,37 +88,43 @@ export class DashboardResumoCategoriasComponent {
     return Array.from(mapa.values()).sort((a, b) => b.total - a.total);
   });
 
-  readonly dailyChartOptions = computed<ChartOptions<'bar'>>(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { enabled: true },
-      datalabels: { display: false },
-    },
-    scales: {
-      x: {
-        stacked: true,
-        ticks: { color: '#9ea8bb', maxRotation: 0, autoSkip: true },
-        grid: { color: 'rgba(174, 185, 210, 0.08)' },
-      },
-      y: {
-        stacked: true,
-        ticks: { color: '#9ea8bb' },
-        grid: { color: 'rgba(174, 185, 210, 0.08)' },
-      },
-    },
-  }));
+  readonly dailyChartOptions = computed<ChartOptions<'bar'>>(() => {
+    this.theme.effectiveTheme();
 
-  readonly classificacaoChartOptions = computed<ChartOptions<'doughnut'>>(() => {
-    const lucroBase = Math.max(1, this.totalReceitas());
     return {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'bottom', labels: { color: '#9ea8bb' } },
+        legend: { display: false },
+        tooltip: { enabled: true },
+        datalabels: { display: false },
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: { color: this.cssVar('--muted-text'), maxRotation: 0, autoSkip: true },
+          grid: { color: this.cssVar('--chart-grid') },
+        },
+        y: {
+          stacked: true,
+          ticks: { color: this.cssVar('--muted-text') },
+          grid: { color: this.cssVar('--chart-grid') },
+        },
+      },
+    };
+  });
+
+  readonly classificacaoChartOptions = computed<ChartOptions<'doughnut'>>(() => {
+    this.theme.effectiveTheme();
+    const lucroBase = Math.max(1, this.totalReceitas());
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: this.cssVar('--muted-text') } },
         datalabels: {
-          color: '#f5f7fc',
+          color: this.cssVar('--text'),
           font: { weight: 600 },
           formatter: (value) => {
             const percent = (Number(value) / lucroBase) * 100;
@@ -125,16 +136,20 @@ export class DashboardResumoCategoriasComponent {
     };
   });
 
-  readonly categoriaChartOptions = computed<ChartOptions<'doughnut'>>(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { enabled: false },
-      datalabels: { display: false },
-    },
-    cutout: '70%',
-  }));
+  readonly categoriaChartOptions = computed<ChartOptions<'doughnut'>>(() => {
+    this.theme.effectiveTheme();
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false },
+        datalabels: { display: false },
+      },
+      cutout: '70%',
+    };
+  });
 
   readonly categoriasLegenda = computed(() => {
     const nomes = new Set<string>();
@@ -236,6 +251,7 @@ export class DashboardResumoCategoriasComponent {
   }
 
   categoriaChartData(item: CategoriaResumo): ChartData<'doughnut'> {
+    this.theme.effectiveTheme();
     const receitas = Math.max(1, this.totalReceitas());
     const restante = Math.max(0, receitas - item.total);
     return {
@@ -243,7 +259,7 @@ export class DashboardResumoCategoriasComponent {
       datasets: [
         {
           data: [item.total, restante],
-          backgroundColor: [item.color, 'rgba(255,255,255,0.08)'],
+          backgroundColor: [item.color, this.cssVar('--chart-track')],
           borderWidth: 0,
         },
       ],
@@ -295,5 +311,9 @@ export class DashboardResumoCategoriasComponent {
       hash |= 0;
     }
     return Math.abs(hash);
+  }
+
+  private cssVar(name: string): string {
+    return getComputedStyle(this.document.documentElement).getPropertyValue(name).trim();
   }
 }

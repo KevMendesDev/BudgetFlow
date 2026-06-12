@@ -78,6 +78,19 @@ public final class RecorrenciaUtils {
         }
     }
 
+    public static void validarIntervaloEntreRecorrencias(
+            LocalDate dataTransacao,
+            LocalDate dataAnterior,
+            LocalDate dataPosterior,
+            Frequencia frequencia
+    ) {
+        validarIntervaloRecorrencia(dataTransacao, dataAnterior, frequencia);
+
+        if (dataPosterior != null) {
+            validarIntervaloRecorrencia(dataPosterior, dataTransacao, frequencia);
+        }
+    }
+
     public static BigDecimal calcularValorTotal(BigDecimal valorParcela, Integer totalParcelas) {
         if (valorParcela == null || totalParcelas == null) {
             return null;

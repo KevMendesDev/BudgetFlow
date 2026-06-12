@@ -5,11 +5,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { AuthApiService } from '../../core/services/auth-api.service';
 import { SessionService } from '../../core/services/session.service';
+import { ThemeMenuComponent } from '../../shared/components/theme-menu/theme-menu.component';
 import { isMobileViewport } from '../../shared/utils/viewport.util';
 
 @Component({
   selector: 'app-private-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ThemeMenuComponent],
   templateUrl: './private-layout.component.html',
   styleUrl: './private-layout.component.scss',
 })

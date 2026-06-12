@@ -1,6 +1,7 @@
 package br.com.budgetflow.features.movimentacoes.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -102,9 +103,7 @@ public class TransacaoService {
         Long userId = SecurityUtils.currentUserId();
         Transacao transacao = findByIdAndUserId(id, userId);
 
-        PeriodoFinanceiro periodo = requestDTO.periodoId() == null
-                ? transacao.getPeriodo()
-                : periodoFinanceiroService.resolvePeriodoToTransacao(requestDTO.periodoId(), userId);
+        PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(requestDTO.periodoId(), userId);
 
         transacaoMapper.updateFromDto(requestDTO, transacao);
         transacao.setPeriodo(periodo);
@@ -177,15 +176,44 @@ public class TransacaoService {
         );
 
         Long recorrenteId = transacaoRecorrente.getId();
-        java.util.Optional<Transacao> ultimaTransacao = currentTransacaoId == null
-                ? transacaoRepository.findFirstByTransacaoRecorrenteIdAndUserIdOrderByDataDescIdDesc(recorrenteId, userId)
-                : transacaoRepository.findFirstByTransacaoRecorrenteIdAndUserIdAndIdNotOrderByDataDescIdDesc(recorrenteId, userId, currentTransacaoId);
+        if (currentTransacaoId == null) {
+            LocalDate ultimaData = transacaoRepository
+                    .findFirstByTransacaoRecorrenteIdAndUserIdOrderByDataDescIdDesc(recorrenteId, userId)
+                    .map(Transacao::getData)
+                    .orElse(null);
 
-        RecorrenciaUtils.validarIntervaloRecorrencia(
-                transacao.getData(),
-                ultimaTransacao.map(Transacao::getData).orElse(null),
-                transacaoRecorrente.getFrequencia()
-        );
+            RecorrenciaUtils.validarIntervaloRecorrencia(
+                    transacao.getData(),
+                    ultimaData,
+                    transacaoRecorrente.getFrequencia()
+            );
+        } else {
+            LocalDate dataAnterior = transacaoRepository
+                    .findFirstByTransacaoRecorrenteIdAndUserIdAndIdNotAndDataLessThanEqualOrderByDataDescIdDesc(
+                            recorrenteId,
+                            userId,
+                            currentTransacaoId,
+                            transacao.getData()
+                    )
+                    .map(Transacao::getData)
+                    .orElse(null);
+            LocalDate dataPosterior = transacaoRepository
+                    .findFirstByTransacaoRecorrenteIdAndUserIdAndIdNotAndDataGreaterThanEqualOrderByDataAscIdAsc(
+                            recorrenteId,
+                            userId,
+                            currentTransacaoId,
+                            transacao.getData()
+                    )
+                    .map(Transacao::getData)
+                    .orElse(null);
+
+            RecorrenciaUtils.validarIntervaloEntreRecorrencias(
+                    transacao.getData(),
+                    dataAnterior,
+                    dataPosterior,
+                    transacaoRecorrente.getFrequencia()
+            );
+        }
 
         long parcelasLancadas = currentTransacaoId == null
                 ? transacaoRepository.countByTransacaoRecorrenteIdAndUserId(recorrenteId, userId)
@@ -213,7 +241,6 @@ public class TransacaoService {
                 || requestDTO.descricao() == null
                 || requestDTO.descricao().isBlank()
                 || requestDTO.valor() == null
-                || requestDTO.tipoMovimentacao() == null
                 || requestDTO.tipoPagamento() == null) {
             throw new BusinessRuleException("Para transação sem recorrência, categoria, descrição, valor, tipo de movimentação e tipo de pagamento são obrigatórios");
         }

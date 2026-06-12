@@ -10,10 +10,11 @@
           </div>
         </div>
         <button class="collapse-btn" (click)="toggleSidebar()" type="button" [attr.aria-label]="collapsed() ? 'Expandir menu' : 'Retrair menu'">
-          <span class="collapse-text">{{ collapsed() ? '>>' : '<<' }}</span>
           <span class="collapse-icon" aria-hidden="true">☰</span>
         </button>
       </header>
+
+      <app-theme-menu class="sidebar-theme" />
 
       <nav class="menu" aria-label="Menu principal">
         <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">

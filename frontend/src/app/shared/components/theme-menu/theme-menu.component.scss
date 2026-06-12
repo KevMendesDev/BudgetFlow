@@ -1,0 +1,73 @@
+:host {
+  display: block;
+  position: relative;
+}
+
+.theme-menu {
+  position: relative;
+}
+
+.theme-menu summary {
+  width: 2.35rem;
+  height: 2.35rem;
+  display: grid;
+  place-items: center;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: var(--surface-2);
+  color: var(--muted-text);
+  cursor: pointer;
+}
+
+.theme-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.theme-menu summary:hover,
+.theme-menu[open] summary {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.theme-menu svg {
+  width: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.theme-options {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  width: 9rem;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--overlay-bg);
+  box-shadow: var(--shadow-elevated);
+}
+
+.theme-options button {
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: transparent;
+  color: var(--muted-text);
+  text-align: left;
+}
+
+.theme-options button:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.theme-options button.active {
+  background: var(--brand-green);
+  color: var(--brand-contrast);
+}

@@ -75,5 +75,17 @@ public interface TransacaoRepository extends JpaRepository<Transacao, Long>, Jpa
 
     Optional<Transacao> findFirstByTransacaoRecorrenteIdAndUserIdOrderByDataDescIdDesc(Long transacaoRecorrenteId, Long userId);
 
-    Optional<Transacao> findFirstByTransacaoRecorrenteIdAndUserIdAndIdNotOrderByDataDescIdDesc(Long transacaoRecorrenteId, Long userId, Long id);
+    Optional<Transacao> findFirstByTransacaoRecorrenteIdAndUserIdAndIdNotAndDataLessThanEqualOrderByDataDescIdDesc(
+            Long transacaoRecorrenteId,
+            Long userId,
+            Long id,
+            LocalDate data
+    );
+
+    Optional<Transacao> findFirstByTransacaoRecorrenteIdAndUserIdAndIdNotAndDataGreaterThanEqualOrderByDataAscIdAsc(
+            Long transacaoRecorrenteId,
+            Long userId,
+            Long id,
+            LocalDate data
+    );
 }
