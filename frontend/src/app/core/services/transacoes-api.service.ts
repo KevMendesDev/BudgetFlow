@@ -6,6 +6,7 @@ import { API_BASE_URL } from '../config/api.config';
 import { NaturezaFinanceira } from '../models/natureza-financeira.models';
 import { PageResponse, PageSize } from '../models/pagination.models';
 import {
+  SincronizacaoRecorrentesResponse,
   TipoPagamento,
   TransacaoRequest,
   TransacaoResponse,
@@ -86,5 +87,14 @@ export class TransacoesApiService {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${API_BASE_URL}/api/transacoes/${id}`);
+  }
+
+  sincronizarRecorrentes(periodoId: number): Observable<SincronizacaoRecorrentesResponse> {
+    const params = new HttpParams().set('periodoId', String(periodoId));
+    return this.http.post<SincronizacaoRecorrentesResponse>(
+      `${API_BASE_URL}/api/transacoes/sincronizar-recorrentes`,
+      null,
+      { params }
+    );
   }
 }

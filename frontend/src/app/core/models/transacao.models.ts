@@ -9,6 +9,8 @@ export type TipoPagamento =
   | 'TRANSFERENCIA'
   | 'BOLETO';
 
+export type StatusTransacao = 'PENDENTE' | 'EXECUTADO';
+
 export const TIPOS_MOVIMENTACAO: Array<{ value: NaturezaFinanceira; label: string }> = [
   { value: NaturezaFinanceira.RECEITA, label: 'Receita' },
   { value: NaturezaFinanceira.DESPESA, label: 'Despesa' },
@@ -31,6 +33,15 @@ export const TIPO_PAGAMENTO_LABELS = Object.fromEntries(
   TIPOS_PAGAMENTO.map(({ value, label }) => [value, label])
 ) as Record<TipoPagamento, string>;
 
+export const STATUS_TRANSACAO_OPTIONS: Array<{ value: StatusTransacao; label: string }> = [
+  { value: 'EXECUTADO', label: 'Executado' },
+  { value: 'PENDENTE', label: 'Pendente' },
+];
+
+export const STATUS_TRANSACAO_LABELS = Object.fromEntries(
+  STATUS_TRANSACAO_OPTIONS.map(({ value, label }) => [value, label])
+) as Record<StatusTransacao, string>;
+
 export interface TransacaoResponse {
   id: number;
   userId: number;
@@ -43,6 +54,7 @@ export interface TransacaoResponse {
   valor: number;
   tipoMovimentacao: NaturezaFinanceira;
   tipoPagamento: TipoPagamento;
+  status: StatusTransacao;
   data: string;
   createdAt: string;
   updatedAt: string;
@@ -56,5 +68,13 @@ export interface TransacaoRequest {
   tipoPagamento: TipoPagamento | null;
   periodoId: number;
   transacaoRecorrenteId: number | null;
+  status: StatusTransacao | null;
   data: string;
+}
+
+export interface SincronizacaoRecorrentesResponse {
+  transacoesGeradas: number;
+  transacoesRecorrentesSemValor: number;
+  transacoesRecorrentesPendentes: string[];
+  mensagem: string;
 }

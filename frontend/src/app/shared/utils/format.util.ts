@@ -31,6 +31,13 @@ const moneyFormatter = new Intl.NumberFormat('pt-BR', {
   minimumFractionDigits: 2,
 });
 
+const monthFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' });
+
+export const MONTH_OPTIONS = Array.from({ length: 12 }, (_, index) => ({
+  value: index + 1,
+  label: formatMonthName(index + 1),
+}));
+
 export function formatMoney(value: number): string {
   return moneyFormatter.format(value);
 }
@@ -42,6 +49,16 @@ export function formatDate(value: string): string {
 export function formatDateOrNull(value: string | null): string {
   if (!value) return '-';
   return formatDate(value);
+}
+
+export function formatMonthYear(month: number, year: number): string {
+  const label = formatMonthName(month);
+  return `${label}/${year}`;
+}
+
+export function formatMonthName(month: number): string {
+  const label = monthFormatter.format(new Date(Date.UTC(2000, month - 1, 1)));
+  return `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
 }
 
 export function toIsoDate(date: Date): string {

@@ -6,10 +6,9 @@ import { TipoPagamento } from './transacao.models';
 export { NaturezaFinanceira };
 export type { TipoPagamento };
 
-export type Frequencia = 'DIARIO' | 'SEMANAL' | 'MENSAL' | 'ANUAL';
+export type Frequencia = 'SEMANAL' | 'MENSAL' | 'ANUAL';
 
 export const FREQUENCIAS: Array<{ value: Frequencia; label: string }> = [
-  { value: 'DIARIO', label: 'Diário' },
   { value: 'SEMANAL', label: 'Semanal' },
   { value: 'MENSAL', label: 'Mensal' },
   { value: 'ANUAL', label: 'Anual' },
@@ -22,7 +21,7 @@ export const FREQUENCIA_LABELS = Object.fromEntries(
 export interface TransacaoRecorrenteRequest {
   categoriaId: number;
   descricao: string;
-  valorParcela: number;
+  valorParcela: number | null;
   tipoMovimentacao: NaturezaFinanceira;
   tipoPagamento: TipoPagamento;
   frequencia: Frequencia;
@@ -38,8 +37,8 @@ export interface TransacaoRecorrenteResponse {
   categoriaNome: string;
   classificacaoCategoria: ClassificacaoCategoria | null;
   descricao: string;
-  valorParcela: number;
-  valorTotal: number;
+  valorParcela: number | null;
+  valorTotal: number | null;
   tipoMovimentacao: NaturezaFinanceira;
   tipoPagamento: TipoPagamento;
   frequencia: Frequencia;

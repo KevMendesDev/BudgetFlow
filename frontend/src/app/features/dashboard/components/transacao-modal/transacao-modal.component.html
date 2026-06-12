@@ -10,6 +10,17 @@
     }
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-12" novalidate>
+      
+      <label class="bf-label md:col-span-6">
+        Transação recorrente (opcional)
+        <select class="bf-input" formControlName="transacaoRecorrenteId" (change)="onRecorrenteChange($any($event.target).value)">
+          <option value="">Manual</option>
+          @for (rec of recorrentesDisponiveis(); track rec.id) {
+            <option [value]="rec.id">{{ recorrenteOptionLabel(rec) }}</option>
+          }
+        </select>
+      </label>
+
       <label class="bf-label md:col-span-6">
         Valor
         <input class="bf-input" type="number" min="0.01" step="0.01" formControlName="valor" [disabled]="!isManualMode()" />
@@ -29,6 +40,15 @@
         @if (fieldError(form.controls.tipoMovimentacao, 'Tipo de movimentação')) {
           <small class="bf-error">{{ fieldError(form.controls.tipoMovimentacao, 'Tipo de movimentação') }}</small>
         }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Status do Pagamento
+        <select class="bf-input" formControlName="status">
+          @for (item of statusOptions; track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
       </label>
 
       <label class="bf-label md:col-span-12">
@@ -54,16 +74,6 @@
         @if (fieldError(form.controls.categoriaId, 'Categoria')) {
           <small class="bf-error">{{ fieldError(form.controls.categoriaId, 'Categoria') }}</small>
         }
-      </label>
-
-      <label class="bf-label md:col-span-6">
-        Transação recorrente (opcional)
-        <select class="bf-input" formControlName="transacaoRecorrenteId" (change)="onRecorrenteChange($any($event.target).value)">
-          <option value="">Manual</option>
-          @for (rec of recorrentesDisponiveis(); track rec.id) {
-            <option [value]="rec.id">{{ recorrenteOptionLabel(rec) }}</option>
-          }
-        </select>
       </label>
 
       <label class="bf-label md:col-span-6">

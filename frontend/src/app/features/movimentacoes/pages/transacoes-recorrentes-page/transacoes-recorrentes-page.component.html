@@ -97,7 +97,7 @@
                 <tr>
                   <td>{{ item.descricao }}</td>
                   <td>{{ item.categoriaNome }}</td>
-                  <td>{{ item.valorParcela | currencyBRL }}</td>
+                  <td>{{ item.valorParcela == null ? '-' : (item.valorParcela | currencyBRL) }}</td>
                   <td>{{ frequenciaLabel(item.frequencia) }}</td>
                   <td>{{ item.dataInicio | dateBR }}</td>
                   <td>{{ item.dataFim | dateBR }}</td>
@@ -131,7 +131,7 @@
                     [class.receita]="item.tipoMovimentacao === 'RECEITA'"
                     [class.despesa]="item.tipoMovimentacao === 'DESPESA'"
                   >
-                    {{ item.tipoMovimentacao === 'DESPESA' ? '-' : '+' }} {{ item.valorParcela | currencyBRL }}
+                    {{ item.valorParcela == null ? '-' : ((item.tipoMovimentacao === 'DESPESA' ? '-' : '+') + ' ' + (item.valorParcela | currencyBRL)) }}
                   </span>
                   <span class="card-dates">{{ item.dataInicio | dateBR }}{{ item.dataFim ? ' → ' + (item.dataFim | dateBR) : '' }}</span>
                 </div>
@@ -186,7 +186,7 @@
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-12" novalidate>
           <label class="bf-label md:col-span-6">
-            Valor da parcela
+            Valor da parcela (opcional)
             <input class="bf-input" type="number" min="0.01" step="0.01" formControlName="valorParcela" placeholder="0.00" />
             @if (fieldError(form.controls.valorParcela, 'Valor')) {
               <small class="bf-error">{{ fieldError(form.controls.valorParcela, 'Valor') }}</small>

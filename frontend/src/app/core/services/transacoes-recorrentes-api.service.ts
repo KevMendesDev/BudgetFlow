@@ -58,4 +58,15 @@ export class TransacoesRecorrentesApiService {
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${API_BASE_URL}/api/transacoes-recorrentes/${id}`);
   }
+
+  listDisponiveisParaLancamento(periodoId: number, data: string): Observable<TransacaoRecorrenteResponse[]> {
+    const params = new HttpParams()
+      .set('periodoId', String(periodoId))
+      .set('data', data);
+
+    return this.http.get<TransacaoRecorrenteResponse[]>(
+      `${API_BASE_URL}/api/transacoes-recorrentes/disponiveis-para-lancamento`,
+      { params }
+    );
+  }
 }

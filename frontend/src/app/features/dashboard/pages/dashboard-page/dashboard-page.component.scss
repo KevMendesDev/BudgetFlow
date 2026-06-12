@@ -39,9 +39,27 @@
 
 .topbar-actions {
   display: flex;
-  align-items: center;
+  align-items: end;
   gap: 0.7rem;
   min-width: 0;
+}
+
+.btn-sync-dashboard {
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) 1.1rem;
+  border: 0;
+  border-radius: var(--control-radius);
+  background: #0077ff;
+  color: #edf1f5;
+  font-size: var(--control-font-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn-sync-dashboard:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 
@@ -112,6 +130,10 @@
   }
 
   .periodo-field {
+    width: 100%;
+  }
+
+  .btn-sync-dashboard {
     width: 100%;
   }
 }

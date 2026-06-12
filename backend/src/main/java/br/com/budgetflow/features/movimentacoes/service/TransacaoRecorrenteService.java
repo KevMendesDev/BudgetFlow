@@ -1,5 +1,15 @@
 package br.com.budgetflow.features.movimentacoes.service;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.common.exceptions.EntityHasRelationshipsException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
@@ -8,25 +18,19 @@ import br.com.budgetflow.common.utils.DateRangeUtils;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.categorias.service.CategoriaService;
 import br.com.budgetflow.features.movimentacoes.criteria.TransacaoRecorrenteFilterCriteria;
+import br.com.budgetflow.features.movimentacoes.domain.Transacao;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoRecorrenteRequestDTO;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoRecorrenteResponseDTO;
 import br.com.budgetflow.features.movimentacoes.mapper.TransacaoRecorrenteMapper;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
+import br.com.budgetflow.features.movimentacoes.repository.TransacaoRepository;
 import br.com.budgetflow.features.movimentacoes.repository.specification.TransacaoRecorrenteSpecification;
 import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
+import br.com.budgetflow.features.periodos.service.PeriodoFinanceiroService;
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.service.UserService;
 import br.com.budgetflow.security.SecurityUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Set;
 
 @Service
 public class TransacaoRecorrenteService {
@@ -36,19 +40,25 @@ public class TransacaoRecorrenteService {
     private final TransacaoRecorrenteMapper transacaoRecorrenteMapper;
     private final CategoriaService categoriaService;
     private final RelacionamentoChecker relacionamentoChecker;
+    private final TransacaoRepository transacaoRepository;
+    private final PeriodoFinanceiroService periodoFinanceiroService;
 
     public TransacaoRecorrenteService(
             TransacaoRecorrenteRepository transacaoRecorrenteRepository,
             UserService userService,
             TransacaoRecorrenteMapper transacaoRecorrenteMapper,
             CategoriaService categoriaService,
-            RelacionamentoChecker relacionamentoChecker
+            RelacionamentoChecker relacionamentoChecker,
+            TransacaoRepository transacaoRepository,
+            PeriodoFinanceiroService periodoFinanceiroService
     ) {
         this.transacaoRecorrenteRepository = transacaoRecorrenteRepository;
         this.userService = userService;
         this.transacaoRecorrenteMapper = transacaoRecorrenteMapper;
         this.categoriaService = categoriaService;
         this.relacionamentoChecker = relacionamentoChecker;
+        this.transacaoRepository = transacaoRepository;
+        this.periodoFinanceiroService = periodoFinanceiroService;
     }
 
     @Transactional
@@ -59,11 +69,13 @@ public class TransacaoRecorrenteService {
 
         DateRangeUtils.validateRange(requestDTO.dataInicio(), requestDTO.dataFim());
         validateCategoriaTipo(categoria, requestDTO.tipoMovimentacao().name());
+        validateValorParcela(requestDTO.valorParcela());
 
         TransacaoRecorrente transacaoRecorrente = transacaoRecorrenteMapper.toEntity(requestDTO);
         transacaoRecorrente.setUser(user);
         transacaoRecorrente.setCategoria(categoria);
         transacaoRecorrente.setDescricao(requestDTO.descricao().trim());
+        transacaoRecorrente.setValor(requestDTO.valorParcela());
         transacaoRecorrente.setDataFim(resolveDataFim(requestDTO));
 
         return transacaoRecorrenteMapper.toResponseDTO(transacaoRecorrenteRepository.save(transacaoRecorrente));
@@ -109,6 +121,17 @@ public class TransacaoRecorrenteService {
         return transacaoRecorrenteMapper.toResponseDTO(transacaoRecorrente);
     }
 
+    @Transactional(readOnly = true)
+    public List<TransacaoRecorrenteResponseDTO> findDisponiveisParaLancamento(Long periodoId, LocalDate data) {
+        Long userId = SecurityUtils.currentUserId();
+        periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
+
+        return transacaoRecorrenteRepository.findAllByUserId(userId).stream()
+                .filter(recorrente -> podeSerLancada(recorrente, userId, data))
+                .map(transacaoRecorrenteMapper::toResponseDTO)
+                .toList();
+    }
+
     @Transactional
     public TransacaoRecorrenteResponseDTO update(Long id, TransacaoRecorrenteRequestDTO requestDTO) {
         Long userId = SecurityUtils.currentUserId();
@@ -117,10 +140,12 @@ public class TransacaoRecorrenteService {
 
         DateRangeUtils.validateRange(requestDTO.dataInicio(), requestDTO.dataFim());
         validateCategoriaTipo(categoria, requestDTO.tipoMovimentacao().name());
+        validateValorParcela(requestDTO.valorParcela());
 
         transacaoRecorrenteMapper.updateFromDto(requestDTO, transacaoRecorrente);
         transacaoRecorrente.setCategoria(categoria);
         transacaoRecorrente.setDescricao(requestDTO.descricao().trim());
+        transacaoRecorrente.setValor(requestDTO.valorParcela());
         transacaoRecorrente.setDataFim(resolveDataFim(requestDTO));
 
         return transacaoRecorrenteMapper.toResponseDTO(transacaoRecorrenteRepository.save(transacaoRecorrente));
@@ -156,6 +181,39 @@ public class TransacaoRecorrenteService {
         if (!categoria.getTipoCategoria().name().equals(tipoMovimentacao)) {
             throw new BusinessRuleException("O tipo da categoria deve ser igual ao tipo de movimentação");
         }
+    }
+
+    private void validateValorParcela(java.math.BigDecimal valorParcela) {
+        if (valorParcela != null && valorParcela.signum() <= 0) {
+            throw new BusinessRuleException("O valor da parcela deve ser maior que zero");
+        }
+    }
+
+    private boolean podeSerLancada(TransacaoRecorrente recorrente, Long userId, LocalDate data) {
+        if (data.isBefore(recorrente.getDataInicio())) {
+            return false;
+        }
+
+        if (recorrente.getDataFim() != null && data.isAfter(recorrente.getDataFim())) {
+            return false;
+        }
+
+        long parcelasLancadas = transacaoRepository.countByTransacaoRecorrenteIdAndUserId(recorrente.getId(), userId);
+        if (recorrente.getTotalParcelas() != null && parcelasLancadas >= recorrente.getTotalParcelas()) {
+            return false;
+        }
+
+        LocalDate ultimaData = transacaoRepository
+                .findFirstByTransacaoRecorrenteIdAndUserIdOrderByDataDescIdDesc(recorrente.getId(), userId)
+                .map(Transacao::getData)
+                .orElse(null);
+
+        if (ultimaData == null) {
+            return true;
+        }
+
+        LocalDate proximaDataMinima = RecorrenciaUtils.calcularProximaDataMinima(ultimaData, recorrente.getFrequencia());
+        return !data.isBefore(proximaDataMinima);
     }
 
     private TransacaoRecorrente findByIdAndUserId(Long id, Long userId) {

@@ -1,5 +1,14 @@
 package br.com.budgetflow.features.movimentacoes.service;
 
+import java.math.BigDecimal;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import br.com.budgetflow.common.enums.StatusTransacao;
 import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.common.utils.DateRangeUtils;
@@ -8,6 +17,7 @@ import br.com.budgetflow.features.categorias.repository.CategoriaRepository;
 import br.com.budgetflow.features.movimentacoes.criteria.TransacaoFilterCriteria;
 import br.com.budgetflow.features.movimentacoes.domain.Transacao;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
+import br.com.budgetflow.features.movimentacoes.dto.SincronizacaoRecorrentesResponseDTO;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoRequestDTO;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoResponseDTO;
 import br.com.budgetflow.features.movimentacoes.mapper.TransacaoMapper;
@@ -19,11 +29,6 @@ import br.com.budgetflow.features.periodos.service.PeriodoFinanceiroService;
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.service.UserService;
 import br.com.budgetflow.security.SecurityUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TransacaoService {
@@ -34,6 +39,7 @@ public class TransacaoService {
     private final PeriodoFinanceiroService periodoFinanceiroService;
     private final UserService userService;
     private final TransacaoMapper transacaoMapper;
+    private final GeracaoTransacoesDoPeriodoService geracaoTransacoesDoPeriodoService;
 
     public TransacaoService(
             TransacaoRepository transacaoRepository,
@@ -41,7 +47,8 @@ public class TransacaoService {
             CategoriaRepository categoriaRepository,
             PeriodoFinanceiroService periodoFinanceiroService,
             UserService userService,
-            TransacaoMapper transacaoMapper
+            TransacaoMapper transacaoMapper,
+            GeracaoTransacoesDoPeriodoService geracaoTransacoesDoPeriodoService
     ) {
         this.transacaoRepository = transacaoRepository;
         this.transacaoRecorrenteService = transacaoRecorrenteService;
@@ -49,6 +56,7 @@ public class TransacaoService {
         this.periodoFinanceiroService = periodoFinanceiroService;
         this.userService = userService;
         this.transacaoMapper = transacaoMapper;
+        this.geracaoTransacoesDoPeriodoService = geracaoTransacoesDoPeriodoService;
     }
 
     @Transactional
@@ -107,6 +115,13 @@ public class TransacaoService {
     }
 
     @Transactional
+    public SincronizacaoRecorrentesResponseDTO sincronizarRecorrentes(Long periodoId) {
+        Long userId = SecurityUtils.currentUserId();
+        PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
+        return geracaoTransacoesDoPeriodoService.gerarParaPeriodo(periodo);
+    }
+
+    @Transactional
     public void delete(Long id) {
         Long userId = SecurityUtils.currentUserId();
         Transacao transacao = findByIdAndUserId(id, userId);
@@ -120,8 +135,10 @@ public class TransacaoService {
             transacao.setTransacaoRecorrente(transacaoRecorrente);
             transacao.setCategoria(transacaoRecorrente.getCategoria());
             transacao.setDescricao(transacaoRecorrente.getDescricao());
+            transacao.setValor(resolveValorRecorrente(requestDTO, transacaoRecorrente));
             transacao.setTipoMovimentacao(transacaoRecorrente.getTipoMovimentacao());
             transacao.setTipoPagamento(transacaoRecorrente.getTipoPagamento());
+            transacao.setStatus(resolveStatus(requestDTO.status(), StatusTransacao.EXECUTADO));
             return;
         }
 
@@ -144,6 +161,7 @@ public class TransacaoService {
         transacao.setValor(requestDTO.valor());
         transacao.setTipoMovimentacao(requestDTO.tipoMovimentacao());
         transacao.setTipoPagamento(requestDTO.tipoPagamento());
+        transacao.setStatus(resolveStatus(requestDTO.status(), StatusTransacao.EXECUTADO));
     }
 
     private void validateTransacaoRecorrenteConstraints(
@@ -159,19 +177,35 @@ public class TransacaoService {
         );
 
         Long recorrenteId = transacaoRecorrente.getId();
-        Long periodoId = transacao.getPeriodo().getId();
+        java.util.Optional<Transacao> ultimaTransacao = currentTransacaoId == null
+                ? transacaoRepository.findFirstByTransacaoRecorrenteIdAndUserIdOrderByDataDescIdDesc(recorrenteId, userId)
+                : transacaoRepository.findFirstByTransacaoRecorrenteIdAndUserIdAndIdNotOrderByDataDescIdDesc(recorrenteId, userId, currentTransacaoId);
 
-        boolean jaExisteNoPeriodo = currentTransacaoId == null
-                ? transacaoRepository.existsByTransacaoRecorrenteIdAndPeriodoIdAndUserId(recorrenteId, periodoId, userId)
-                : transacaoRepository.existsByTransacaoRecorrenteIdAndPeriodoIdAndUserIdAndIdNot(recorrenteId, periodoId, userId, currentTransacaoId);
-
-        RecorrenciaUtils.validarRecorrenciaUnicaNoPeriodo(jaExisteNoPeriodo);
+        RecorrenciaUtils.validarIntervaloRecorrencia(
+                transacao.getData(),
+                ultimaTransacao.map(Transacao::getData).orElse(null),
+                transacaoRecorrente.getFrequencia()
+        );
 
         long parcelasLancadas = currentTransacaoId == null
                 ? transacaoRepository.countByTransacaoRecorrenteIdAndUserId(recorrenteId, userId)
                 : transacaoRepository.countByTransacaoRecorrenteIdAndUserIdAndIdNot(recorrenteId, userId, currentTransacaoId);
 
         RecorrenciaUtils.validarLimiteParcelas(transacaoRecorrente.getTotalParcelas(), parcelasLancadas);
+    }
+
+    private BigDecimal resolveValorRecorrente(TransacaoRequestDTO requestDTO, TransacaoRecorrente transacaoRecorrente) {
+        if (requestDTO.valor() != null) {
+            return requestDTO.valor();
+        }
+        if (transacaoRecorrente.getValor() != null) {
+            return transacaoRecorrente.getValor();
+        }
+        throw new BusinessRuleException("O valor é obrigatório para transações criadas a partir de recorrência sem valor");
+    }
+
+    private StatusTransacao resolveStatus(StatusTransacao status, StatusTransacao defaultStatus) {
+        return status == null ? defaultStatus : status;
     }
 
     private void validateManualTransacaoRequest(TransacaoRequestDTO requestDTO) {

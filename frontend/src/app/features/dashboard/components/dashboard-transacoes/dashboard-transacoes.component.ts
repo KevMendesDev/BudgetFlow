@@ -9,6 +9,7 @@ import {
 import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.models';
 import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import {
+  STATUS_TRANSACAO_LABELS,
   TIPOS_MOVIMENTACAO,
   TIPOS_PAGAMENTO,
   TipoPagamento,
@@ -47,6 +48,7 @@ export class DashboardTransacoesComponent {
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
   readonly tiposPagamento = TIPOS_PAGAMENTO;
   readonly classificacoes = CLASSIFICACOES;
+  readonly statusLabels = STATUS_TRANSACAO_LABELS;
 
   readonly loading = signal(false);
   readonly errorMessage = signal('');
@@ -373,8 +375,6 @@ export class DashboardTransacoesComponent {
     const MS_DIA = 1000 * 60 * 60 * 24;
 
     switch (frequencia) {
-      case 'DIARIO':
-        return Math.floor((alvo.getTime() - inicio.getTime()) / MS_DIA);
       case 'SEMANAL':
         return Math.floor((alvo.getTime() - inicio.getTime()) / (MS_DIA * 7));
       case 'MENSAL':

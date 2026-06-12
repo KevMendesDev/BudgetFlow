@@ -16,4 +16,8 @@ public interface PeriodoFinanceiroRepository extends JpaRepository<PeriodoFinanc
     Optional<PeriodoFinanceiro> findByIdAndUserId(Long id, Long userId);
 
     Optional<PeriodoFinanceiro> findFirstByUserIdAndDataInicioLessThanEqualAndDataFimGreaterThanEqual(Long userId, LocalDate dataInicio, LocalDate dataFim);
+
+    boolean existsByUserIdAndDataInicio(Long userId, LocalDate dataInicio);
+
+    boolean existsByUserIdAndDataInicioAndIdNot(Long userId, LocalDate dataInicio, Long id);
 }

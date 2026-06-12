@@ -32,7 +32,7 @@ public abstract class Movimentacao {
     @Column(nullable = false)
     private String descricao;
 
-    @Column(nullable = false, precision = 19, scale = 2)
+    @Column(precision = 19, scale = 2)
     private BigDecimal valor;
 
     @Enumerated(EnumType.STRING)

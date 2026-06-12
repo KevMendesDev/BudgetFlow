@@ -75,8 +75,7 @@
           <table>
             <thead>
               <tr>
-                <th>Início</th>
-                <th>Fim</th>
+                <th>Período</th>
                 <th>Criado em</th>
                 <th class="actions-col">Ações</th>
               </tr>
@@ -84,8 +83,7 @@
             <tbody>
               @for (periodo of periodos(); track periodo.id) {
                 <tr>
-                  <td>{{ periodo.dataInicio | dateBR }}</td>
-                  <td>{{ periodo.dataFim | dateBR }}</td>
+                  <td>{{ formatMonthYear(periodo.mes, periodo.ano) }}</td>
                   <td>{{ periodo.createdAt.slice(0, 10) | dateBR }}</td>
                   <td class="actions-col">
                     <button type="button" class="btn-secondary" (click)="startEdit(periodo)">Editar</button>
@@ -109,7 +107,7 @@
           @for (periodo of periodos(); track periodo.id) {
             <li class="card-item">
               <div class="card-main">
-                <strong>{{ periodo.dataInicio | dateBR }} → {{ periodo.dataFim | dateBR }}</strong>
+                <strong>{{ formatMonthYear(periodo.mes, periodo.ano) }}</strong>
                 <small class="card-muted">Criado em {{ periodo.createdAt.slice(0, 10) | dateBR }}</small>
               </div>
               <div class="card-actions">
@@ -162,18 +160,23 @@
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid gap-3" novalidate>
           <label class="bf-label">
-            Data de início
-            <input class="bf-input" type="date" formControlName="dataInicio" />
-            @if (fieldError(form.controls.dataInicio, 'Data de início')) {
-              <small class="bf-error">{{ fieldError(form.controls.dataInicio, 'Data de início') }}</small>
+            Mês
+            <select class="bf-input" formControlName="mes">
+              <option value="">Selecione</option>
+              @for (month of monthOptions; track month.value) {
+                <option [value]="month.value">{{ month.label }}</option>
+              }
+            </select>
+            @if (fieldError(form.controls.mes, 'Mês')) {
+              <small class="bf-error">{{ fieldError(form.controls.mes, 'Mês') }}</small>
             }
           </label>
 
           <label class="bf-label">
-            Data de fim
-            <input class="bf-input" type="date" formControlName="dataFim" />
-            @if (fieldError(form.controls.dataFim, 'Data de fim')) {
-              <small class="bf-error">{{ fieldError(form.controls.dataFim, 'Data de fim') }}</small>
+            Ano
+            <input class="bf-input" type="number" min="2000" max="2100" step="1" formControlName="ano" />
+            @if (fieldError(form.controls.ano, 'Ano')) {
+              <small class="bf-error">{{ fieldError(form.controls.ano, 'Ano') }}</small>
             }
           </label>
 

@@ -10,8 +10,11 @@ import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.
 import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import { TransacaoRecorrenteResponse } from '../../../../core/models/transacao-recorrente.models';
 import { TransacoesApiService } from '../../../../core/services/transacoes-api.service';
+import { TransacoesRecorrentesApiService } from '../../../../core/services/transacoes-recorrentes-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import {
+  STATUS_TRANSACAO_OPTIONS,
+  StatusTransacao,
   TIPOS_MOVIMENTACAO,
   TIPOS_PAGAMENTO,
   TipoPagamento,
@@ -29,6 +32,7 @@ import { mapApiError } from '../../../../shared/utils/error-message.util';
 export class TransacaoModalComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly transacoesApi = inject(TransacoesApiService);
+  private readonly transacoesRecorrentesApi = inject(TransacoesRecorrentesApiService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -43,6 +47,7 @@ export class TransacaoModalComponent implements OnInit {
 
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
   readonly tiposPagamento = TIPOS_PAGAMENTO;
+  readonly statusOptions = STATUS_TRANSACAO_OPTIONS;
   readonly classificacaoLabels = CLASSIFICACAO_LABELS;
   readonly fieldError = fieldError;
 
@@ -57,24 +62,11 @@ export class TransacaoModalComponent implements OnInit {
     valor: [''],
     tipoMovimentacao: ['' as '' | NaturezaFinanceira],
     tipoPagamento: ['' as '' | TipoPagamento],
+    status: ['EXECUTADO' as StatusTransacao],
     data: ['', [Validators.required]],
   });
 
-  readonly recorrentesDisponiveis = computed(() => {
-    const selectedRecorrenteId = Number(this.form.controls.transacaoRecorrenteId.value || 0);
-    const idsUsados = new Set(
-      this.transacoes()
-        .filter((tx) => tx.transacaoRecorrenteId)
-        .map((tx) => tx.transacaoRecorrenteId as number)
-    );
-
-    return this.recorrentes().filter((recorrente) => {
-      if (selectedRecorrenteId === recorrente.id) {
-        return true;
-      }
-      return !idsUsados.has(recorrente.id);
-    });
-  });
+  readonly recorrentesDisponiveis = signal<TransacaoRecorrenteResponse[]>([]);
 
   categoriasDisponiveis(): CategoriaResponse[] {
     const tipoMovimentacao = this.form.controls.tipoMovimentacao.value;
@@ -99,6 +91,10 @@ export class TransacaoModalComponent implements OnInit {
         this.toggleManualValidators(!value);
       });
 
+    this.form.controls.data.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.loadRecorrentesDisponiveis());
+
     this.form.controls.tipoMovimentacao.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((tipoMovimentacao) => {
@@ -112,6 +108,8 @@ export class TransacaoModalComponent implements OnInit {
           this.form.controls.categoriaId.setValue('');
         }
       });
+
+    this.loadRecorrentesDisponiveis();
   }
 
   isManualMode(): boolean {
@@ -137,9 +135,10 @@ export class TransacaoModalComponent implements OnInit {
     this.form.patchValue({
       categoriaId: String(recorrente.categoriaId),
       descricao: recorrente.descricao,
-      valor: String(recorrente.valorParcela),
+      valor: recorrente.valorParcela == null ? '' : String(recorrente.valorParcela),
       tipoMovimentacao: recorrente.tipoMovimentacao,
       tipoPagamento: recorrente.tipoPagamento,
+      status: 'EXECUTADO',
       data: dataPadrao,
     });
   }
@@ -179,11 +178,12 @@ export class TransacaoModalComponent implements OnInit {
     const recorrenteId = raw.transacaoRecorrenteId ? Number(raw.transacaoRecorrenteId) : null;
 
     const payload = {
-      categoriaId: Number(raw.categoriaId),
-      descricao: raw.descricao.trim(),
-      valor: Number(raw.valor),
+      categoriaId: raw.categoriaId ? Number(raw.categoriaId) : null,
+      descricao: raw.descricao.trim() || null,
+      valor: raw.valor === '' ? null : Number(raw.valor),
       tipoMovimentacao: raw.tipoMovimentacao as NaturezaFinanceira,
       tipoPagamento: raw.tipoPagamento as TipoPagamento,
+      status: raw.status as StatusTransacao,
       periodoId: periodo.id,
       transacaoRecorrenteId: recorrenteId,
       data: raw.data,
@@ -221,6 +221,7 @@ export class TransacaoModalComponent implements OnInit {
       valor: String(tx.valor),
       tipoMovimentacao: tx.tipoMovimentacao,
       tipoPagamento: tx.tipoPagamento,
+      status: tx.status,
       data: tx.data,
     });
     this.errorMessage.set('');
@@ -234,6 +235,35 @@ export class TransacaoModalComponent implements OnInit {
       this.form.controls.data.setValue(this.clampDateToPeriodo(today, periodo));
     }
     this.toggleManualValidators(true);
+  }
+
+  private loadRecorrentesDisponiveis(): void {
+    const periodo = this.selectedPeriodo();
+    const data = this.form.controls.data.value;
+
+    if (!periodo || !data) {
+      this.recorrentesDisponiveis.set(this.recorrentes());
+      return;
+    }
+
+    this.transacoesRecorrentesApi
+      .listDisponiveisParaLancamento(periodo.id, data)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (recorrentes) => {
+          const editingRecorrenteId = this.editingTransacao()?.transacaoRecorrenteId;
+          if (editingRecorrenteId && !recorrentes.some((item) => item.id === editingRecorrenteId)) {
+            const atual = this.recorrentes().find((item) => item.id === editingRecorrenteId);
+            this.recorrentesDisponiveis.set(atual ? [atual, ...recorrentes] : recorrentes);
+            return;
+          }
+
+          this.recorrentesDisponiveis.set(recorrentes);
+        },
+        error: () => {
+          this.recorrentesDisponiveis.set(this.recorrentes());
+        },
+      });
   }
 
   private toggleManualValidators(isManual: boolean): void {
@@ -256,7 +286,7 @@ export class TransacaoModalComponent implements OnInit {
         c.updateValueAndValidity({ emitEvent: false });
       });
       this.form.controls.descricao.setValidators([Validators.maxLength(255)]);
-      this.form.controls.valor.clearValidators();
+      this.form.controls.valor.setValidators([Validators.required, Validators.min(0.01)]);
     }
 
     this.form.controls.descricao.updateValueAndValidity({ emitEvent: false });

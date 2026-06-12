@@ -1,19 +1,20 @@
 package br.com.budgetflow.features.movimentacoes.service.support;
 
-import br.com.budgetflow.common.enums.Frequencia;
-import br.com.budgetflow.common.exceptions.BusinessRuleException;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+
+import br.com.budgetflow.common.enums.Frequencia;
+import br.com.budgetflow.common.exceptions.BusinessRuleException;
 
 public final class RecorrenciaUtils {
 
     private static final String MSG_DATA_ANTES_INICIO = "A data da transação não pode ser anterior ao início da recorrência";
     private static final String MSG_DATA_APOS_FIM = "A data da transação não pode ultrapassar a data final da recorrência";
-    private static final String MSG_DUPLICADA_PERIODO = "Esta transação recorrente já foi usada neste período";
     private static final String MSG_LIMITE_PARCELAS = "Não é possível lançar mais parcelas para esta transação recorrente";
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private RecorrenciaUtils() {
     }
@@ -25,12 +26,6 @@ public final class RecorrenciaUtils {
 
         if (dataFim != null && dataTransacao.isAfter(dataFim)) {
             throw new BusinessRuleException(MSG_DATA_APOS_FIM);
-        }
-    }
-
-    public static void validarRecorrenciaUnicaNoPeriodo(boolean jaExisteNoPeriodo) {
-        if (jaExisteNoPeriodo) {
-            throw new BusinessRuleException(MSG_DUPLICADA_PERIODO);
         }
     }
 
@@ -56,11 +51,31 @@ public final class RecorrenciaUtils {
         }
 
         return switch (frequencia) {
-            case DIARIO -> dataInicio.plusDays(indiceOcorrencia);
             case SEMANAL -> dataInicio.plusWeeks(indiceOcorrencia);
             case MENSAL -> adicionarMesesComAjusteFimMes(dataInicio, indiceOcorrencia);
             case ANUAL -> adicionarAnosComAjusteBissexto(dataInicio, indiceOcorrencia);
         };
+    }
+
+    public static LocalDate calcularProximaDataMinima(LocalDate ultimaData, Frequencia frequencia) {
+        return switch (frequencia) {
+            case SEMANAL -> ultimaData.plusWeeks(1);
+            case MENSAL -> adicionarMesesComAjusteFimMes(ultimaData, 1);
+            case ANUAL -> adicionarAnosComAjusteBissexto(ultimaData, 1);
+        };
+    }
+
+    public static void validarIntervaloRecorrencia(LocalDate dataTransacao, LocalDate ultimaData, Frequencia frequencia) {
+        if (ultimaData == null) {
+            return;
+        }
+
+        LocalDate proximaDataMinima = calcularProximaDataMinima(ultimaData, frequencia);
+        if (dataTransacao.isBefore(proximaDataMinima)) {
+            throw new BusinessRuleException(
+                    "Esta transação só pode ser lançada novamente a partir de " + proximaDataMinima.format(DATE_FORMATTER)
+            );
+        }
     }
 
     public static BigDecimal calcularValorTotal(BigDecimal valorParcela, Integer totalParcelas) {

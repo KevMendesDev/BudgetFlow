@@ -11,6 +11,7 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
 import { DateBRPipe } from '../../../../shared/pipes/date-br.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { fieldError } from '../../../../shared/utils/form-error.util';
+import { formatMonthYear, MONTH_OPTIONS } from '../../../../shared/utils/format.util';
 import { isDesktopViewport } from '../../../../shared/utils/viewport.util';
 
 @Component({
@@ -39,6 +40,8 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
   readonly totalPages = signal(0);
   readonly totalElements = signal(0);
   readonly fieldError = fieldError;
+  readonly monthOptions = MONTH_OPTIONS;
+  readonly formatMonthYear = formatMonthYear;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
     q: [''],
@@ -47,8 +50,8 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
   });
 
   readonly form = this.formBuilder.nonNullable.group({
-    dataInicio: ['', [Validators.required]],
-    dataFim: ['', [Validators.required]],
+    mes: ['', [Validators.required]],
+    ano: ['', [Validators.required, Validators.min(2000), Validators.max(2100)]],
   });
 
   ngOnInit(): void {
@@ -85,8 +88,8 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
     this.modalOpen.set(true);
     this.editingId.set(periodo.id);
     this.form.setValue({
-      dataInicio: periodo.dataInicio,
-      dataFim: periodo.dataFim,
+      mes: String(periodo.mes),
+      ano: String(periodo.ano),
     });
     this.modalErrorMessage.set('');
   }
@@ -102,16 +105,11 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
       return;
     }
 
-    const raw = this.form.getRawValue();
-    if (raw.dataFim < raw.dataInicio) {
-      this.modalErrorMessage.set('A data de fim não pode ser anterior à data de início.');
-      return;
-    }
-
     this.modalErrorMessage.set('');
     this.submitting.set(true);
 
-    const payload = { dataInicio: raw.dataInicio, dataFim: raw.dataFim };
+    const raw = this.form.getRawValue();
+    const payload = { mes: Number(raw.mes), ano: Number(raw.ano) };
 
     const editingId = this.editingId();
     const request$ = editingId
@@ -217,7 +215,7 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
 
   private resetForm(): void {
     this.editingId.set(null);
-    this.form.setValue({ dataInicio: '', dataFim: '' });
+    this.form.setValue({ mes: '', ano: '' });
     this.form.markAsPristine();
     this.form.markAsUntouched();
     this.modalErrorMessage.set('');

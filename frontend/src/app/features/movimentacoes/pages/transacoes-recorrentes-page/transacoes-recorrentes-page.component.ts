@@ -76,7 +76,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   readonly form = this.formBuilder.nonNullable.group({
     categoriaId: ['', [Validators.required]],
     descricao: ['', [Validators.required, Validators.maxLength(255)]],
-    valorParcela: ['', [Validators.required, Validators.min(0.01)]],
+    valorParcela: [''],
     tipoMovimentacao: ['' as '' | NaturezaFinanceira, [Validators.required]],
     tipoPagamento: ['' as '' | TipoPagamento, [Validators.required]],
     frequencia: ['' as '' | Frequencia, [Validators.required]],
@@ -141,7 +141,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
     this.form.setValue({
       categoriaId: String(item.categoriaId),
       descricao: item.descricao,
-      valorParcela: String(item.valorParcela),
+      valorParcela: item.valorParcela == null ? '' : String(item.valorParcela),
       tipoMovimentacao: item.tipoMovimentacao,
       tipoPagamento: item.tipoPagamento,
       frequencia: item.frequencia,
@@ -167,10 +167,16 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
     this.submitting.set(true);
 
     const raw = this.form.getRawValue();
+    const valorParcela = raw.valorParcela;
+    const valorParcelaNormalizado =
+      valorParcela === '' || valorParcela == null || Number(valorParcela) === 0
+        ? null
+        : Number(valorParcela);
+
     const payload = {
       categoriaId: Number(raw.categoriaId),
       descricao: raw.descricao.trim(),
-      valorParcela: Number(raw.valorParcela),
+      valorParcela: valorParcelaNormalizado,
       tipoMovimentacao: raw.tipoMovimentacao as NaturezaFinanceira,
       tipoPagamento: raw.tipoPagamento as TipoPagamento,
       frequencia: raw.frequencia as Frequencia,

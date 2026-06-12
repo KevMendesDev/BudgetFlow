@@ -5,6 +5,14 @@
         <h1>Olá, {{ user()?.nome }}</h1>
       </div>
       <div class="topbar-actions">
+        <button
+          type="button"
+          class="btn-sync-dashboard"
+          (click)="onSincronizarRecorrentes()"
+          [disabled]="!selectedPeriodo()"
+        >
+          Sincronizar recorrentes
+        </button>
         <label class="periodo-field grid gap-1" for="periodoSelect">
           Período selecionado
           <select
