@@ -8,7 +8,7 @@ import { RawHttpService } from '../services/raw-http.service';
 import { SessionService } from '../services/session.service';
 
 const AUTH_ROUTES_WITHOUT_REFRESH = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'];
-const UNAUTHORIZED_STATUS = new Set([401, 403]);
+const UNAUTHORIZED_STATUS = 401;
 
 let refreshInFlight$: Observable<void> | null = null;
 
@@ -19,7 +19,7 @@ export const authRefreshInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      const isUnauthorized = UNAUTHORIZED_STATUS.has(error.status);
+      const isUnauthorized = error.status === UNAUTHORIZED_STATUS;
       const shouldSkipRefresh = AUTH_ROUTES_WITHOUT_REFRESH.some((route) => req.url.includes(route));
 
       if (!isUnauthorized || shouldSkipRefresh) {

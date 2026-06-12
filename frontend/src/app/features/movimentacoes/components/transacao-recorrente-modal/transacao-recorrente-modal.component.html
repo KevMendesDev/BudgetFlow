@@ -1,0 +1,109 @@
+<section class="modal-backdrop" (click)="close()" aria-label="Fechar modal">
+  <div class="modal-card modal-wide bf-panel" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <h2>{{ editingRecorrencia() ? 'Editar recorrência' : 'Criar recorrência' }}</h2>
+      <button class="btn-secondary" type="button" (click)="close()" [disabled]="submitting()">Fechar</button>
+    </div>
+
+    @if (errorMessage()) {
+      <p class="error modal-error">{{ errorMessage() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-12" novalidate>
+      <label class="bf-label md:col-span-6">
+        Valor da parcela (opcional)
+        <input class="bf-input" type="number" min="0.01" step="0.01" formControlName="valorParcela" placeholder="0.00" />
+        @if (fieldError(form.controls.valorParcela, 'Valor')) {
+          <small class="bf-error">{{ fieldError(form.controls.valorParcela, 'Valor') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Tipo de movimentação
+        <select class="bf-input" formControlName="tipoMovimentacao">
+          <option value="">Selecione</option>
+          @for (item of tiposMovimentacao; track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.tipoMovimentacao, 'Tipo de movimentação')) {
+          <small class="bf-error">{{ fieldError(form.controls.tipoMovimentacao, 'Tipo de movimentação') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-12">
+        Descrição
+        <input class="bf-input" type="text" maxlength="255" formControlName="descricao" placeholder="Ex: Assinatura streaming" />
+        @if (fieldError(form.controls.descricao, 'Descrição')) {
+          <small class="bf-error">{{ fieldError(form.controls.descricao, 'Descrição') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Categoria
+        <select class="bf-input" formControlName="categoriaId" [disabled]="!form.controls.tipoMovimentacao.value">
+          <option value="">{{ form.controls.tipoMovimentacao.value ? 'Selecione' : 'Selecione o tipo de movimentação' }}</option>
+          @for (categoria of categoriasDisponiveis(); track categoria.id) {
+            <option [value]="categoria.id">{{ categoriaOptionLabel(categoria) }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.categoriaId, 'Categoria')) {
+          <small class="bf-error">{{ fieldError(form.controls.categoriaId, 'Categoria') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Tipo de pagamento
+        <select class="bf-input" formControlName="tipoPagamento">
+          <option value="">Selecione</option>
+          @for (item of tiposPagamento; track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.tipoPagamento, 'Tipo de pagamento')) {
+          <small class="bf-error">{{ fieldError(form.controls.tipoPagamento, 'Tipo de pagamento') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Frequência
+        <select class="bf-input" formControlName="frequencia">
+          <option value="">Selecione</option>
+          @for (item of frequencias; track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.frequencia, 'Frequência')) {
+          <small class="bf-error">{{ fieldError(form.controls.frequencia, 'Frequência') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Data de início
+        <input class="bf-input" type="date" formControlName="dataInicio" />
+        @if (fieldError(form.controls.dataInicio, 'Data de início')) {
+          <small class="bf-error">{{ fieldError(form.controls.dataInicio, 'Data de início') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Data de fim (opcional)
+        <input class="bf-input" type="date" formControlName="dataFim" />
+      </label>
+
+      <label class="bf-label md:col-span-6">
+        Total de parcelas (opcional)
+        <input class="bf-input" type="number" min="1" step="1" formControlName="totalParcelas" placeholder="Ex: 12" />
+        @if (fieldError(form.controls.totalParcelas, 'Total de parcelas')) {
+          <small class="bf-error">{{ fieldError(form.controls.totalParcelas, 'Total de parcelas') }}</small>
+        }
+      </label>
+
+      <div class="modal-actions md:col-span-12">
+        <button class="btn-create" type="submit" [disabled]="submitting() || loadingCategorias()">
+          {{ submitting() ? 'Salvando...' : editingRecorrencia() ? 'Salvar alterações' : 'Criar recorrência' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

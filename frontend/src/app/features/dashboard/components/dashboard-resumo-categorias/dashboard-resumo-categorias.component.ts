@@ -13,23 +13,21 @@ import {
 import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import { TransacaoResponse } from '../../../../core/models/transacao.models';
 import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
-import { formatDate, toIsoDate } from '../../../../shared/utils/format.util';
+import { formatDate } from '../../../../shared/utils/format.util';
 import { ThemeService } from '../../../../core/services/theme.service';
-
-interface CategoriaResumo {
-  nome: string;
-  classificacao: ClassificacaoCategoria;
-  total: number;
-  percentualSaldo: number;
-  percentualLucro: number;
-  color: string;
-}
-
-interface ClassificacaoResumo {
-  classificacao: ClassificacaoCategoria;
-  total: number;
-  widthPercent: number;
-}
+import {
+  buildCategoriaChartData,
+  buildCategoriasLegenda,
+  buildClassificacaoChartData,
+  buildColorMap,
+  buildDailyChartData,
+  buildResumoCategorias,
+  buildResumoClassificacao,
+  CategoriaResumo,
+  ClassificacaoResumo,
+  filterDespesas,
+  sumValores,
+} from '../../utils/dashboard-resumo.util';
 
 @Component({
   selector: 'app-dashboard-resumo-categorias',
@@ -54,39 +52,15 @@ export class DashboardResumoCategoriasComponent {
   readonly doughnutChartType: 'doughnut' = 'doughnut';
   readonly categoriaChartType: 'doughnut' = 'doughnut';
 
-  readonly saldo = computed(() => {
-    const receitas = this.totalReceitas();
-    const despesas = this.sumValores(this.getDespesas());
-    return receitas - despesas;
-  });
+  readonly despesas = computed(() => filterDespesas(this.transacoes()));
 
-  readonly totalReceitas = computed(() =>
-    this.sumValores(
-      this.transacoes().filter((tx) => tx.tipoMovimentacao === 'RECEITA')
-    )
+  readonly saldo = computed(() => this.totalReceitas() - sumValores(this.despesas()));
+
+  readonly totalReceitas = computed(() => sumValores(this.transacoes().filter((tx) => tx.tipoMovimentacao === 'RECEITA')));
+
+  readonly resumoCategorias = computed<CategoriaResumo[]>(() =>
+    buildResumoCategorias(this.despesas(), this.saldo(), this.totalReceitas(), (key) => this.colorForKey(key))
   );
-
-  readonly resumoCategorias = computed<CategoriaResumo[]>(() => {
-    const saldoBase = Math.max(1, Math.abs(this.saldo()));
-    const lucroBase = Math.max(1, this.totalReceitas());
-    const mapa = new Map<string, CategoriaResumo>();
-
-    this.getDespesas().forEach((tx) => {
-        const key = `${tx.categoriaNome}__${tx.classificacaoCategoria}`;
-        const atual = mapa.get(key);
-        const total = (atual?.total ?? 0) + Number(tx.valor);
-        mapa.set(key, {
-          nome: tx.categoriaNome,
-          classificacao: tx.classificacaoCategoria as ClassificacaoCategoria,
-          total,
-          percentualSaldo: Math.min(100, (total / saldoBase) * 100),
-          percentualLucro: Math.min(100, (total / lucroBase) * 100),
-          color: this.colorForKey(tx.categoriaNome),
-        });
-      });
-
-    return Array.from(mapa.values()).sort((a, b) => b.total - a.total);
-  });
 
   readonly dailyChartOptions = computed<ChartOptions<'bar'>>(() => {
     this.theme.effectiveTheme();
@@ -152,99 +126,31 @@ export class DashboardResumoCategoriasComponent {
   });
 
   readonly categoriasLegenda = computed(() => {
-    const nomes = new Set<string>();
-    this.getDespesas().forEach((tx) => nomes.add(tx.categoriaNome));
-
-    return Array.from(nomes).map((nome) => ({
-      nome,
-      color: this.colorForKey(nome),
-    }));
+    return buildCategoriasLegenda(this.despesas(), (key) => this.colorForKey(key));
   });
 
   readonly colorMap = computed(() => {
-    const keys = new Set<string>();
-    this.transacoes().forEach((tx) => {
-      if (tx.categoriaNome) {
-        keys.add(tx.categoriaNome);
-      }
-      if (tx.classificacaoCategoria) {
-        keys.add(tx.classificacaoCategoria);
-      }
-    });
+    const keys = this.transacoes().flatMap((tx) => [
+      ...(tx.categoriaNome ? [tx.categoriaNome] : []),
+      ...(tx.classificacaoCategoria ? [tx.classificacaoCategoria] : []),
+    ]);
 
-    const list = Array.from(keys).sort((a, b) => a.localeCompare(b));
-    const map = new Map<string, string>();
-    list.forEach((key, index) => {
-      map.set(key, this.colorFromIndex(index));
-    });
-    return map;
+    return buildColorMap(keys, (index) => this.colorFromIndex(index));
   });
 
   readonly dailyChartData = computed<ChartData<'bar'>>(() => {
-    const periodo = this.selectedPeriodo();
-    if (!periodo) {
-      return { labels: [], datasets: [] };
-    }
-
-    const dias = this.getDiasNoPeriodo(periodo.dataInicio, periodo.dataFim);
-    const labels = dias.map((dia) => formatDate(dia));
-    const categorias = this.getCategoriasUnicas(this.getDespesas());
-
-    const datasets = categorias.map((categoria) => {
-      const data = dias.map((dia) =>
-        this.sumValores(
-          this.getDespesas().filter((tx) => tx.data === dia && tx.categoriaNome === categoria)
-        )
-      );
-
-      return {
-        label: categoria,
-        data,
-        backgroundColor: this.colorForKey(categoria),
-        borderRadius: 6,
-        borderSkipped: false as const,
-      };
-    });
-
-    return { labels, datasets };
+    return buildDailyChartData(this.selectedPeriodo(), this.despesas(), (key) => this.colorForKey(key));
   });
 
   readonly classificacaoChartData = computed<ChartData<'doughnut'>>(() => {
-    const classificacoes = this.resumoClassificacao();
-    return {
-      labels: classificacoes.map((item) => this.classificacaoLabels[item.classificacao]),
-      datasets: [
-        {
-          data: classificacoes.map((item) => item.total),
-          backgroundColor: classificacoes.map((item) => this.colorForKey(item.classificacao)),
-          borderWidth: 0,
-        },
-      ],
-    };
+    return buildClassificacaoChartData(
+      this.resumoClassificacao(),
+      (classificacao) => this.classificacaoLabels[classificacao],
+      (key) => this.colorForKey(key)
+    );
   });
 
-  readonly resumoClassificacao = computed<ClassificacaoResumo[]>(() => {
-    const mapa = new Map<ClassificacaoCategoria, number>();
-
-    this.getDespesas().forEach((tx) => {
-        const classificacao = tx.classificacaoCategoria as ClassificacaoCategoria;
-        mapa.set(classificacao, (mapa.get(classificacao) ?? 0) + Number(tx.valor));
-      });
-
-    const totais = Array.from(mapa.entries()).map(([classificacao, total]) => ({
-      classificacao,
-      total,
-    }));
-
-    const maxTotal = Math.max(1, ...totais.map((item) => item.total));
-
-    return totais
-      .map((item) => ({
-        ...item,
-        widthPercent: (item.total / maxTotal) * 100,
-      }))
-      .sort((a, b) => b.total - a.total);
-  });
+  readonly resumoClassificacao = computed<ClassificacaoResumo[]>(() => buildResumoClassificacao(this.despesas()));
 
   toggle(): void {
     this.aberto.update((value) => !value);
@@ -252,46 +158,10 @@ export class DashboardResumoCategoriasComponent {
 
   categoriaChartData(item: CategoriaResumo): ChartData<'doughnut'> {
     this.theme.effectiveTheme();
-    const receitas = Math.max(1, this.totalReceitas());
-    const restante = Math.max(0, receitas - item.total);
-    return {
-      labels: ['Gasto', 'Restante'],
-      datasets: [
-        {
-          data: [item.total, restante],
-          backgroundColor: [item.color, this.cssVar('--chart-track')],
-          borderWidth: 0,
-        },
-      ],
-    };
+    return buildCategoriaChartData(item.total, this.totalReceitas(), item.color, this.cssVar('--chart-track'));
   }
 
   formatDate = formatDate;
-
-  private getDespesas(): TransacaoResponse[] {
-    return this.transacoes().filter((tx) => tx.tipoMovimentacao === 'DESPESA');
-  }
-
-  private getCategoriasUnicas(transacoes: TransacaoResponse[]): string[] {
-    return Array.from(new Set(transacoes.map((tx) => tx.categoriaNome)));
-  }
-
-  private sumValores(transacoes: TransacaoResponse[]): number {
-    return transacoes.reduce((sum, tx) => sum + Number(tx.valor), 0);
-  }
-
-  private getDiasNoPeriodo(inicio: string, fim: string): string[] {
-    const dias: string[] = [];
-    let atual = new Date(`${inicio}T00:00:00`);
-    const end = new Date(`${fim}T00:00:00`);
-
-    while (atual <= end) {
-      dias.push(toIsoDate(atual));
-      atual.setDate(atual.getDate() + 1);
-    }
-
-    return dias;
-  }
 
   private colorForKey(key: string): string {
     return this.colorMap().get(key) ?? this.colorFromIndex(this.hashToIndex(key));

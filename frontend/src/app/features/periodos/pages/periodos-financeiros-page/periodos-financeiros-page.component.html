@@ -147,46 +147,10 @@
   </div>
 
   @if (modalOpen()) {
-    <section class="modal-backdrop" (click)="closeModal()" aria-label="Fechar modal">
-      <div class="modal-card bf-panel" (click)="$event.stopPropagation()">
-        <div class="modal-head">
-          <h2>{{ editingId() ? 'Editar período' : 'Criar período' }}</h2>
-          <button class="btn-secondary" type="button" (click)="closeModal()" [disabled]="submitting()">Fechar</button>
-        </div>
-
-        @if (modalErrorMessage()) {
-          <p class="error modal-error">{{ modalErrorMessage() }}</p>
-        }
-
-        <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid gap-3" novalidate>
-          <label class="bf-label">
-            Mês
-            <select class="bf-input" formControlName="mes">
-              <option value="">Selecione</option>
-              @for (month of monthOptions; track month.value) {
-                <option [value]="month.value">{{ month.label }}</option>
-              }
-            </select>
-            @if (fieldError(form.controls.mes, 'Mês')) {
-              <small class="bf-error">{{ fieldError(form.controls.mes, 'Mês') }}</small>
-            }
-          </label>
-
-          <label class="bf-label">
-            Ano
-            <input class="bf-input" type="number" min="2000" max="2100" step="1" formControlName="ano" />
-            @if (fieldError(form.controls.ano, 'Ano')) {
-              <small class="bf-error">{{ fieldError(form.controls.ano, 'Ano') }}</small>
-            }
-          </label>
-
-          <div class="modal-actions">
-            <button class="btn-create" type="submit" [disabled]="submitting()">
-              {{ submitting() ? 'Salvando...' : editingId() ? 'Salvar alterações' : 'Criar período' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </section>
+    <app-periodo-financeiro-modal
+      [editingPeriodo]="editingPeriodo()"
+      (closed)="closeModal()"
+      (saved)="onPeriodoSaved()"
+    />
   }
 </main>

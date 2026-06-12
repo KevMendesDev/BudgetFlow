@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { PageSize } from '../../../../core/models/pagination.models';
@@ -10,13 +10,13 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 import { DateBRPipe } from '../../../../shared/pipes/date-br.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
-import { fieldError } from '../../../../shared/utils/form-error.util';
-import { formatMonthYear, MONTH_OPTIONS } from '../../../../shared/utils/format.util';
+import { formatMonthYear } from '../../../../shared/utils/format.util';
 import { isDesktopViewport } from '../../../../shared/utils/viewport.util';
+import { PeriodoFinanceiroModalComponent } from '../../components/periodo-financeiro-modal/periodo-financeiro-modal.component';
 
 @Component({
   selector: 'app-periodos-financeiros-page',
-  imports: [ReactiveFormsModule, DateBRPipe],
+  imports: [ReactiveFormsModule, DateBRPipe, PeriodoFinanceiroModalComponent],
   templateUrl: './periodos-financeiros-page.component.html',
   styleUrl: './periodos-financeiros-page.component.scss',
 })
@@ -29,29 +29,20 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
 
   readonly periodos = signal<PeriodoFinanceiroResponse[]>([]);
   readonly loading = signal(false);
-  readonly submitting = signal(false);
   readonly deletingId = signal<number | null>(null);
   readonly modalOpen = signal(false);
-  readonly editingId = signal<number | null>(null);
+  readonly editingPeriodo = signal<PeriodoFinanceiroResponse | null>(null);
   readonly errorMessage = signal('');
-  readonly modalErrorMessage = signal('');
   readonly filtrosAbertos = signal(isDesktopViewport());
   readonly paginaAtual = signal(0);
   readonly totalPages = signal(0);
   readonly totalElements = signal(0);
-  readonly fieldError = fieldError;
-  readonly monthOptions = MONTH_OPTIONS;
   readonly formatMonthYear = formatMonthYear;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
     q: [''],
     dataInicio: [''],
     dataFim: [''],
-  });
-
-  readonly form = this.formBuilder.nonNullable.group({
-    mes: ['', [Validators.required]],
-    ano: ['', [Validators.required, Validators.min(2000), Validators.max(2100)]],
   });
 
   ngOnInit(): void {
@@ -80,54 +71,23 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
   }
 
   openCreateModal(): void {
+    this.editingPeriodo.set(null);
     this.modalOpen.set(true);
-    this.resetForm();
   }
 
   startEdit(periodo: PeriodoFinanceiroResponse): void {
+    this.editingPeriodo.set(periodo);
     this.modalOpen.set(true);
-    this.editingId.set(periodo.id);
-    this.form.setValue({
-      mes: String(periodo.mes),
-      ano: String(periodo.ano),
-    });
-    this.modalErrorMessage.set('');
   }
 
   closeModal(): void {
     this.modalOpen.set(false);
-    this.resetForm();
+    this.editingPeriodo.set(null);
   }
 
-  submit(): void {
-    if (this.form.invalid || this.submitting()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    this.modalErrorMessage.set('');
-    this.submitting.set(true);
-
-    const raw = this.form.getRawValue();
-    const payload = { mes: Number(raw.mes), ano: Number(raw.ano) };
-
-    const editingId = this.editingId();
-    const request$ = editingId
-      ? this.periodosApi.update(editingId, payload)
-      : this.periodosApi.create(payload);
-
-    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.toast.show(editingId ? 'Período atualizado.' : 'Período criado.', 'success');
-        this.closeModal();
-        this.loadPeriodos(this.paginaAtual());
-      },
-      error: (err) => {
-        this.modalErrorMessage.set(mapApiError(err));
-        this.submitting.set(false);
-      },
-    });
+  onPeriodoSaved(): void {
+    this.closeModal();
+    this.loadPeriodos(this.paginaAtual());
   }
 
   async deletePeriodo(periodo: PeriodoFinanceiroResponse): Promise<void> {
@@ -211,13 +171,5 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
           this.loading.set(false);
         },
       });
-  }
-
-  private resetForm(): void {
-    this.editingId.set(null);
-    this.form.setValue({ mes: '', ano: '' });
-    this.form.markAsPristine();
-    this.form.markAsUntouched();
-    this.modalErrorMessage.set('');
   }
 }

@@ -1,0 +1,55 @@
+<section class="modal-backdrop" (click)="close()" aria-label="Fechar modal">
+  <div class="modal-card bf-panel" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <h2>{{ editingCategoria() ? 'Editar categoria' : 'Criar categoria' }}</h2>
+      <button class="btn-secondary" type="button" (click)="close()" [disabled]="submitting()">Fechar</button>
+    </div>
+
+    @if (errorMessage()) {
+      <p class="error modal-error">{{ errorMessage() }}</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid gap-3" novalidate>
+      <label class="bf-label">
+        Nome
+        <input class="bf-input" type="text" maxlength="100" formControlName="nome" placeholder="Ex: Alimentação" />
+        @if (fieldError(form.controls.nome, 'Nome')) {
+          <small class="bf-error">{{ fieldError(form.controls.nome, 'Nome') }}</small>
+        }
+      </label>
+
+      <label class="bf-label">
+        Tipo
+        <select class="bf-input" formControlName="tipoCategoria">
+          @for (item of tiposCategoria; track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.tipoCategoria, 'Tipo')) {
+          <small class="bf-error">{{ fieldError(form.controls.tipoCategoria, 'Tipo') }}</small>
+        }
+      </label>
+
+      @if (isDespesaForm()) {
+        <label class="bf-label">
+          Classificação
+          <select class="bf-input" formControlName="classificacao">
+            <option value="">Selecione</option>
+            @for (item of classificacoes; track item.value) {
+              <option [value]="item.value">{{ item.label }}</option>
+            }
+          </select>
+          @if (fieldError(form.controls.classificacao, 'Classificação')) {
+            <small class="bf-error">{{ fieldError(form.controls.classificacao, 'Classificação') }}</small>
+          }
+        </label>
+      }
+
+      <div class="modal-actions">
+        <button class="btn-create" type="submit" [disabled]="submitting()">
+          {{ submitting() ? 'Salvando...' : editingCategoria() ? 'Salvar alterações' : 'Criar categoria' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

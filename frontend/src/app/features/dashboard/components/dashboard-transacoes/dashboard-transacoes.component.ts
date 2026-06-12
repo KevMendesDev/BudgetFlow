@@ -15,7 +15,7 @@ import {
   TipoPagamento,
   TransacaoResponse,
 } from '../../../../core/models/transacao.models';
-import { TransacaoRecorrenteResponse, Frequencia } from '../../../../core/models/transacao-recorrente.models';
+import { TransacaoRecorrenteResponse } from '../../../../core/models/transacao-recorrente.models';
 import { TransacoesApiService } from '../../../../core/services/transacoes-api.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
@@ -25,6 +25,7 @@ import { formatDate } from '../../../../shared/utils/format.util';
 import { isDesktopViewport } from '../../../../shared/utils/viewport.util';
 import { PageSize } from '../../../../core/models/pagination.models';
 import { TransacaoModalComponent } from '../transacao-modal/transacao-modal.component';
+import { buildParcelaInfo } from '../../utils/transacao-parcelas.util';
 
 @Component({
   selector: 'app-dashboard-transacoes',
@@ -214,26 +215,7 @@ export class DashboardTransacoesComponent {
   }
 
   parcelaInfo(tx: TransacaoResponse): string {
-    if (!tx.transacaoRecorrenteId) {
-      return '';
-    }
-
-    const recorrente = this.recorrentes().find((item) => item.id === tx.transacaoRecorrenteId);
-    if (!recorrente) {
-      return '';
-    }
-
-    const total = recorrente.totalParcelas ?? this.calcularTotalParcelasPorDataFim(recorrente);
-    if (!total) {
-      return '';
-    }
-
-    const numero = this.calcularNumeroParcela(recorrente, tx.data);
-    if (!numero) {
-      return '';
-    }
-
-    return `${numero}/${total}`;
+    return buildParcelaInfo(tx, this.recorrentes());
   }
 
   private loadPage(page: number): void {
@@ -339,50 +321,5 @@ export class DashboardTransacoesComponent {
       tipoPagamento: tipoPagamento || undefined,
       recorrente: recorrenteRaw === 'all' ? undefined : recorrenteRaw === 'true',
     };
-  }
-
-  private calcularNumeroParcela(
-    recorrente: TransacaoRecorrenteResponse,
-    data: string
-  ): number | null {
-    const inicio = new Date(`${recorrente.dataInicio}T00:00:00`);
-    const alvo = new Date(`${data}T00:00:00`);
-
-    if (alvo < inicio) {
-      return null;
-    }
-
-    const indice = this.calcularIndice(inicio, alvo, recorrente.frequencia);
-    return indice >= 0 ? indice + 1 : null;
-  }
-
-  private calcularTotalParcelasPorDataFim(recorrente: TransacaoRecorrenteResponse): number | null {
-    if (!recorrente.dataFim) {
-      return null;
-    }
-
-    const inicio = new Date(`${recorrente.dataInicio}T00:00:00`);
-    const fim = new Date(`${recorrente.dataFim}T00:00:00`);
-
-    if (fim < inicio) {
-      return null;
-    }
-
-    return this.calcularIndice(inicio, fim, recorrente.frequencia) + 1;
-  }
-
-  private calcularIndice(inicio: Date, alvo: Date, frequencia: Frequencia): number {
-    const MS_DIA = 1000 * 60 * 60 * 24;
-
-    switch (frequencia) {
-      case 'SEMANAL':
-        return Math.floor((alvo.getTime() - inicio.getTime()) / (MS_DIA * 7));
-      case 'MENSAL':
-        return (alvo.getFullYear() - inicio.getFullYear()) * 12 + (alvo.getMonth() - inicio.getMonth());
-      case 'ANUAL':
-        return alvo.getFullYear() - inicio.getFullYear();
-      default:
-        return 0;
-    }
   }
 }

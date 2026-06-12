@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import {
@@ -17,12 +17,12 @@ import { CategoriasApiService } from '../../../../core/services/categorias-api.s
 import { ToastService } from '../../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
-import { fieldError } from '../../../../shared/utils/form-error.util';
 import { isDesktopViewport } from '../../../../shared/utils/viewport.util';
+import { CategoriaModalComponent } from '../../components/categoria-modal/categoria-modal.component';
 
 @Component({
   selector: 'app-categorias-page',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CategoriaModalComponent],
   templateUrl: './categorias-page.component.html',
   styleUrl: './categorias-page.component.scss',
 })
@@ -35,39 +35,22 @@ export class CategoriasPageComponent implements OnInit {
 
   readonly categorias = signal<CategoriaResponse[]>([]);
   readonly loading = signal(false);
-  readonly submitting = signal(false);
   readonly deletingId = signal<number | null>(null);
   readonly modalOpen = signal(false);
-  readonly editingId = signal<number | null>(null);
+  readonly editingCategoria = signal<CategoriaResponse | null>(null);
   readonly errorMessage = signal('');
-  readonly modalErrorMessage = signal('');
   readonly filtrosAbertos = signal(isDesktopViewport());
   readonly paginaAtual = signal(0);
   readonly totalPages = signal(0);
   readonly totalElements = signal(0);
   readonly classificacoes = CLASSIFICACOES;
   readonly tiposCategoria = TIPOS_CATEGORIA;
-  readonly fieldError = fieldError;
 
   readonly filtersForm = this.formBuilder.nonNullable.group({
     q: [''],
     classificacao: ['' as '' | ClassificacaoCategoria],
     tipoCategoria: ['' as '' | NaturezaFinanceira],
   });
-
-  readonly form = this.formBuilder.nonNullable.group({
-    nome: ['', [Validators.required, Validators.maxLength(100)]],
-    tipoCategoria: [NaturezaFinanceira.DESPESA as NaturezaFinanceira, [Validators.required]],
-    classificacao: ['' as '' | ClassificacaoCategoria],
-  });
-
-  constructor() {
-    this.configureClassificacaoValidator(this.form.controls.tipoCategoria.value);
-
-    this.form.controls.tipoCategoria.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((tipoCategoria) => this.configureClassificacaoValidator(tipoCategoria));
-  }
 
   ngOnInit(): void {
     this.loadCategorias(0);
@@ -94,63 +77,24 @@ export class CategoriasPageComponent implements OnInit {
     this.loadCategorias(0);
   }
 
-  submit(): void {
-    if (this.form.invalid || this.submitting()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    this.modalErrorMessage.set('');
-    this.submitting.set(true);
-
-    const raw = this.form.getRawValue();
-    const payload = {
-      nome: raw.nome.trim(),
-      tipoCategoria: raw.tipoCategoria as NaturezaFinanceira,
-      classificacao:
-        raw.tipoCategoria === NaturezaFinanceira.DESPESA
-          ? (raw.classificacao as ClassificacaoCategoria)
-          : null,
-    };
-
-    const editingId = this.editingId();
-    const request$ = editingId
-      ? this.categoriasApi.update(editingId, payload)
-      : this.categoriasApi.create(payload);
-
-    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.toast.show(editingId ? 'Categoria atualizada.' : 'Categoria criada.', 'success');
-        this.closeModal();
-        this.loadCategorias(this.paginaAtual());
-      },
-      error: (err) => {
-        this.modalErrorMessage.set(mapApiError(err));
-        this.submitting.set(false);
-      },
-    });
-  }
-
   openCreateModal(): void {
+    this.editingCategoria.set(null);
     this.modalOpen.set(true);
-    this.resetForm();
   }
 
   startEdit(categoria: CategoriaResponse): void {
+    this.editingCategoria.set(categoria);
     this.modalOpen.set(true);
-    this.editingId.set(categoria.id);
-    this.form.setValue({
-      nome: categoria.nome,
-      tipoCategoria: categoria.tipoCategoria,
-      classificacao: categoria.classificacao ?? '',
-    });
-    this.modalErrorMessage.set('');
   }
 
   closeModal(): void {
     this.modalOpen.set(false);
-    this.resetForm();
+    this.editingCategoria.set(null);
+  }
+
+  onCategoriaSaved(): void {
+    this.closeModal();
+    this.loadCategorias(this.paginaAtual());
   }
 
   async deleteCategoria(categoria: CategoriaResponse): Promise<void> {
@@ -172,11 +116,6 @@ export class CategoriasPageComponent implements OnInit {
         next: () => {
           this.deletingId.set(null);
           this.toast.show('Categoria excluída.', 'success');
-
-          if (this.editingId() === categoria.id) {
-            this.resetForm();
-          }
-
           this.loadCategorias(this.paginaAtual());
         },
         error: () => {
@@ -195,11 +134,6 @@ export class CategoriasPageComponent implements OnInit {
   tipoCategoriaLabel(value: NaturezaFinanceira): string {
     return TIPO_CATEGORIA_LABELS[value] ?? value;
   }
-
-  isDespesaForm(): boolean {
-    return this.form.controls.tipoCategoria.value === NaturezaFinanceira.DESPESA;
-  }
-
   goToPreviousPage(): void {
     const atual = this.paginaAtual();
     if (atual > 0) {
@@ -252,24 +186,5 @@ export class CategoriasPageComponent implements OnInit {
           this.loading.set(false);
         },
       });
-  }
-
-  private resetForm(): void {
-    this.editingId.set(null);
-    this.form.setValue({ nome: '', tipoCategoria: NaturezaFinanceira.DESPESA, classificacao: '' });
-    this.form.markAsPristine();
-    this.form.markAsUntouched();
-    this.modalErrorMessage.set('');
-  }
-
-  private configureClassificacaoValidator(tipoCategoria: NaturezaFinanceira): void {
-    const classificacaoControl = this.form.controls.classificacao;
-    if (tipoCategoria === NaturezaFinanceira.DESPESA) {
-      classificacaoControl.setValidators([Validators.required]);
-    } else {
-      classificacaoControl.setValue('', { emitEvent: false });
-      classificacaoControl.clearValidators();
-    }
-    classificacaoControl.updateValueAndValidity({ emitEvent: false });
   }
 }

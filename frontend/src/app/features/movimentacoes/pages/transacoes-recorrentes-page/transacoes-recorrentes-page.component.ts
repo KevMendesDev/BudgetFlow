@@ -1,11 +1,10 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import {
   CategoriaResponse,
-  CLASSIFICACAO_LABELS,
 } from '../../../../core/models/categoria.models';
 import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.models';
 import { PageSize } from '../../../../core/models/pagination.models';
@@ -19,7 +18,6 @@ import {
   TIPO_MOVIMENTACAO_LABELS,
   TIPO_PAGAMENTO_LABELS,
   TIPOS_MOVIMENTACAO,
-  TIPOS_PAGAMENTO,
   TipoPagamento,
 } from '../../../../core/models/transacao.models';
 import { CategoriasApiService } from '../../../../core/services/categorias-api.service';
@@ -29,12 +27,12 @@ import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog
 import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { DateBRPipe } from '../../../../shared/pipes/date-br.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
-import { fieldError } from '../../../../shared/utils/form-error.util';
 import { isDesktopViewport } from '../../../../shared/utils/viewport.util';
+import { TransacaoRecorrenteModalComponent } from '../../components/transacao-recorrente-modal/transacao-recorrente-modal.component';
 
 @Component({
   selector: 'app-transacoes-recorrentes-page',
-  imports: [ReactiveFormsModule, CurrencyBRLPipe, DateBRPipe],
+  imports: [ReactiveFormsModule, CurrencyBRLPipe, DateBRPipe, TransacaoRecorrenteModalComponent],
   templateUrl: './transacoes-recorrentes-page.component.html',
   styleUrl: './transacoes-recorrentes-page.component.scss',
 })
@@ -50,12 +48,10 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   readonly categorias = signal<CategoriaResponse[]>([]);
   readonly loading = signal(false);
   readonly loadingCategorias = signal(false);
-  readonly submitting = signal(false);
   readonly deletingId = signal<number | null>(null);
   readonly modalOpen = signal(false);
-  readonly editingId = signal<number | null>(null);
+  readonly editingRecorrencia = signal<TransacaoRecorrenteResponse | null>(null);
   readonly errorMessage = signal('');
-  readonly modalErrorMessage = signal('');
   readonly filtrosAbertos = signal(isDesktopViewport());
   readonly paginaAtual = signal(0);
   readonly totalPages = signal(0);
@@ -63,34 +59,15 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
 
   readonly frequencias = FREQUENCIAS;
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
-  readonly tiposPagamento = TIPOS_PAGAMENTO;
-  readonly fieldError = fieldError;
-  readonly classificacaoLabels = CLASSIFICACAO_LABELS;
-
   readonly filtersForm = this.formBuilder.nonNullable.group({
     query: [''],
     frequencia: ['' as '' | Frequencia],
     tipoMovimentacao: ['' as '' | NaturezaFinanceira],
   });
 
-  readonly form = this.formBuilder.nonNullable.group({
-    categoriaId: ['', [Validators.required]],
-    descricao: ['', [Validators.required, Validators.maxLength(255)]],
-    valorParcela: [''],
-    tipoMovimentacao: ['' as '' | NaturezaFinanceira, [Validators.required]],
-    tipoPagamento: ['' as '' | TipoPagamento, [Validators.required]],
-    frequencia: ['' as '' | Frequencia, [Validators.required]],
-    dataInicio: ['', [Validators.required]],
-    dataFim: [''],
-    totalParcelas: ['', [Validators.min(1)]],
-  });
-
-  readonly categoriasDisponiveis = signal<CategoriaResponse[]>([]);
-
   ngOnInit(): void {
     this.loadCategorias();
     this.loadRecorrencias(0);
-    this.syncCategoriasDisponiveis();
 
     this.filtersForm.valueChanges
       .pipe(
@@ -100,21 +77,6 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
       )
       .subscribe(() => this.loadRecorrencias(0));
 
-    this.form.controls.tipoMovimentacao.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((tipoMovimentacao) => {
-        this.syncCategoriasDisponiveis();
-
-        const categoriaId = Number(this.form.controls.categoriaId.value);
-        if (!categoriaId || !tipoMovimentacao) {
-          return;
-        }
-
-        const categoria = this.categorias().find((item) => item.id === categoriaId);
-        if (categoria && categoria.tipoCategoria !== tipoMovimentacao) {
-          this.form.controls.categoriaId.setValue('');
-        }
-      });
   }
 
   toggleFiltros(): void {
@@ -131,77 +93,23 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   }
 
   openCreateModal(): void {
+    this.editingRecorrencia.set(null);
     this.modalOpen.set(true);
-    this.resetForm();
   }
 
   startEdit(item: TransacaoRecorrenteResponse): void {
+    this.editingRecorrencia.set(item);
     this.modalOpen.set(true);
-    this.editingId.set(item.id);
-    this.form.setValue({
-      categoriaId: String(item.categoriaId),
-      descricao: item.descricao,
-      valorParcela: item.valorParcela == null ? '' : String(item.valorParcela),
-      tipoMovimentacao: item.tipoMovimentacao,
-      tipoPagamento: item.tipoPagamento,
-      frequencia: item.frequencia,
-      dataInicio: item.dataInicio,
-      dataFim: item.dataFim ?? '',
-      totalParcelas: item.totalParcelas ? String(item.totalParcelas) : '',
-    });
-    this.modalErrorMessage.set('');
   }
 
   closeModal(): void {
     this.modalOpen.set(false);
-    this.resetForm();
+    this.editingRecorrencia.set(null);
   }
 
-  submit(): void {
-    if (this.form.invalid || this.submitting()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    this.modalErrorMessage.set('');
-    this.submitting.set(true);
-
-    const raw = this.form.getRawValue();
-    const valorParcela = raw.valorParcela;
-    const valorParcelaNormalizado =
-      valorParcela === '' || valorParcela == null || Number(valorParcela) === 0
-        ? null
-        : Number(valorParcela);
-
-    const payload = {
-      categoriaId: Number(raw.categoriaId),
-      descricao: raw.descricao.trim(),
-      valorParcela: valorParcelaNormalizado,
-      tipoMovimentacao: raw.tipoMovimentacao as NaturezaFinanceira,
-      tipoPagamento: raw.tipoPagamento as TipoPagamento,
-      frequencia: raw.frequencia as Frequencia,
-      dataInicio: raw.dataInicio,
-      dataFim: raw.dataFim || null,
-      totalParcelas: raw.totalParcelas ? Number(raw.totalParcelas) : null,
-    };
-
-    const editingId = this.editingId();
-    const request$ = editingId
-      ? this.recorrentesApi.update(editingId, payload)
-      : this.recorrentesApi.create(payload);
-
-    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.toast.show(editingId ? 'Recorrência atualizada.' : 'Recorrência criada.', 'success');
-        this.closeModal();
-        this.loadRecorrencias(this.paginaAtual());
-      },
-      error: (err) => {
-        this.modalErrorMessage.set(mapApiError(err));
-        this.submitting.set(false);
-      },
-    });
+  onRecorrenciaSaved(): void {
+    this.closeModal();
+    this.loadRecorrencias(this.paginaAtual());
   }
 
   async deleteRecorrencia(item: TransacaoRecorrenteResponse): Promise<void> {
@@ -244,15 +152,6 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   tipoPagamentoLabel(value: TipoPagamento): string {
     return TIPO_PAGAMENTO_LABELS[value] ?? value;
   }
-
-  categoriaOptionLabel(categoria: CategoriaResponse): string {
-    const parts = [categoria.nome];
-    if (categoria.classificacao) {
-      parts.push(this.classificacaoLabels[categoria.classificacao]);
-    }
-    return parts.join(' • ');
-  }
-
   goToPreviousPage(): void {
     const atual = this.paginaAtual();
     if (atual > 0) {
@@ -276,7 +175,6 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
       .subscribe({
         next: (page) => {
           this.categorias.set(page.content);
-          this.syncCategoriasDisponiveis();
           this.loadingCategorias.set(false);
         },
         error: (err) => {
@@ -324,36 +222,5 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
           this.loading.set(false);
         },
       });
-  }
-
-  private resetForm(): void {
-    this.editingId.set(null);
-    this.form.setValue({
-      categoriaId: '',
-      descricao: '',
-      valorParcela: '',
-      tipoMovimentacao: '',
-      tipoPagamento: '',
-      frequencia: '',
-      dataInicio: '',
-      dataFim: '',
-      totalParcelas: '',
-    });
-    this.form.markAsPristine();
-    this.form.markAsUntouched();
-    this.modalErrorMessage.set('');
-    this.syncCategoriasDisponiveis();
-  }
-
-  private syncCategoriasDisponiveis(): void {
-    const tipoMovimentacao = this.form.controls.tipoMovimentacao.value;
-    if (!tipoMovimentacao) {
-      this.categoriasDisponiveis.set([]);
-      return;
-    }
-
-    this.categoriasDisponiveis.set(
-      this.categorias().filter((categoria) => categoria.tipoCategoria === tipoMovimentacao)
-    );
   }
 }

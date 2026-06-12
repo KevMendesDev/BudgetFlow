@@ -15,6 +15,7 @@ export class SessionService {
   readonly loading = signal(false);
 
   readonly isAuthenticated = () => this.user() !== null;
+  readonly isBootstrapped = () => this.hasBootstrapped;
 
   bootstrapSession(force = false): Observable<boolean> {
     if (this.hasBootstrapped && !force) {
