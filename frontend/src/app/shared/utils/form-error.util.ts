@@ -27,10 +27,6 @@ export function fieldError(control: AbstractControl | null, label: string): stri
     return 'E-mail inválido';
   }
 
-  if (control.hasError('cpf')) {
-    return 'CPF inválido';
-  }
-
   if (control.hasError('telefone')) {
     return 'Telefone inválido';
   }

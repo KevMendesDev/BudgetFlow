@@ -6,9 +6,9 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthApiService } from '../../../../core/services/auth-api.service';
 import { SessionService } from '../../../../core/services/session.service';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
-import { formatCpf, formatPhone, onlyDigits } from '../../../../shared/utils/format.util';
+import { formatPhone, onlyDigits } from '../../../../shared/utils/format.util';
 import { fieldError } from '../../../../shared/utils/form-error.util';
-import { cpfValidator, strongPasswordValidator, telefoneValidator } from '../../../../shared/validators/br-validators';
+import { strongPasswordValidator, telefoneValidator } from '../../../../shared/validators/br-validators';
 
 @Component({
   selector: 'app-register-page',
@@ -29,15 +29,9 @@ export class RegisterPageComponent {
   readonly form = this.formBuilder.nonNullable.group({
     nome: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
-    cpf: ['', [Validators.required, cpfValidator()]],
     telefone: ['', [telefoneValidator(true)]],
     senha: ['', [Validators.required, Validators.minLength(8), strongPasswordValidator()]],
   });
-
-  onCpfInput(): void {
-    const cpfControl = this.form.controls.cpf;
-    cpfControl.setValue(formatCpf(cpfControl.value), { emitEvent: false });
-  }
 
   onPhoneInput(): void {
     const telefoneControl = this.form.controls.telefone;
@@ -58,7 +52,7 @@ export class RegisterPageComponent {
     this.authApi
       .register({
         ...formValue,
-        cpf: onlyDigits(formValue.cpf),
+        email: formValue.email.trim().toLowerCase(),
         telefone: formValue.telefone ? onlyDigits(formValue.telefone) : null,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
