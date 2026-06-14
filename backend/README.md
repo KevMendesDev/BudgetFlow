@@ -34,5 +34,8 @@ Set these environment variables in the runtime platform or container environment
 - `CORS_ALLOWED_ORIGINS`
 - `COOKIE_SECURE`
 - `COOKIE_DOMAIN` when needed
+- `BREVO_API_KEY`
+- `EMAIL_FROM`
+- `EMAIL_FROM_NAME`
 
 Do not store production secrets in repository files.

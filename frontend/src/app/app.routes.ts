@@ -25,6 +25,38 @@ export const routes: Routes = [
 				loadComponent: () =>
 					import('./features/auth/pages/register-page/register-page.component').then((m) => m.RegisterPageComponent),
 			},
+			{
+				path: 'verificar-email',
+				canActivate: [guestGuard],
+				loadComponent: () =>
+					import('./features/auth/pages/verify-email-page/verify-email-page.component').then(
+						(m) => m.VerifyEmailPageComponent
+					),
+			},
+			{
+				path: 'confirmar-email',
+				canActivate: [guestGuard],
+				loadComponent: () =>
+					import('./features/auth/pages/confirm-email-page/confirm-email-page.component').then(
+						(m) => m.ConfirmEmailPageComponent
+					),
+			},
+			{
+				path: 'esqueci-senha',
+				canActivate: [guestGuard],
+				loadComponent: () =>
+					import('./features/auth/pages/forgot-password-page/forgot-password-page.component').then(
+						(m) => m.ForgotPasswordPageComponent
+					),
+			},
+			{
+				path: 'redefinir-senha',
+				canActivate: [guestGuard],
+				loadComponent: () =>
+					import('./features/auth/pages/reset-password-page/reset-password-page.component').then(
+						(m) => m.ResetPasswordPageComponent
+					),
+			},
 		],
 	},
 	{

@@ -2,6 +2,7 @@ package br.com.budgetflow.features.auth.service;
 
 import br.com.budgetflow.common.exceptions.ConflictException;
 import br.com.budgetflow.common.exceptions.UnauthorizedException;
+import br.com.budgetflow.features.auth.domain.AuthTokenType;
 import br.com.budgetflow.features.auth.domain.RefreshToken;
 import br.com.budgetflow.features.auth.dto.CurrentUserResponseDTO;
 import br.com.budgetflow.features.auth.dto.RegisterRequestDTO;
@@ -19,21 +20,34 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Service
 public class AuthService {
+
+    private static final Logger LOGGER = Logger.getLogger(AuthService.class.getName());
+    private static final Duration VERIFICATION_VALIDITY = Duration.ofHours(24);
+    private static final Duration RESET_VALIDITY = Duration.ofHours(1);
+    private static final Duration EMAIL_REQUEST_INTERVAL = Duration.ofMinutes(1);
+    private static final String GENERIC_EMAIL_MESSAGE =
+            "Se a conta estiver apta, enviaremos as instruções por email.";
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthCookieService cookieService;
+    private final AuthTokenService authTokenService;
+    private final BrevoEmailService emailService;
     private final long accessTokenMinutes;
     private final long refreshTokenDays;
 
@@ -43,6 +57,8 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             AuthCookieService cookieService,
+            AuthTokenService authTokenService,
+            BrevoEmailService emailService,
             @Value("${app.security.jwt.access-token-minutes}") long accessTokenMinutes,
             @Value("${app.security.jwt.refresh-token-days}") long refreshTokenDays) {
         this.userRepository = userRepository;
@@ -50,36 +66,39 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.cookieService = cookieService;
+        this.authTokenService = authTokenService;
+        this.emailService = emailService;
         this.accessTokenMinutes = accessTokenMinutes;
         this.refreshTokenDays = refreshTokenDays;
     }
 
     @Transactional
-    public CurrentUserResponseDTO register(RegisterRequestDTO request, HttpServletResponse response) {
+    public String register(RegisterRequestDTO request) {
         String normalizedEmail = normalizeEmail(request.email());
-
         if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new ConflictException("E-mail já cadastrado");
+            throw new ConflictException("Email já cadastrado");
         }
 
         User user = new User(
-            request.nome().trim(),
-            normalizedEmail,
-            request.telefone() == null || request.telefone().isBlank() ? null : request.telefone().trim(),
-            passwordEncoder.encode(request.senha())
-        );
+                request.nome().trim(),
+                normalizedEmail,
+                request.telefone() == null || request.telefone().isBlank() ? null : request.telefone().trim(),
+                passwordEncoder.encode(request.senha()));
         userRepository.save(user);
-
-        return login(normalizedEmail, request.senha(), response);
+        sendVerificationEmail(user);
+        return "Conta criada. Verifique seu email para liberar o acesso.";
     }
 
     @Transactional
     public CurrentUserResponseDTO login(String email, String senha, HttpServletResponse response) {
         User user = userRepository.findByEmail(normalizeEmail(email))
-                .orElseThrow(() -> new UnauthorizedException("E-mail ou senha inválidos"));
+                .orElseThrow(() -> new UnauthorizedException("Email ou senha inválidos"));
 
         if (user.getSenha() == null || !passwordEncoder.matches(senha, user.getSenha())) {
-            throw new UnauthorizedException("E-mail ou senha inválidos");
+            throw new UnauthorizedException("Email ou senha inválidos");
+        }
+        if (user.getEmailVerifiedAt() == null) {
+            throw new UnauthorizedException("Confirme seu email antes de entrar", "EMAIL_NOT_VERIFIED");
         }
 
         return issueTokensAndReturn(user, response);
@@ -88,7 +107,7 @@ public class AuthService {
     @Transactional
     public CurrentUserResponseDTO loginWithGoogle(OidcUser oidcUser, HttpServletResponse response) {
         if (!Boolean.TRUE.equals(oidcUser.getEmailVerified())) {
-            throw new UnauthorizedException("E-mail do Google não verificado");
+            throw new UnauthorizedException("Email do Google não verificado");
         }
 
         String subject = oidcUser.getSubject();
@@ -102,7 +121,7 @@ public class AuthService {
                         .map(existingUser -> {
                             if (existingUser.getGoogleSubject() != null
                                     && !existingUser.getGoogleSubject().equals(subject)) {
-                                throw new UnauthorizedException("E-mail já vinculado a outra conta Google");
+                                throw new UnauthorizedException("Email já vinculado a outra conta Google");
                             }
                             existingUser.setGoogleSubject(subject);
                             return existingUser;
@@ -117,8 +136,46 @@ public class AuthService {
                             return newUser;
                         }));
 
+        user.setEmailVerifiedAt(LocalDateTime.now());
         userRepository.save(user);
         return issueTokensAndReturn(user, response);
+    }
+
+    @Transactional
+    public void confirmEmail(String token) {
+        User user = authTokenService.consume(token, AuthTokenType.EMAIL_VERIFICATION);
+        if (user.getEmailVerifiedAt() == null) {
+            user.setEmailVerifiedAt(LocalDateTime.now());
+        }
+    }
+
+    @Transactional
+    public String resendVerification(String email) {
+        userRepository.findByEmail(normalizeEmail(email))
+                .filter(user -> user.getEmailVerifiedAt() == null)
+                .filter(user -> user.getSenha() != null)
+                .filter(user -> !authTokenService.issuedWithin(
+                        user, AuthTokenType.EMAIL_VERIFICATION, EMAIL_REQUEST_INTERVAL))
+                .ifPresent(this::sendVerificationEmail);
+        return GENERIC_EMAIL_MESSAGE;
+    }
+
+    @Transactional
+    public String forgotPassword(String email) {
+        userRepository.findByEmail(normalizeEmail(email))
+                .filter(user -> user.getEmailVerifiedAt() != null)
+                .filter(user -> user.getSenha() != null)
+                .filter(user -> !authTokenService.issuedWithin(
+                        user, AuthTokenType.PASSWORD_RESET, EMAIL_REQUEST_INTERVAL))
+                .ifPresent(this::sendPasswordResetEmail);
+        return GENERIC_EMAIL_MESSAGE;
+    }
+
+    @Transactional
+    public void resetPassword(String token, String newPassword) {
+        User user = authTokenService.consume(token, AuthTokenType.PASSWORD_RESET);
+        user.setSenha(passwordEncoder.encode(newPassword));
+        refreshTokenRepository.deleteAllByUserId(user.getId());
     }
 
     @Transactional
@@ -127,10 +184,8 @@ public class AuthService {
             throw new UnauthorizedException("Refresh token inválido");
         }
 
-        String hash = hashToken(rawRefreshToken);
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hash)
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hashToken(rawRefreshToken))
                 .orElseThrow(() -> new UnauthorizedException("Refresh token inválido"));
-
         if (refreshToken.isRevoked()) {
             throw new UnauthorizedException("Refresh token revogado");
         }
@@ -140,9 +195,7 @@ public class AuthService {
 
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
-
-        User user = refreshToken.getUser();
-        issueTokensAndReturn(user, response);
+        issueTokensAndReturn(refreshToken.getUser(), response);
     }
 
     @Transactional
@@ -157,58 +210,63 @@ public class AuthService {
     public CurrentUserResponseDTO me(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UnauthorizedException("Usuário não encontrado"));
-
-        List<String> roles = rolesToStrings(user.getRoles());
-
-        return new CurrentUserResponseDTO(user.getId(), user.getNome(), user.getEmail(), roles);
+        return new CurrentUserResponseDTO(user.getId(), user.getNome(), user.getEmail(), rolesToStrings(user.getRoles()));
     }
 
-    private String normalizeEmail(String email) {
-        if (email == null) return null;
-        return email.trim().toLowerCase(Locale.ROOT);
+    private void sendVerificationEmail(User user) {
+        String token = authTokenService.issue(user, AuthTokenType.EMAIL_VERIFICATION, VERIFICATION_VALIDITY);
+        try {
+            emailService.sendVerification(user, token);
+        } catch (RuntimeException exception) {
+            LOGGER.log(Level.WARNING, "Falha ao enviar verificação para usuário " + user.getId(), exception);
+        }
+    }
+
+    private void sendPasswordResetEmail(User user) {
+        String token = authTokenService.issue(user, AuthTokenType.PASSWORD_RESET, RESET_VALIDITY);
+        try {
+            emailService.sendPasswordReset(user, token);
+        } catch (RuntimeException exception) {
+            LOGGER.log(Level.WARNING, "Falha ao enviar recuperação para usuário " + user.getId(), exception);
+        }
     }
 
     private CurrentUserResponseDTO issueTokensAndReturn(User user, HttpServletResponse response) {
         String accessToken = jwtService.generateAccessToken(user.getId(), user.getRoles());
-
         String rawRefreshToken = UUID.randomUUID().toString();
-        String hash = hashToken(rawRefreshToken);
 
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
-        refreshToken.setTokenHash(hash);
+        refreshToken.setTokenHash(hashToken(rawRefreshToken));
         refreshToken.setExpiresAt(OffsetDateTime.now().plusDays(refreshTokenDays));
         refreshToken.setRevoked(false);
         refreshTokenRepository.save(refreshToken);
 
-        int accessMaxAge = (int) (accessTokenMinutes * 60);
-        int refreshMaxAge = (int) (refreshTokenDays * 24 * 60 * 60);
+        cookieService.setAccessTokenCookie(response, accessToken, (int) (accessTokenMinutes * 60));
+        cookieService.setRefreshTokenCookie(response, rawRefreshToken, (int) (refreshTokenDays * 24 * 60 * 60));
 
-        cookieService.setAccessTokenCookie(response, accessToken, accessMaxAge);
-        cookieService.setRefreshTokenCookie(response, rawRefreshToken, refreshMaxAge);
-
-        List<String> roles = rolesToStrings(user.getRoles());
-
-        return new CurrentUserResponseDTO(user.getId(), user.getNome(), user.getEmail(), roles);
+        return new CurrentUserResponseDTO(
+                user.getId(), user.getNome(), user.getEmail(), rolesToStrings(user.getRoles()));
     }
 
     private List<String> rolesToStrings(Set<Role> roles) {
         if (roles == null || roles.isEmpty()) {
             return List.of(Role.USER.name());
         }
+        return roles.stream().map(Role::name).toList();
+    }
 
-        return roles.stream()
-                .map(Role::name)
-                .toList();
+    private String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
     }
 
     private String hashToken(String token) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(token.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 not available", e);
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 não disponível", exception);
         }
     }
 }

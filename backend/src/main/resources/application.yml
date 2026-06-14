@@ -24,6 +24,10 @@ server:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  email:
+    brevo-api-key: ${BREVO_API_KEY:}
+    from: ${EMAIL_FROM:}
+    from-name: ${EMAIL_FROM_NAME:BudgetFlow}
   security:
     jwt:
       secret: ${JWT_SECRET:dev-only-change-me-with-at-least-32-chars}

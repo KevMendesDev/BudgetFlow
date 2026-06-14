@@ -1,8 +1,6 @@
 package br.com.budgetflow.features.auth.api;
 
-import br.com.budgetflow.features.auth.dto.LoginRequestDTO;
-import br.com.budgetflow.features.auth.dto.CurrentUserResponseDTO;
-import br.com.budgetflow.features.auth.dto.RegisterRequestDTO;
+import br.com.budgetflow.features.auth.dto.*;
 import br.com.budgetflow.features.auth.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,21 +21,42 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<CurrentUserResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request, HttpServletResponse response) {
-        CurrentUserResponseDTO createdUser = authService.register(request, response);
-        return ResponseEntity.ok(createdUser);
+    public ResponseEntity<MessageResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
+        return ResponseEntity.ok(new MessageResponseDTO(authService.register(request)));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<CurrentUserResponseDTO> login(@Valid @RequestBody LoginRequestDTO request, HttpServletResponse response) {
-        CurrentUserResponseDTO loginUser = authService.login(request.email(), request.senha(), response);
-        return ResponseEntity.ok(loginUser);
+    public ResponseEntity<CurrentUserResponseDTO> login(
+            @Valid @RequestBody LoginRequestDTO request,
+            HttpServletResponse response) {
+        return ResponseEntity.ok(authService.login(request.email(), request.senha(), response));
+    }
+
+    @PostMapping("/email-verification/confirm")
+    public ResponseEntity<MessageResponseDTO> confirmEmail(@Valid @RequestBody TokenRequestDTO request) {
+        authService.confirmEmail(request.token());
+        return ResponseEntity.ok(new MessageResponseDTO("Email confirmado. Você já pode entrar."));
+    }
+
+    @PostMapping("/email-verification/resend")
+    public ResponseEntity<MessageResponseDTO> resendVerification(@Valid @RequestBody EmailRequestDTO request) {
+        return ResponseEntity.ok(new MessageResponseDTO(authService.resendVerification(request.email())));
+    }
+
+    @PostMapping("/password/forgot")
+    public ResponseEntity<MessageResponseDTO> forgotPassword(@Valid @RequestBody EmailRequestDTO request) {
+        return ResponseEntity.ok(new MessageResponseDTO(authService.forgotPassword(request.email())));
+    }
+
+    @PostMapping("/password/reset")
+    public ResponseEntity<MessageResponseDTO> resetPassword(@Valid @RequestBody ResetPasswordRequestDTO request) {
+        authService.resetPassword(request.token(), request.senha());
+        return ResponseEntity.ok(new MessageResponseDTO("Senha alterada. Entre novamente."));
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<Void> refresh(HttpServletRequest request, HttpServletResponse response) {
-        String rawRefreshToken = cookieValue(request, "refresh_token");
-        authService.refresh(rawRefreshToken, response);
+        authService.refresh(cookieValue(request, "refresh_token"), response);
         return ResponseEntity.noContent().build();
     }
 
@@ -48,7 +67,7 @@ public class AuthController {
             try {
                 userId = Long.valueOf(authentication.getName());
             } catch (NumberFormatException ignored) {
-
+                // Invalid principals are treated as anonymous logout requests.
             }
         }
         authService.logout(userId, response);
@@ -59,17 +78,19 @@ public class AuthController {
     public ResponseEntity<CurrentUserResponseDTO> me(Authentication authentication) {
         if (authentication == null || authentication.getName() == null) {
             return ResponseEntity.status(401).build();
-        }        
-        CurrentUserResponseDTO userResponse = authService.me(Long.valueOf(authentication.getName()));
-
-        return ResponseEntity.ok(userResponse);
+        }
+        return ResponseEntity.ok(authService.me(Long.valueOf(authentication.getName())));
     }
 
     private String cookieValue(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
-        if (cookies == null) return null;
+        if (cookies == null) {
+            return null;
+        }
         for (Cookie cookie : cookies) {
-            if (name.equals(cookie.getName())) return cookie.getValue();
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
         }
         return null;
     }
