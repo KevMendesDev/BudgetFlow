@@ -9,7 +9,6 @@ public record UserResponseDTO(
     Long id,
     String nome,
     String email,
-    String cpf,
     String telefone,
     Set<Role> roles
 ) {
@@ -18,7 +17,6 @@ public record UserResponseDTO(
             user.getId(),
             user.getNome(),
             user.getEmail(),
-            user.getCpf(),
             user.getTelefone(),
             user.getRoles()
         );

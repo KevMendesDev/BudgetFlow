@@ -20,12 +20,11 @@ import lombok.Setter;
 @Table(
         name = "users",
         indexes = {
-                @Index(name = "ix_users_email", columnList = "email"),
-                @Index(name = "ix_users_cpf", columnList = "cpf")
+                @Index(name = "ix_users_email", columnList = "email")
         },
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_users_email", columnNames = "email"),
-                @UniqueConstraint(name = "uk_users_cpf", columnNames = "cpf")
+                @UniqueConstraint(name = "uk_users_google_subject", columnNames = "google_subject")
         }
 )
 public class User {
@@ -42,13 +41,13 @@ public class User {
     @Column(nullable = false)
     private String email;
 
-    @Column(nullable = false, length = 11)
-    private String cpf;
-
     private String telefone;
 
-    @Column(nullable = false)
+    @Column
     private String senha;
+
+    @Column(name = "google_subject")
+    private String googleSubject;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
@@ -64,10 +63,9 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public User(String nome, String email, String cpf, String telefone, String senha) {
+    public User(String nome, String email, String telefone, String senha) {
         this.nome = nome;
         this.email = email;
-        this.cpf = cpf;
         this.telefone = telefone;
         this.senha = senha;
     }
@@ -103,7 +101,7 @@ public class User {
 
     @Override
     public String toString() {
-        return "User [id=" + id + ", nome=" + nome + ", email=" + email + ", cpf=" + cpf
+        return "User [id=" + id + ", nome=" + nome + ", email=" + email
                 + ", telefone=" + telefone + ", roles=" + roles
                 + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
     }

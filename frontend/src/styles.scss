@@ -231,6 +231,36 @@ select optgroup {
 		@apply text-[var(--brand-green)] no-underline;
 	}
 
+	.btn-google {
+		@apply flex w-full items-center justify-center gap-3 no-underline;
+		min-height: var(--control-height);
+		border: 1px solid #dadce0;
+		border-radius: var(--control-radius);
+		background: #fff;
+		color: #3c4043;
+		font-family: Arial, sans-serif;
+		font-size: 0.875rem;
+		font-weight: 500;
+		letter-spacing: 0.01em;
+		transition: background-color 120ms ease, box-shadow 120ms ease;
+	}
+
+	.btn-google:hover {
+		background: #f8faff;
+		box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3);
+	}
+
+	.btn-google:focus-visible {
+		outline: 2px solid #4285f4;
+		outline-offset: 2px;
+	}
+
+	.google-icon {
+		width: 1.125rem;
+		height: 1.125rem;
+		flex: none;
+	}
+
 	.bf-skeleton-line {
 		@apply animate-pulse rounded-full;
 		background: var(--surface-5);
@@ -240,6 +270,23 @@ select optgroup {
 .bf-auth-card .auth-error {
 	color: var(--danger-text);
 }
+
+:root[data-theme='dark'] .btn-google {
+	border-color: #5f6368;
+	background: #202124;
+	color: #e8eaed;
+}
+
+:root[data-theme='dark'] .btn-google:hover {
+	background: #303134;
+	border-color: #8ab4f8;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+:root[data-theme='dark'] .btn-google:focus-visible {
+	outline-color: #8ab4f8;
+}
+
 :root[data-theme='dark'] .bf-input[type='date']::-webkit-calendar-picker-indicator {
 	filter: invert(1);
 }

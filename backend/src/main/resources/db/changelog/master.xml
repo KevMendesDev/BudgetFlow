@@ -9,4 +9,5 @@
     <include file="classpath:db/changelog/0002-auth-refresh-tokens.xml"/>
     <include file="classpath:db/changelog/0003-add-column-categorias-tipo.xml"/>
     <include file="classpath:db/changelog/0004-periodos-transacoes-recorrencias.xml"/>
+    <include file="classpath:db/changelog/0005-add-login-email-google.xml"/>
 </databaseChangeLog>

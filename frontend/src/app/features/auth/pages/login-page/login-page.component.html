@@ -1,7 +1,7 @@
 <div class="bf-auth-card">
   <p class="m-0 text-[0.78rem] uppercase tracking-[0.08em] text-[var(--brand-amber)]">Acesso</p>
   <h2 class="mt-1 font-[var(--font-display)] text-3xl">Entrar na conta</h2>
-  <p class="mt-2 text-[var(--muted-text)]">Usa teu CPF e senha. Sessao inicia com cookie.</p>
+  <p class="mt-2 text-[var(--muted-text)]">Use seu e-mail e senha ou entre com o Google.</p>
 
   @if (errorMessage()) {
     <p class="auth-error mt-3 text-sm">{{ errorMessage() }}</p>
@@ -9,18 +9,16 @@
 
   <form class="bf-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <label class="bf-label">
-      CPF
+      E-mail
       <input
         class="bf-input"
-        type="text"
-        formControlName="cpf"
-        placeholder="000.000.000-00"
-        inputmode="numeric"
-        maxlength="14"
-        (input)="onCpfInput()"
+        type="email"
+        formControlName="email"
+        placeholder="seu-email@mail.com"
+        autocomplete="email"
       />
-      @if (fieldError(form.controls.cpf, 'CPF')) {
-        <small class="bf-error">{{ fieldError(form.controls.cpf, 'CPF') }}</small>
+      @if (fieldError(form.controls.email, 'E-mail')) {
+        <small class="bf-error">{{ fieldError(form.controls.email, 'E-mail') }}</small>
       }
     </label>
 
@@ -31,6 +29,7 @@
         type="password"
         formControlName="senha"
         placeholder="********"
+        autocomplete="current-password"
       />
       @if (fieldError(form.controls.senha, 'Senha')) {
         <small class="bf-error">{{ fieldError(form.controls.senha, 'Senha') }}</small>
@@ -41,6 +40,22 @@
       {{ loading() ? 'Entrando...' : 'Entrar' }}
     </button>
   </form>
+
+  <div class="my-4 flex items-center gap-3 text-xs text-[var(--muted-text)]">
+    <span class="h-px flex-1 bg-[var(--line)]"></span>
+    ou
+    <span class="h-px flex-1 bg-[var(--line)]"></span>
+  </div>
+
+  <a class="btn-google" [href]="googleLoginUrl">
+    <svg class="google-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.8 3-4.3 3-7.3Z"/>
+      <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.5L15.4 17c-.9.6-2 .9-3.4.9-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22Z"/>
+      <path fill="#FBBC05" d="M6.4 13.8A6 6 0 0 1 6.1 12c0-.6.1-1.2.3-1.8V7.6H3.1A10 10 0 0 0 2 12c0 1.6.4 3 1.1 4.4l3.3-2.6Z"/>
+      <path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 12 2a10 10 0 0 0-8.9 5.6l3.3 2.6A6 6 0 0 1 12 6.1Z"/>
+    </svg>
+    Entrar com Google
+  </a>
 
   <p class="mt-4 text-sm text-[var(--muted-text)]">
     Novo por aqui?
