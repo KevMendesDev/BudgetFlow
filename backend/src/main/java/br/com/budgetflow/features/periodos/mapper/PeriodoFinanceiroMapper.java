@@ -5,18 +5,12 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import br.com.budgetflow.common.service.RelacionamentoChecker;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.periodos.dto.PeriodoFinanceiroRequestDTO;
 import br.com.budgetflow.features.periodos.dto.PeriodoFinanceiroResponseDTO;
 
 @Mapper(componentModel = "spring")
 public abstract class PeriodoFinanceiroMapper {
-    @Autowired
-    protected RelacionamentoChecker relacionamentoChecker;
-
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -37,11 +31,6 @@ public abstract class PeriodoFinanceiroMapper {
     @Mapping(source = "user.id", target = "userId")
     @Mapping(target = "possuiRelacionamentos", ignore = true)
     protected abstract PeriodoFinanceiroResponseDTO toResponseDTOBase(PeriodoFinanceiro periodoFinanceiro);
-
-    public PeriodoFinanceiroResponseDTO toResponseDTO(PeriodoFinanceiro periodoFinanceiro) {
-        boolean possuiRelacionamentos = relacionamentoChecker.periodoHasRelationships(periodoFinanceiro.getId(), periodoFinanceiro.getUser().getId());
-        return toResponseDTO(periodoFinanceiro, possuiRelacionamentos);
-    }
 
     public PeriodoFinanceiroResponseDTO toResponseDTO(PeriodoFinanceiro periodoFinanceiro, boolean possuiRelacionamentos) {
         PeriodoFinanceiroResponseDTO periodoFinanceiroBase = toResponseDTOBase(periodoFinanceiro);

@@ -1,0 +1,20 @@
+app:
+  frontend-url: http://localhost:4200
+  security:
+    jwt:
+      secret: test-secret-key-with-at-least-32-characters
+    cookies:
+      secure: false
+      same-site: LAX
+      domain: ""
+    cors:
+      allowed-origins: http://localhost:4200
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: test-client-id
+            client-secret: test-client-secret

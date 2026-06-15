@@ -66,6 +66,7 @@ public class TransacaoService {
         User user = userService.findById(userId);
 
         PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(requestDTO.periodoId(), userId);
+        validateDataNoPeriodo(requestDTO.data(), periodo);
         Transacao transacao = transacaoMapper.toEntity(requestDTO);
         transacao.setUser(user);
         transacao.setPeriodo(periodo);
@@ -104,6 +105,7 @@ public class TransacaoService {
         Transacao transacao = findByIdAndUserId(id, userId);
 
         PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(requestDTO.periodoId(), userId);
+        validateDataNoPeriodo(requestDTO.data(), periodo);
 
         transacaoMapper.updateFromDto(requestDTO, transacao);
         transacao.setPeriodo(periodo);
@@ -243,6 +245,12 @@ public class TransacaoService {
                 || requestDTO.valor() == null
                 || requestDTO.tipoPagamento() == null) {
             throw new BusinessRuleException("Para transação sem recorrência, categoria, descrição, valor, tipo de movimentação e tipo de pagamento são obrigatórios");
+        }
+    }
+
+    private void validateDataNoPeriodo(LocalDate data, PeriodoFinanceiro periodo) {
+        if (data.isBefore(periodo.getDataInicio()) || data.isAfter(periodo.getDataFim())) {
+            throw new BusinessRuleException("A data da transação deve estar dentro do período financeiro selecionado");
         }
     }
 

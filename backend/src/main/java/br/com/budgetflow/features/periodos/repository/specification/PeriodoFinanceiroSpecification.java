@@ -15,12 +15,6 @@ public final class PeriodoFinanceiroSpecification {
         return (root, query, cb) -> cb.equal(root.get("user").get("id"), currentUserId);
     }
 
-    public static Specification<PeriodoFinanceiro> hasUserId(Long userId) {
-        return (root, query, cb) -> userId == null
-                ? null
-                : cb.equal(root.get("user").get("id"), userId);
-    }
-
     public static Specification<PeriodoFinanceiro> hasDataInicioFrom(LocalDate dataInicio) {
         return (root, query, cb) -> dataInicio == null
                 ? null

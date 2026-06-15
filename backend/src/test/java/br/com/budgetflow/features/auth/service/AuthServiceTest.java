@@ -1,6 +1,7 @@
 package br.com.budgetflow.features.auth.service;
 
 import br.com.budgetflow.common.exceptions.UnauthorizedException;
+import br.com.budgetflow.features.auth.domain.RefreshToken;
 import br.com.budgetflow.features.auth.repository.RefreshTokenRepository;
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.repository.UserRepository;
@@ -12,13 +13,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +43,8 @@ class AuthServiceTest {
     @Mock
     private AuthCookieService cookieService;
     @Mock
+    private AuthThrottleService throttleService;
+    @Mock
     private HttpServletResponse response;
     @Mock
     private OidcUser oidcUser;
@@ -51,20 +59,27 @@ class AuthServiceTest {
                 passwordEncoder,
                 jwtService,
                 cookieService,
+                throttleService,
                 15,
-                30);
+                30,
+                5);
     }
 
     @Test
     void loginNormalizesEmailAndIssuesCookies() {
         User user = new User("Usuário", "user@example.com", null, "encoded");
+        ReflectionTestUtils.setField(user, "id", 1L);
+
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("secret", "encoded")).thenReturn(true);
+        when(refreshTokenRepository.findAllByUserIdOrderByCreatedAtAsc(1L)).thenReturn(List.of());
         when(jwtService.generateAccessToken(any(), any())).thenReturn("access-token");
 
-        var result = authService.login("  USER@EXAMPLE.COM ", "secret", response);
+        var result = authService.login("  USER@EXAMPLE.COM ", "secret", "127.0.0.1", response);
 
         assertEquals("user@example.com", result.email());
+        verify(throttleService).check("login:127.0.0.1:user@example.com");
+        verify(throttleService).reset("login:127.0.0.1:user@example.com");
         verify(cookieService).setAccessTokenCookie(response, "access-token", 900);
         verify(cookieService).setRefreshTokenCookie(any(), any(), anyInt());
     }
@@ -76,8 +91,9 @@ class AuthServiceTest {
 
         assertThrows(
                 UnauthorizedException.class,
-                () -> authService.login("user@example.com", "secret", response));
+                () -> authService.login("user@example.com", "secret", "127.0.0.1", response));
 
+        verify(throttleService).check("login:127.0.0.1:user@example.com");
         verify(passwordEncoder, never()).matches(any(), any());
     }
 
@@ -86,7 +102,12 @@ class AuthServiceTest {
         mockVerifiedGoogleUser("google-subject", "USER@EXAMPLE.COM", "Usuário Google");
         when(userRepository.findByGoogleSubject("google-subject")).thenReturn(Optional.empty());
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.empty());
-        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User saved = invocation.getArgument(0);
+            ReflectionTestUtils.setField(saved, "id", 1L);
+            return saved;
+        });
+        when(refreshTokenRepository.findAllByUserIdOrderByCreatedAtAsc(1L)).thenReturn(List.of());
         when(jwtService.generateAccessToken(any(), any())).thenReturn("access-token");
 
         var result = authService.loginWithGoogle(oidcUser, response);
@@ -99,12 +120,15 @@ class AuthServiceTest {
     @Test
     void googleLoginLinksExistingUserByEmail() {
         User user = new User("Usuário", "user@example.com", null, "encoded");
+        ReflectionTestUtils.setField(user, "id", 1L);
+
         when(oidcUser.getEmailVerified()).thenReturn(true);
         when(oidcUser.getSubject()).thenReturn("google-subject");
         when(oidcUser.getEmail()).thenReturn("user@example.com");
         when(userRepository.findByGoogleSubject("google-subject")).thenReturn(Optional.empty());
         when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
+        when(refreshTokenRepository.findAllByUserIdOrderByCreatedAtAsc(1L)).thenReturn(List.of());
         when(jwtService.generateAccessToken(any(), any())).thenReturn("access-token");
 
         authService.loginWithGoogle(oidcUser, response);
@@ -121,6 +145,42 @@ class AuthServiceTest {
                 () -> authService.loginWithGoogle(oidcUser, response));
 
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void refreshLocksTokenBeforeRotatingIt() {
+        User user = mock(User.class);
+        RefreshToken refreshToken = mock(RefreshToken.class);
+
+        when(refreshTokenRepository.findByTokenHashForUpdate(anyString())).thenReturn(Optional.of(refreshToken));
+        when(refreshToken.isRevoked()).thenReturn(false);
+        when(refreshToken.getExpiresAt()).thenReturn(OffsetDateTime.now().plusDays(1));
+        when(refreshToken.getUser()).thenReturn(user);
+        when(user.getId()).thenReturn(1L);
+        when(refreshTokenRepository.findAllByUserIdOrderByCreatedAtAsc(1L)).thenReturn(List.of());
+        when(jwtService.generateAccessToken(any(), any())).thenReturn("access-token");
+
+        authService.refresh("refresh-token", "127.0.0.1", response);
+
+        verify(throttleService).check("refresh:127.0.0.1");
+        verify(throttleService).reset("refresh:127.0.0.1");
+        verify(refreshToken).setRevoked(true);
+        verify(refreshTokenRepository).findByTokenHashForUpdate(anyString());
+    }
+
+    @Test
+    void logoutUsesRefreshCookieWhenAccessTokenIsUnavailable() {
+        User user = mock(User.class);
+        RefreshToken refreshToken = mock(RefreshToken.class);
+
+        when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(refreshToken));
+        when(refreshToken.getUser()).thenReturn(user);
+        when(user.getId()).thenReturn(1L);
+
+        authService.logout(null, "refresh-token", response);
+
+        verify(refreshTokenRepository).deleteAllByUserId(1L);
+        verify(cookieService).clearCookies(response);
     }
 
     private void mockVerifiedGoogleUser(String subject, String email, String name) {
