@@ -1,0 +1,62 @@
+.comparativo {
+  margin-top: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface-3);
+  padding: 1rem;
+}
+
+.comparativo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+h2, h3 {
+  margin: 0;
+  font-family: var(--font-display);
+}
+
+h2 {
+  font-size: 1.1rem;
+}
+
+h3 {
+  font-size: 0.9rem;
+}
+
+.muted {
+  margin: 0.35rem 0 0;
+  color: var(--muted-text);
+  font-size: 0.82rem;
+}
+
+.btn-toggle {
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.chart {
+  height: 18rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .comparativo-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .charts {
+    grid-template-columns: 1fr;
+  }
+}

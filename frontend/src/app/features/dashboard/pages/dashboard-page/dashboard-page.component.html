@@ -68,6 +68,13 @@
         [selectedPeriodo]="selectedPeriodo()"
       />
 
+      @if (planejamentos().length > 0) {
+        <app-dashboard-planejamento-comparativo
+          [planejamentos]="planejamentos()"
+          [transacoes]="transacoes()"
+        />
+      }
+
       <app-dashboard-transacoes
         [categorias]="categorias()"
         [recorrentes]="recorrentes()"
