@@ -55,7 +55,7 @@ public class CategoriaService {
         categoria.setClassificacao(classificacao);
         categoria.setUser(user);
 
-        return categoriaMapper.toResponseDTO(categoriaRepository.save(categoria));
+        return categoriaMapper.toResponseDTO(categoriaRepository.save(categoria), false);
     }
 
     @Transactional(readOnly = true)
@@ -90,9 +90,11 @@ public class CategoriaService {
     }
 
     @Transactional(readOnly = true)
-    public Categoria findById(Long id) {
+    public CategoriaResponseDTO findById(Long id) {
         Long userId = SecurityUtils.currentUserId();
-        return findByIdAndUser(id, userId);
+        Categoria categoria = findByIdAndUser(id, userId);
+        boolean possuiRelacionamentos = relacionamentoChecker.categoriaHasRelationships(id, userId);
+        return categoriaMapper.toResponseDTO(categoria, possuiRelacionamentos);
     }
 
     @Transactional(readOnly = true)
@@ -115,7 +117,9 @@ public class CategoriaService {
         categoria.setClassificacao(classificacao);
         categoria.setUser(user);
 
-        return categoriaMapper.toResponseDTO(categoriaRepository.save(categoria));
+        Categoria saved = categoriaRepository.save(categoria);
+        boolean possuiRelacionamentos = relacionamentoChecker.categoriaHasRelationships(id, userId);
+        return categoriaMapper.toResponseDTO(saved, possuiRelacionamentos);
     }
 
     @Transactional
