@@ -51,8 +51,8 @@
 
       <label class="bf-label md:col-span-6">
         Categoria
-        <select class="bf-input" formControlName="categoriaId" [disabled]="!form.controls.tipoMovimentacao.value">
-          <option value="">{{ form.controls.tipoMovimentacao.value ? 'Selecione' : 'Selecione o tipo' }}</option>
+        <select class="bf-input" formControlName="categoriaId" [disabled]="!tipoMovimentacaoSelecionado()">
+          <option value="">{{ tipoMovimentacaoSelecionado() ? 'Selecione' : 'Selecione o tipo' }}</option>
           @for (categoria of categoriasDisponiveis(); track categoria.id) {
             <option [value]="categoria.id">{{ categoriaLabel(categoria) }}</option>
           }

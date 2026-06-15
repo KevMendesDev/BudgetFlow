@@ -1,6 +1,7 @@
-import { Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { startWith } from 'rxjs';
 
 import {
   CategoriaResponse,
@@ -27,6 +28,7 @@ export class PlanejamentoModalComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly planejamentosApi = inject(PlanejamentosApiService);
   private readonly toast = inject(ToastService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly categorias = input.required<CategoriaResponse[]>();
   readonly recorrentes = input.required<TransacaoRecorrenteResponse[]>();
@@ -42,6 +44,7 @@ export class PlanejamentoModalComponent implements OnInit {
   readonly submitting = signal(false);
   readonly errorMessage = signal('');
   readonly editingId = computed(() => this.editingPlanejamento()?.id ?? null);
+  readonly tipoMovimentacaoSelecionado = signal<'' | NaturezaFinanceira>('');
 
   readonly form = this.formBuilder.nonNullable.group({
     transacaoRecorrenteId: [''],
@@ -64,8 +67,12 @@ export class PlanejamentoModalComponent implements OnInit {
     }
 
     this.form.controls.tipoMovimentacao.valueChanges
-      .pipe(takeUntilDestroyed())
+      .pipe(
+        startWith(this.form.controls.tipoMovimentacao.value),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe((tipo) => {
+        this.tipoMovimentacaoSelecionado.set(tipo);
         const categoria = this.categorias().find(
           (item) => item.id === Number(this.form.controls.categoriaId.value)
         );
@@ -76,7 +83,7 @@ export class PlanejamentoModalComponent implements OnInit {
   }
 
   categoriasDisponiveis(): CategoriaResponse[] {
-    const tipo = this.form.controls.tipoMovimentacao.value;
+    const tipo = this.tipoMovimentacaoSelecionado();
     return tipo ? this.categorias().filter((categoria) => categoria.tipoCategoria === tipo) : [];
   }
 
