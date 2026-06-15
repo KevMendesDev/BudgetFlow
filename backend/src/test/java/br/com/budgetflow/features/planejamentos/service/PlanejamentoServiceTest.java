@@ -3,9 +3,9 @@ package br.com.budgetflow.features.planejamentos.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -85,6 +85,7 @@ class PlanejamentoServiceTest {
         User user = mock(User.class);
         PeriodoFinanceiro periodo = mock(PeriodoFinanceiro.class);
         when(periodo.getUser()).thenReturn(user);
+        when(periodo.getId()).thenReturn(10L);
         when(periodo.getDataInicio()).thenReturn(LocalDate.of(2026, 6, 1));
         when(periodo.getDataFim()).thenReturn(LocalDate.of(2026, 6, 30));
         when(periodoFinanceiroService.resolvePeriodoToTransacao(10L, 1L)).thenReturn(periodo);
@@ -94,8 +95,8 @@ class PlanejamentoServiceTest {
         when(recorrenteRepository.findAllByUserId(1L)).thenReturn(List.of(mensal, semValor));
 
         Set<String> chavesPersistidas = new HashSet<>();
-        when(planejamentoRepository.existsByChaveSincronizacaoAndUserId(any(), anyLong()))
-                .thenAnswer(invocation -> chavesPersistidas.contains(invocation.getArgument(0)));
+        when(planejamentoRepository.findChavesSincronizacaoByPeriodoIdAndUserId(10L, 1L))
+                .thenAnswer(invocation -> new HashSet<>(chavesPersistidas));
         when(planejamentoRepository.saveAll(any())).thenAnswer(invocation -> {
             List<Planejamento> items = invocation.getArgument(0);
             items.forEach(item -> chavesPersistidas.add(item.getChaveSincronizacao()));
@@ -110,7 +111,9 @@ class PlanejamentoServiceTest {
         assertEquals(0, segunda.planejamentosGerados());
 
         ArgumentCaptor<Iterable<Planejamento>> captor = ArgumentCaptor.forClass(Iterable.class);
-        verify(planejamentoRepository, org.mockito.Mockito.times(2)).saveAll(captor.capture());
+        verify(planejamentoRepository, times(2)).saveAll(captor.capture());
+        verify(planejamentoRepository, times(2))
+                .findChavesSincronizacaoByPeriodoIdAndUserId(10L, 1L);
         Planejamento gerado = captor.getAllValues().getFirst().iterator().next();
         assertTrue(gerado.isSincronizado());
     }

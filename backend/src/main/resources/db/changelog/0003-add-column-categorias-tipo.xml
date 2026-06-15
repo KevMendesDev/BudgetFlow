@@ -34,9 +34,16 @@
                 columnName="classificacao"
                 columnDataType="VARCHAR(50)"/>
 
-        <addUniqueConstraint
-                tableName="categorias"
-                columnNames="nome, user_id, tipo_categoria, classificacao"
-                constraintName="uk_categorias_nome_user_tipo_classificacao"/>
+        <sql dbms="postgresql">
+            CREATE UNIQUE INDEX uk_categorias_receita_nome_user_tipo
+            ON categorias (user_id, lower(nome), tipo_categoria)
+            WHERE classificacao IS NULL;
+
+            CREATE UNIQUE INDEX uk_categorias_despesa_nome_user_tipo_classificacao
+            ON categorias (user_id, lower(nome), tipo_categoria, classificacao)
+            WHERE classificacao IS NOT NULL;
+
+            CREATE INDEX ix_categorias_nome_trgm ON categorias USING gin (lower(nome) gin_trgm_ops);
+        </sql>
     </changeSet>
 </databaseChangeLog>

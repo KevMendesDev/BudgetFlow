@@ -5,8 +5,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,6 +116,9 @@ public class PlanejamentoService {
         Long userId = SecurityUtils.currentUserId();
         PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
         List<Planejamento> novos = new ArrayList<>();
+        Set<String> chavesSincronizadas = new HashSet<>(
+                planejamentoRepository.findChavesSincronizacaoByPeriodoIdAndUserId(periodo.getId(), userId)
+        );
         int semValor = 0;
 
         for (TransacaoRecorrente recorrente : recorrenteRepository.findAllByUserId(userId)) {
@@ -121,7 +126,7 @@ public class PlanejamentoService {
                 semValor++;
                 continue;
             }
-            gerarOcorrenciasDoPeriodo(recorrente, periodo, userId, novos);
+            gerarOcorrenciasDoPeriodo(recorrente, periodo, userId, chavesSincronizadas, novos);
         }
 
         planejamentoRepository.saveAll(novos);
@@ -134,6 +139,7 @@ public class PlanejamentoService {
             TransacaoRecorrente recorrente,
             PeriodoFinanceiro periodo,
             Long userId,
+            Set<String> chavesSincronizadas,
             List<Planejamento> novos
     ) {
         long indice = 0;
@@ -153,7 +159,7 @@ public class PlanejamentoService {
 
             if (!data.isBefore(periodo.getDataInicio())) {
                 String chave = buildSyncKey(userId, recorrente.getId(), data);
-                if (!planejamentoRepository.existsByChaveSincronizacaoAndUserId(chave, userId)) {
+                if (chavesSincronizadas.add(chave)) {
                     Planejamento planejamento = new Planejamento();
                     planejamento.setUser(recorrente.getUser());
                     planejamento.setPeriodo(periodo);

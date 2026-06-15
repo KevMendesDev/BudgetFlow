@@ -18,15 +18,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(
-        name = "categorias",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_categorias_nome_user_tipo_classificacao",
-                        columnNames = {"nome", "user_id", "tipo_categoria", "classificacao"}
-                )
-        }
-)
+@Table(name = "categorias")
 public class Categoria {
 
     @Id
