@@ -13,6 +13,11 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+        order_inserts: true
   liquibase:
     change-log: classpath:db/changelog/master.xml
   docker:
@@ -30,9 +35,13 @@ app:
     from-name: ${EMAIL_FROM_NAME:BudgetFlow}
   security:
     jwt:
-      secret: ${JWT_SECRET:dev-only-change-me-with-at-least-32-chars}
+      secret: ${JWT_SECRET}
       access-token-minutes: 15
       refresh-token-days: 30
+    max-sessions-per-user: 5
+    rate-limit:
+      max-attempts: 10
+      window-minutes: 15
     cookies:
       secure: ${COOKIE_SECURE:false}
       same-site: LAX

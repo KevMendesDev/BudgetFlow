@@ -31,7 +31,7 @@ public class JwtService {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenMinutes * 60 * 1000);
         List<String> roleNames = (roles == null || roles.isEmpty())
-                ? List.of(Role.USER.name())
+                ? List.of()
                 : roles.stream().map(Role::name).toList();
 
         return Jwts.builder()

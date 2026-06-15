@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,15 +22,21 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<MessageResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
-        return ResponseEntity.ok(new MessageResponseDTO(authService.register(request)));
+    public ResponseEntity<MessageResponseDTO> register(
+            @Valid @RequestBody RegisterRequestDTO request,
+            HttpServletRequest httpRequest
+    ) {
+        return ResponseEntity.ok(
+                new MessageResponseDTO(authService.register(request, httpRequest.getRemoteAddr())));
     }
 
     @PostMapping("/login")
     public ResponseEntity<CurrentUserResponseDTO> login(
             @Valid @RequestBody LoginRequestDTO request,
+            HttpServletRequest httpRequest,
             HttpServletResponse response) {
-        return ResponseEntity.ok(authService.login(request.email(), request.senha(), response));
+        return ResponseEntity.ok(
+                authService.login(request.email(), request.senha(), httpRequest.getRemoteAddr(), response));
     }
 
     @PostMapping("/email-verification/confirm")
@@ -54,14 +61,24 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponseDTO("Senha alterada. Entre novamente."));
     }
 
+    @GetMapping("/csrf")
+    public ResponseEntity<CsrfTokenResponseDTO> csrf(CsrfToken csrfToken) {
+        return ResponseEntity.ok(new CsrfTokenResponseDTO(csrfToken.getToken(), csrfToken.getHeaderName()));
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<Void> refresh(HttpServletRequest request, HttpServletResponse response) {
-        authService.refresh(cookieValue(request, "refresh_token"), response);
+        String rawRefreshToken = cookieValue(request, "refresh_token");
+        authService.refresh(rawRefreshToken, request.getRemoteAddr(), response);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(Authentication authentication, HttpServletResponse response) {
+    public ResponseEntity<Void> logout(
+            Authentication authentication,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
         Long userId = null;
         if (authentication != null && authentication.getName() != null) {
             try {
@@ -70,7 +87,7 @@ public class AuthController {
                 // Invalid principals are treated as anonymous logout requests.
             }
         }
-        authService.logout(userId, response);
+        authService.logout(userId, cookieValue(request, "refresh_token"), response);
         return ResponseEntity.noContent().build();
     }
 

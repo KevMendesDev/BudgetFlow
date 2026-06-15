@@ -4,7 +4,6 @@ import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.features.categorias.dto.CategoriaRequestDTO;
 import br.com.budgetflow.features.categorias.dto.CategoriaResponseDTO;
-import br.com.budgetflow.features.categorias.mapper.CategoriaMapper;
 import jakarta.validation.Valid;
 
 import java.net.URI;
@@ -21,11 +20,9 @@ import br.com.budgetflow.features.categorias.service.CategoriaService;
 @RequestMapping("/api/categorias")
 public class CategoriaController {
     private final CategoriaService categoriaService;
-    private final CategoriaMapper categoriaMapper;
 
-    public CategoriaController(CategoriaService categoriaService, CategoriaMapper categoriaMapper) {
+    public CategoriaController(CategoriaService categoriaService) {
         this.categoriaService = categoriaService;
-        this.categoriaMapper = categoriaMapper;
     }
 
     @PostMapping
@@ -53,7 +50,7 @@ public class CategoriaController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<CategoriaResponseDTO> findById(@PathVariable Long id) {
-        CategoriaResponseDTO categoria = categoriaMapper.toResponseDTO(categoriaService.findById(id));
+        CategoriaResponseDTO categoria = categoriaService.findById(id);
         return ResponseEntity.ok(categoria);
     }
 

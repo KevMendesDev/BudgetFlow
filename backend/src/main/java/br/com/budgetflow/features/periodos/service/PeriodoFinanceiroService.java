@@ -59,7 +59,7 @@ public class PeriodoFinanceiroService {
         periodo.setDataInicio(dataInicio);
         periodo.setDataFim(dataFim);
 
-        return periodoFinanceiroMapper.toResponseDTO(periodoFinanceiroRepository.save(periodo));
+        return periodoFinanceiroMapper.toResponseDTO(periodoFinanceiroRepository.save(periodo), false);
     }
 
     @Transactional(readOnly = true)
@@ -98,10 +98,12 @@ public class PeriodoFinanceiroService {
     }
 
     @Transactional(readOnly = true)
-    public PeriodoFinanceiro findById(Long id) {
+    public PeriodoFinanceiroResponseDTO findById(Long id) {
         Long userId = SecurityUtils.currentUserId();
-        return periodoFinanceiroRepository.findByIdAndUserId(id, userId)
+        PeriodoFinanceiro periodo = periodoFinanceiroRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Período financeiro não encontrado"));
+        boolean possuiRelacionamentos = relacionamentoChecker.periodoHasRelationships(id, userId);
+        return periodoFinanceiroMapper.toResponseDTO(periodo, possuiRelacionamentos);
     }
 
     @Transactional
@@ -120,7 +122,9 @@ public class PeriodoFinanceiroService {
         periodo.setDataInicio(dataInicio);
         periodo.setDataFim(dataFim);
 
-        return periodoFinanceiroMapper.toResponseDTO(periodoFinanceiroRepository.save(periodo));
+        PeriodoFinanceiro updatedPeriodo = periodoFinanceiroRepository.save(periodo);
+        boolean possuiRelacionamentos = relacionamentoChecker.periodoHasRelationships(id, userId);
+        return periodoFinanceiroMapper.toResponseDTO(updatedPeriodo, possuiRelacionamentos);
     }
 
     @Transactional
