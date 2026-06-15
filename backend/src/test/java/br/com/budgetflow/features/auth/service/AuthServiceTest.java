@@ -37,7 +37,7 @@ class AuthServiceTest {
     @Mock private JwtService jwtService;
     @Mock private AuthCookieService cookieService;
     @Mock private AuthTokenService authTokenService;
-    @Mock private BrevoEmailService emailService;
+    @Mock private ResendEmailService emailService;
     @Mock private AuthThrottleService throttleService;
     @Mock private HttpServletResponse response;
     @Mock private OidcUser oidcUser;

@@ -30,7 +30,7 @@ server:
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
   email:
-    brevo-api-key: ${BREVO_API_KEY:}
+    resend-api-key: ${RESEND_API_KEY:}
     from: ${EMAIL_FROM:}
     from-name: ${EMAIL_FROM_NAME:BudgetFlow}
   security:

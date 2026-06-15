@@ -47,7 +47,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthCookieService cookieService;
     private final AuthTokenService authTokenService;
-    private final BrevoEmailService emailService;
+    private final ResendEmailService emailService;
     private final AuthThrottleService throttleService;
     private final long accessTokenMinutes;
     private final long refreshTokenDays;
@@ -60,7 +60,7 @@ public class AuthService {
             JwtService jwtService,
             AuthCookieService cookieService,
             AuthTokenService authTokenService,
-            BrevoEmailService emailService,
+            ResendEmailService emailService,
             AuthThrottleService throttleService,
             @Value("${app.security.jwt.access-token-minutes}") long accessTokenMinutes,
             @Value("${app.security.jwt.refresh-token-days}") long refreshTokenDays,
