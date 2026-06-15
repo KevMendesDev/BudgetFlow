@@ -36,4 +36,9 @@ export class CsrfTokenService {
 
     return this.tokenRequest$;
   }
+
+  invalidate(): void {
+    this.token = null;
+    this.tokenRequest$ = null;
+  }
 }

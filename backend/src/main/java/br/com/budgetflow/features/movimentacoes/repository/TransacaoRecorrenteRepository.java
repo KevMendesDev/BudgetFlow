@@ -24,23 +24,25 @@ public interface TransacaoRecorrenteRepository extends JpaRepository<TransacaoRe
 
     @EntityGraph(attributePaths = {"categoria", "user"})
     @Query("""
-            select tr as recorrente,
-                   count(transacao.id) as parcelasLancadas,
-                   max(transacao.data) as ultimaData
-            from TransacaoRecorrente tr
-            left join Transacao transacao
-              on transacao.transacaoRecorrente = tr
-             and transacao.user.id = :userId
-            where tr.user.id = :userId
-            group by tr
+            select transacaoRecorrente as recorrente,
+                   (select count(transacao.id)
+                    from Transacao transacao
+                    where transacao.transacaoRecorrente = transacaoRecorrente
+                      and transacao.user.id = :userId) as parcelasLancadas,
+                   (select max(transacao.data)
+                    from Transacao transacao
+                    where transacao.transacaoRecorrente = transacaoRecorrente
+                      and transacao.user.id = :userId) as ultimaData
+            from TransacaoRecorrente transacaoRecorrente
+            where transacaoRecorrente.user.id = :userId
             """)
     List<TransacaoRecorrenteUsageProjection> findUsageByUserId(@Param("userId") Long userId);
 
     @Query("""
-            select distinct tr.categoria.id
-            from TransacaoRecorrente tr
-            where tr.user.id = :userId
-              and tr.categoria.id in :categoriaIds
+            select distinct transacaoRecorrente.categoria.id
+            from TransacaoRecorrente transacaoRecorrente
+            where transacaoRecorrente.user.id = :userId
+              and transacaoRecorrente.categoria.id in :categoriaIds
             """)
     List<Long> findCategoriaIdsByUserIdAndCategoriaIds(
             @Param("userId") Long userId,
