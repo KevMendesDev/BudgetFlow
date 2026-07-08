@@ -1,0 +1,28 @@
+<section class="comparativo">
+  <div class="comparativo-head">
+    <div>
+      <h2>Planejado x executado</h2>
+      <p class="muted">Somente despesas executadas são consideradas.</p>
+    </div>
+    <button type="button" class="btn-toggle" (click)="toggle()">
+      {{ aberto() ? 'Ocultar' : 'Mostrar' }}
+    </button>
+  </div>
+
+  @if (aberto()) {
+    <div class="charts">
+      <article>
+        <h3>Por categoria</h3>
+        <div class="chart chart-categorias">
+          <canvas baseChart [type]="chartType" [data]="categoriaChartData()" [options]="chartOptions()"></canvas>
+        </div>
+      </article>
+      <article>
+        <h3>Totais do período</h3>
+        <div class="chart">
+          <canvas baseChart [type]="chartType" [data]="totaisChartData()" [options]="chartOptions()"></canvas>
+        </div>
+      </article>
+    </div>
+  }
+</section>
