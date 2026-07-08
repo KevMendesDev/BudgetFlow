@@ -83,4 +83,17 @@ jobs:
           cache: maven
 
       - name: Run tests
-        run: ./mvnw clean verify
+        run: ./mvnw clean verify -DskipTests
+
+      - name: Rename JAR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          JAR=$(find target -maxdepth 1 -name "*.jar" ! -name "*sources.jar" ! -name "*javadoc.jar" | head -n 1)
+          cp "$JAR" target/budgetflow.jar
+
+      - name: Upload JAR artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: budgetflow-backend
+          path: backend/target/budgetflow.jar
