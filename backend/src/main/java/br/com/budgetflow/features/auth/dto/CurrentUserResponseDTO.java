@@ -6,6 +6,5 @@ public record CurrentUserResponseDTO(
         Long id,
         String nome,
         String email,
-        String cpf,
         List<String> roles
 ) {}

@@ -1,6 +1,5 @@
 package br.com.budgetflow.features.categorias.mapper;
 
-import br.com.budgetflow.common.service.RelacionamentoChecker;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.categorias.dto.CategoriaRequestDTO;
 import br.com.budgetflow.features.categorias.dto.CategoriaResponseDTO;
@@ -9,13 +8,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
 public abstract class CategoriaMapper {
-    @Autowired
-    protected RelacionamentoChecker relacionamentoChecker;
-
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -32,11 +27,6 @@ public abstract class CategoriaMapper {
     @Mapping(source = "user.id", target = "userId")
     @Mapping(target = "possuiRelacionamentos", ignore = true)
     protected abstract CategoriaResponseDTO toResponseDTOBase(Categoria categoria);
-
-    public CategoriaResponseDTO toResponseDTO(Categoria categoria) {
-        boolean possuiRelacionamentos = relacionamentoChecker.categoriaHasRelationships(categoria.getId(), categoria.getUser().getId());
-        return toResponseDTO(categoria, possuiRelacionamentos);
-    }
 
     public CategoriaResponseDTO toResponseDTO(Categoria categoria, boolean possuiRelacionamentos) {
         CategoriaResponseDTO categoriaBase = toResponseDTOBase(categoria);

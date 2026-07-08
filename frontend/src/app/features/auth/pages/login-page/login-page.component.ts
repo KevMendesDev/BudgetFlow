@@ -1,13 +1,12 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { API_BASE_URL } from '../../../../core/config/api.config';
 import { AuthApiService } from '../../../../core/services/auth-api.service';
 import { SessionService } from '../../../../core/services/session.service';
-import { formatCpf, onlyDigits } from '../../../../shared/utils/format.util';
 import { fieldError } from '../../../../shared/utils/form-error.util';
-import { cpfValidator } from '../../../../shared/validators/br-validators';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 
 @Component({
@@ -20,21 +19,22 @@ export class LoginPageComponent {
   private readonly authApi = inject(AuthApiService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(false);
-  readonly errorMessage = signal('');
+  readonly errorMessage = signal(
+    this.route.snapshot.queryParamMap.get('googleError')
+      ? 'Não foi possível entrar com o Google.'
+      : ''
+  );
   readonly fieldError = fieldError;
+  readonly googleLoginUrl = `${API_BASE_URL}/oauth2/authorization/google`;
 
   readonly form = this.formBuilder.nonNullable.group({
-    cpf: ['', [Validators.required, cpfValidator()]],
+    email: ['', [Validators.required, Validators.email]],
     senha: ['', [Validators.required]],
   });
-
-  onCpfInput(): void {
-    const cpfControl = this.form.controls.cpf;
-    cpfControl.setValue(formatCpf(cpfControl.value), { emitEvent: false });
-  }
 
   submit(): void {
     if (this.form.invalid || this.loading()) {
@@ -49,7 +49,7 @@ export class LoginPageComponent {
 
     this.authApi
       .login({
-        cpf: onlyDigits(formValue.cpf),
+        email: formValue.email.trim().toLowerCase(),
         senha: formValue.senha,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))

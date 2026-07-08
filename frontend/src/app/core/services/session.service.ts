@@ -4,10 +4,12 @@ import { catchError, finalize, map, shareReplay } from 'rxjs/operators';
 
 import { CurrentUser } from '../models/auth.models';
 import { AuthApiService } from './auth-api.service';
+import { CsrfTokenService } from './csrf-token.service';
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private readonly authApi = inject(AuthApiService);
+  private readonly csrfTokenService = inject(CsrfTokenService);
   private bootstrapInFlight$: Observable<boolean> | null = null;
   private hasBootstrapped = false;
 
@@ -50,11 +52,13 @@ export class SessionService {
   }
 
   setUser(currentUser: CurrentUser): void {
+    this.csrfTokenService.invalidate();
     this.user.set(currentUser);
     this.hasBootstrapped = true;
   }
 
   clearSession(): void {
+    this.csrfTokenService.invalidate();
     this.user.set(null);
     this.hasBootstrapped = true;
   }

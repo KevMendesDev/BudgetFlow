@@ -83,7 +83,7 @@ public class RefreshToken {
 
     @Override
     public String toString() {
-        return "RefreshToken [id=" + id + ", user=" + user + ", tokenHash=" + tokenHash + ", expiresAt=" + expiresAt
+        return "RefreshToken [id=" + id + ", expiresAt=" + expiresAt
                 + ", revoked=" + revoked + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
     }
 }

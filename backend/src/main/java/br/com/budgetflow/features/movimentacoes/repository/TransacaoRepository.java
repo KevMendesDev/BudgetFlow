@@ -14,23 +14,9 @@ import br.com.budgetflow.features.movimentacoes.domain.Transacao;
 
 public interface TransacaoRepository extends JpaRepository<Transacao, Long>, JpaSpecificationExecutor<Transacao> {
 
-    boolean existsByTransacaoRecorrenteIdAndData(Long transacaoRecorrenteId, LocalDate data);
-
-    boolean existsByTransacaoRecorrenteIdAndDataAndUserId(Long transacaoRecorrenteId, LocalDate data, Long userId);
-
-    boolean existsByTransacaoRecorrenteIdAndPeriodoIdAndUserId(Long transacaoRecorrenteId, Long periodoId, Long userId);
-
-    boolean existsByTransacaoRecorrenteIdAndPeriodoIdAndUserIdAndIdNot(Long transacaoRecorrenteId, Long periodoId, Long userId, Long id);
-
-    long countByTransacaoRecorrenteId(Long transacaoRecorrenteId);
-
     long countByTransacaoRecorrenteIdAndUserId(Long transacaoRecorrenteId, Long userId);
 
     long countByTransacaoRecorrenteIdAndUserIdAndIdNot(Long transacaoRecorrenteId, Long userId, Long id);
-
-    long countByTransacaoRecorrenteIdAndUserIdAndDataLessThanEqual(Long transacaoRecorrenteId, Long userId, LocalDate data);
-
-    long countByTransacaoRecorrenteIdAndUserIdAndDataLessThanEqualAndIdNot(Long transacaoRecorrenteId, Long userId, LocalDate data, Long id);
 
     boolean existsByCategoriaIdAndUserId(Long categoriaId, Long userId);
 

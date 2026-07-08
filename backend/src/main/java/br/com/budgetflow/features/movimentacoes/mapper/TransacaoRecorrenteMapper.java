@@ -1,17 +1,12 @@
 package br.com.budgetflow.features.movimentacoes.mapper;
 
-import br.com.budgetflow.common.service.RelacionamentoChecker;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoRecorrenteRequestDTO;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoRecorrenteResponseDTO;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
 public abstract class TransacaoRecorrenteMapper {
-    @Autowired
-    protected RelacionamentoChecker relacionamentoChecker;
-
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "categoria", ignore = true)
@@ -40,11 +35,6 @@ public abstract class TransacaoRecorrenteMapper {
     )
     @Mapping(target = "possuiRelacionamentos", ignore = true)
     protected abstract TransacaoRecorrenteResponseDTO toResponseDTOBase(TransacaoRecorrente entity);
-
-    public TransacaoRecorrenteResponseDTO toResponseDTO(TransacaoRecorrente entity) {
-        boolean possuiRelacionamentos = relacionamentoChecker.transacaoRecorrenteHasRelationships(entity.getId(), entity.getUser().getId());
-        return toResponseDTO(entity, possuiRelacionamentos);
-    }
 
     public TransacaoRecorrenteResponseDTO toResponseDTO(TransacaoRecorrente entity, boolean possuiRelacionamentos) {
         TransacaoRecorrenteResponseDTO transacaoBase = toResponseDTOBase(entity);

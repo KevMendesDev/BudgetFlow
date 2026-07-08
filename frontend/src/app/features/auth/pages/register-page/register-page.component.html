@@ -25,22 +25,6 @@
     </label>
 
     <label class="bf-label">
-      CPF
-      <input
-        class="bf-input"
-        type="text"
-        formControlName="cpf"
-        placeholder="000.000.000-00"
-        inputmode="numeric"
-        maxlength="14"
-        (input)="onCpfInput()"
-      />
-      @if (fieldError(form.controls.cpf, 'CPF')) {
-        <small class="bf-error">{{ fieldError(form.controls.cpf, 'CPF') }}</small>
-      }
-    </label>
-
-    <label class="bf-label">
       Telefone (opcional)
       <input
         class="bf-input"

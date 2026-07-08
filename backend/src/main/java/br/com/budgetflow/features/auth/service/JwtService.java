@@ -27,16 +27,16 @@ public class JwtService {
         this.accessTokenMinutes = accessTokenMinutes;
     }
 
-    public String generateAccessToken(Long userId, String cpf, Set<Role> roles) {
+    public String generateAccessToken(Long userId, Set<Role> roles) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenMinutes * 60 * 1000);
         List<String> roleNames = (roles == null || roles.isEmpty())
-                ? List.of(Role.USER.name())
+                ? List.of()
                 : roles.stream().map(Role::name).toList();
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
-                .claims(Map.of("cpf", cpf, "roles", roleNames))
+                .claims(Map.of("roles", roleNames))
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)

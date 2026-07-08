@@ -12,6 +12,7 @@ import br.com.budgetflow.features.users.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -32,8 +34,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthCookieService cookieService;
+    private final AuthThrottleService throttleService;
     private final long accessTokenMinutes;
     private final long refreshTokenDays;
+    private final int maxSessionsPerUser;
 
     public AuthService(
             UserRepository userRepository,
@@ -41,66 +45,118 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             AuthCookieService cookieService,
+            AuthThrottleService throttleService,
             @Value("${app.security.jwt.access-token-minutes}") long accessTokenMinutes,
-            @Value("${app.security.jwt.refresh-token-days}") long refreshTokenDays) {
+            @Value("${app.security.jwt.refresh-token-days}") long refreshTokenDays,
+            @Value("${app.security.max-sessions-per-user:5}") int maxSessionsPerUser) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.cookieService = cookieService;
+        this.throttleService = throttleService;
         this.accessTokenMinutes = accessTokenMinutes;
         this.refreshTokenDays = refreshTokenDays;
+        this.maxSessionsPerUser = maxSessionsPerUser;
     }
 
     @Transactional
-    public CurrentUserResponseDTO register(RegisterRequestDTO request, HttpServletResponse response) {
-        String cpf = normalizeCpf(request.cpf());
-        String normalizedEmail = request.email().trim().toLowerCase();
+    public CurrentUserResponseDTO register(
+            RegisterRequestDTO request,
+            String clientAddress,
+            HttpServletResponse response
+    ) {
+        String throttleKey = "register:" + clientAddress;
+        throttleService.check(throttleKey);
+        String normalizedEmail = normalizeEmail(request.email());
 
-        if (userRepository.existsByCpf(cpf)) {
-            throw new ConflictException("CPF ou e-mail já cadastrado(s)");
-        }
         if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new ConflictException("CPF ou e-mail já cadastrado(s)");
+            throw new ConflictException("E-mail já cadastrado");
         }
 
         User user = new User(
             request.nome().trim(),
             normalizedEmail,
-            cpf,
             request.telefone() == null || request.telefone().isBlank() ? null : request.telefone().trim(),
             passwordEncoder.encode(request.senha())
         );
         userRepository.save(user);
 
-        return login(cpf, request.senha(), response);
-    }
-
-    @Transactional
-    public CurrentUserResponseDTO login(String cpf, String senha, HttpServletResponse response) {
-        String cpfNormalizado = normalizeCpf(cpf);
-
-        User user = userRepository.findByCpf(cpfNormalizado)
-                .orElseThrow(() -> new UnauthorizedException("CPF ou senha inválidos"));
-
-        if (!passwordEncoder.matches(senha, user.getSenha())) {
-            throw new UnauthorizedException("CPF ou senha inválidos");
-        }
-
         return issueTokensAndReturn(user, response);
     }
 
     @Transactional
-    public void refresh(String rawRefreshToken, HttpServletResponse response) {
+    public CurrentUserResponseDTO login(
+            String email,
+            String senha,
+            String clientAddress,
+            HttpServletResponse response
+    ) {
+        String normalizedEmail = normalizeEmail(email);
+        String throttleKey = "login:" + clientAddress + ":" + normalizedEmail;
+        throttleService.check(throttleKey);
+
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new UnauthorizedException("E-mail ou senha inválidos"));
+
+        if (user.getSenha() == null || !passwordEncoder.matches(senha, user.getSenha())) {
+            throw new UnauthorizedException("E-mail ou senha inválidos");
+        }
+
+        CurrentUserResponseDTO result = issueTokensAndReturn(user, response);
+        throttleService.reset(throttleKey);
+        return result;
+    }
+
+    @Transactional
+    public CurrentUserResponseDTO loginWithGoogle(OidcUser oidcUser, HttpServletResponse response) {
+        if (!Boolean.TRUE.equals(oidcUser.getEmailVerified())) {
+            throw new UnauthorizedException("E-mail do Google não verificado");
+        }
+
+        String subject = oidcUser.getSubject();
+        String email = normalizeEmail(oidcUser.getEmail());
+        if (subject == null || subject.isBlank() || email == null || email.isBlank()) {
+            throw new UnauthorizedException("Conta Google sem identificação válida");
+        }
+
+        User user = userRepository.findByGoogleSubject(subject)
+                .orElseGet(() -> userRepository.findByEmail(email)
+                        .map(existingUser -> {
+                            if (existingUser.getGoogleSubject() != null
+                                    && !existingUser.getGoogleSubject().equals(subject)) {
+                                throw new UnauthorizedException("E-mail já vinculado a outra conta Google");
+                            }
+                            existingUser.setGoogleSubject(subject);
+                            return existingUser;
+                        })
+                        .orElseGet(() -> {
+                            String name = oidcUser.getFullName();
+                            if (name == null || name.isBlank()) {
+                                name = email;
+                            }
+                            User newUser = new User(name.trim(), email, null, null);
+                            newUser.setGoogleSubject(subject);
+                            return newUser;
+                        }));
+
+        userRepository.save(user);
+        return issueTokensAndReturn(user, response);
+    }
+
+    @Transactional
+    public void refresh(String rawRefreshToken, String clientAddress, HttpServletResponse response) {
+        throttleService.check("refresh:" + clientAddress);
         if (rawRefreshToken == null || rawRefreshToken.isBlank()) {
             throw new UnauthorizedException("Refresh token inválido");
         }
 
         String hash = hashToken(rawRefreshToken);
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(hash)
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHashForUpdate(hash)
                 .orElseThrow(() -> new UnauthorizedException("Refresh token inválido"));
 
         if (refreshToken.isRevoked()) {
+            refreshTokenRepository.deleteAllByUserId(refreshToken.getUser().getId());
             throw new UnauthorizedException("Refresh token revogado");
         }
         if (refreshToken.getExpiresAt().isBefore(OffsetDateTime.now())) {
@@ -112,10 +168,16 @@ public class AuthService {
 
         User user = refreshToken.getUser();
         issueTokensAndReturn(user, response);
+        throttleService.reset("refresh:" + clientAddress);
     }
 
     @Transactional
-    public void logout(Long userId, HttpServletResponse response) {
+    public void logout(Long userId, String rawRefreshToken, HttpServletResponse response) {
+        if (userId == null && rawRefreshToken != null && !rawRefreshToken.isBlank()) {
+            userId = refreshTokenRepository.findByTokenHash(hashToken(rawRefreshToken))
+                    .map(token -> token.getUser().getId())
+                    .orElse(null);
+        }
         if (userId != null) {
             refreshTokenRepository.deleteAllByUserId(userId);
         }
@@ -129,16 +191,17 @@ public class AuthService {
 
         List<String> roles = rolesToStrings(user.getRoles());
 
-        return new CurrentUserResponseDTO(user.getId(), user.getNome(), user.getEmail(), user.getCpf(), roles);
+        return new CurrentUserResponseDTO(user.getId(), user.getNome(), user.getEmail(), roles);
     }
 
-    private String normalizeCpf(String cpf) {
-        if (cpf == null) return null;
-        return cpf.replaceAll("\\D", "");
+    private String normalizeEmail(String email) {
+        if (email == null) return null;
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     private CurrentUserResponseDTO issueTokensAndReturn(User user, HttpServletResponse response) {
-        String accessToken = jwtService.generateAccessToken(user.getId(), user.getCpf(), user.getRoles());
+        enforceSessionLimit(user.getId());
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getRoles());
 
         String rawRefreshToken = UUID.randomUUID().toString();
         String hash = hashToken(rawRefreshToken);
@@ -158,17 +221,25 @@ public class AuthService {
 
         List<String> roles = rolesToStrings(user.getRoles());
 
-        return new CurrentUserResponseDTO(user.getId(), user.getNome(), user.getEmail(), user.getCpf(), roles);
+        return new CurrentUserResponseDTO(user.getId(), user.getNome(), user.getEmail(), roles);
     }
 
     private List<String> rolesToStrings(Set<Role> roles) {
         if (roles == null || roles.isEmpty()) {
-            return List.of(Role.USER.name());
+            return List.of();
         }
 
         return roles.stream()
                 .map(Role::name)
                 .toList();
+    }
+
+    private void enforceSessionLimit(Long userId) {
+        List<RefreshToken> tokens = refreshTokenRepository.findAllByUserIdOrderByCreatedAtAsc(userId);
+        int tokensToDelete = tokens.size() - maxSessionsPerUser + 1;
+        if (tokensToDelete > 0) {
+            refreshTokenRepository.deleteAll(tokens.subList(0, tokensToDelete));
+        }
     }
 
     private String hashToken(String token) {

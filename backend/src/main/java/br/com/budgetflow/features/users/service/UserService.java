@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.features.users.domain.Role;
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.dto.UserResponseDTO;
@@ -35,6 +36,9 @@ public class UserService {
 
     @Transactional
     public UserResponseDTO updateUserRoles(Long userId, List<Role> roles) {
+        if (roles == null || roles.isEmpty()) {
+            throw new BusinessRuleException("O usuário deve possuir ao menos uma role");
+        }
         User user = this.findById(userId);
         user.getRoles().clear();
         user.getRoles().addAll(roles);

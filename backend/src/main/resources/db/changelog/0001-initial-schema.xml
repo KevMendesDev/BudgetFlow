@@ -146,31 +146,61 @@
         <createIndex tableName="periodos_financeiros" indexName="ix_periodos_user_id">
             <column name="user_id"/>
         </createIndex>
+        <createIndex tableName="periodos_financeiros" indexName="ix_periodos_user_inicio_fim">
+            <column name="user_id"/>
+            <column name="data_inicio"/>
+            <column name="data_fim"/>
+        </createIndex>
     </changeSet>
 
     <!-- PLANEJAMENTOS -->
     <changeSet id="0001-04-create-planejamentos" author="kevin">
-        <createTable tableName="planejamentos">
+         <createTable tableName="planejamentos">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_planejamentos" nullable="false"/>
             </column>
-            <column name="periodo_id" type="BIGINT">
+            <column name="user_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
             <column name="categoria_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="valor_planejado" type="NUMERIC(19,2)">
+            <column name="periodo_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descricao" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="valor" type="NUMERIC(19,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_movimentacao" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="chave_sincronizacao" type="VARCHAR(64)"/>
+            <column name="excluido" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
             <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
-            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
-                <constraints nullable="true"/>
-            </column>
+            <column name="updated_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP"/>
         </createTable>
 
+        <addForeignKeyConstraint
+                baseTableName="planejamentos"
+                baseColumnNames="user_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_planejamentos_user"
+                onDelete="CASCADE"/>
+        <addForeignKeyConstraint
+                baseTableName="planejamentos"
+                baseColumnNames="categoria_id"
+                referencedTableName="categorias"
+                referencedColumnNames="id"
+                constraintName="fk_planejamentos_categoria"
+                onDelete="CASCADE"/>
         <addForeignKeyConstraint
                 baseTableName="planejamentos"
                 baseColumnNames="periodo_id"
@@ -179,14 +209,16 @@
                 constraintName="fk_planejamentos_periodo"
                 onDelete="CASCADE"/>
 
-        <addForeignKeyConstraint
-                baseTableName="planejamentos"
-                baseColumnNames="categoria_id"
-                referencedTableName="categorias"
-                referencedColumnNames="id"
-                constraintName="fk_planejamentos_categoria"/>
-
-        <addUniqueConstraint tableName="planejamentos" columnNames="periodo_id, categoria_id" constraintName="uk_planejamentos_periodo_categoria"/>
+        <addUniqueConstraint
+                tableName="planejamentos"
+                columnNames="user_id, chave_sincronizacao"
+                constraintName="uk_planejamentos_user_chave_sincronizacao"/>
+        <createIndex tableName="planejamentos" indexName="ix_planejamentos_user_id">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex tableName="planejamentos" indexName="ix_planejamentos_periodo_id">
+            <column name="periodo_id"/>
+        </createIndex>
     </changeSet>
 
     <!-- TRANSACOES_RECORRENTES -->
@@ -247,6 +279,11 @@
         <createIndex tableName="transacoes_recorrentes" indexName="ix_transacoes_recorrentes_user_id">
             <column name="user_id"/>
         </createIndex>
+
+        <sql dbms="postgresql">
+            CREATE EXTENSION IF NOT EXISTS pg_trgm;
+            CREATE INDEX ix_recorrentes_descricao_trgm ON transacoes_recorrentes USING gin (lower(descricao) gin_trgm_ops);
+        </sql>
     </changeSet>
 
     <!-- TRANSACOES -->
@@ -327,12 +364,24 @@
         <createIndex tableName="transacoes" indexName="ix_transacoes_recorrente_id">
             <column name="transacao_recorrente_id"/>
         </createIndex>
+        <createIndex tableName="transacoes" indexName="ix_transacoes_user_periodo_data">
+            <column name="user_id"/>
+            <column name="periodo_id"/>
+            <column name="data"/>
+        </createIndex>
+        <createIndex tableName="transacoes" indexName="ix_transacoes_recorrente_user_data">
+            <column name="transacao_recorrente_id"/>
+            <column name="user_id"/>
+            <column name="data"/>
+        </createIndex>
 
         <!-- Partial unique index for idempotent recurring generation -->
         <sql dbms="postgresql">
             CREATE UNIQUE INDEX ix_transacoes_recorrente_data_unique
             ON transacoes (transacao_recorrente_id, data)
             WHERE transacao_recorrente_id IS NOT NULL;
+
+            CREATE INDEX ix_transacoes_descricao_trgm ON transacoes USING gin (lower(descricao) gin_trgm_ops);
         </sql>
     </changeSet>
 

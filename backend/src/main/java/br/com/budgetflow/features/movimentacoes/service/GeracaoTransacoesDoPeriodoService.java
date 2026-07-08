@@ -13,6 +13,7 @@ import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.dto.SincronizacaoRecorrentesResponseDTO;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRepository;
+import br.com.budgetflow.features.movimentacoes.repository.projection.TransacaoRecorrenteUsageProjection;
 import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 
@@ -32,28 +33,25 @@ public class GeracaoTransacoesDoPeriodoService {
     @Transactional
     public SincronizacaoRecorrentesResponseDTO gerarParaPeriodo(PeriodoFinanceiro periodo) {
         Long userId = periodo.getUser().getId();
-        List<TransacaoRecorrente> recorrentes = recorrenteRepository.findAllByUserId(userId);
+        List<TransacaoRecorrenteUsageProjection> recorrentes = recorrenteRepository.findUsageByUserId(userId);
         List<Transacao> transacoesPendentes = new ArrayList<>();
         List<String> recorrentesPendentes = new ArrayList<>();
         int ignoradasSemValor = 0;
 
-        for (TransacaoRecorrente recorrente : recorrentes) {
+        for (TransacaoRecorrenteUsageProjection usage : recorrentes) {
+            TransacaoRecorrente recorrente = usage.getRecorrente();
             if (recorrente.getValor() == null) {
                 ignoradasSemValor++;
                 continue;
             }
 
-            ResultadoCalculo resultado = calcularDatas(recorrente, periodo, userId);
+            ResultadoCalculo resultado = calcularDatas(recorrente, periodo, usage);
             if (resultado.pendenteEmPeriodoAnterior()) {
                 recorrentesPendentes.add(recorrente.getDescricao());
                 continue;
             }
 
             for (LocalDate data : resultado.datas()) {
-                if (transacaoRepository.existsByTransacaoRecorrenteIdAndDataAndUserId(recorrente.getId(), data, userId)) {
-                    continue;
-                }
-
                 Transacao transacao = new Transacao();
                 transacao.setUser(recorrente.getUser());
                 transacao.setCategoria(recorrente.getCategoria());
@@ -83,11 +81,14 @@ public class GeracaoTransacoesDoPeriodoService {
         );
     }
 
-    private ResultadoCalculo calcularDatas(TransacaoRecorrente recorrente, PeriodoFinanceiro periodo, Long userId) {
-        LocalDate proximaEsperada = transacaoRepository
-                .findFirstByTransacaoRecorrenteIdAndUserIdOrderByDataDescIdDesc(recorrente.getId(), userId)
-                .map(transacao -> RecorrenciaUtils.calcularProximaDataMinima(transacao.getData(), recorrente.getFrequencia()))
-                .orElse(recorrente.getDataInicio());
+    private ResultadoCalculo calcularDatas(
+            TransacaoRecorrente recorrente,
+            PeriodoFinanceiro periodo,
+            TransacaoRecorrenteUsageProjection usage
+    ) {
+        LocalDate proximaEsperada = usage.getUltimaData() == null
+                ? recorrente.getDataInicio()
+                : RecorrenciaUtils.calcularProximaDataMinima(usage.getUltimaData(), recorrente.getFrequencia());
 
         if (proximaEsperada.isBefore(periodo.getDataInicio())) {
             return new ResultadoCalculo(List.of(), true);
@@ -100,7 +101,7 @@ public class GeracaoTransacoesDoPeriodoService {
         List<LocalDate> datas = new ArrayList<>();
         LocalDate dataAtual = proximaEsperada;
         Integer totalParcelas = recorrente.getTotalParcelas();
-        long parcelasLancadas = transacaoRepository.countByTransacaoRecorrenteIdAndUserId(recorrente.getId(), userId);
+        long parcelasLancadas = usage.getParcelasLancadas();
 
         while (!dataAtual.isAfter(periodo.getDataFim())) {
             if (recorrente.getDataFim() != null && dataAtual.isAfter(recorrente.getDataFim())) {

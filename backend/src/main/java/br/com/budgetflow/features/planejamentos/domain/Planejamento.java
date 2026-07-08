@@ -1,18 +1,31 @@
 package br.com.budgetflow.features.planejamentos.domain;
 
-import br.com.budgetflow.features.categorias.domain.Categoria;
-import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
-import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import br.com.budgetflow.common.enums.NaturezaFinanceira;
+import br.com.budgetflow.features.categorias.domain.Categoria;
+import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
+import br.com.budgetflow.features.users.domain.User;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -20,8 +33,15 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(
         name = "planejamentos",
+        indexes = {
+                @Index(name = "ix_planejamentos_user_id", columnList = "user_id"),
+                @Index(name = "ix_planejamentos_periodo_id", columnList = "periodo_id")
+        },
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_planejamentos_periodo_categoria", columnNames = {"periodo_id", "categoria_id"})
+                @UniqueConstraint(
+                        name = "uk_planejamentos_user_chave_sincronizacao",
+                        columnNames = {"user_id", "chave_sincronizacao"}
+                )
         }
 )
 public class Planejamento {
@@ -33,15 +53,32 @@ public class Planejamento {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "periodo_id", nullable = false)
-    private PeriodoFinanceiro periodo;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
-    @Column(name = "valor_planejado", nullable = false, precision = 19, scale = 2)
-    private BigDecimal valorPlanejado;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "periodo_id", nullable = false)
+    private PeriodoFinanceiro periodo;
+
+    @Column(nullable = false)
+    private String descricao;
+
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal valor;
+
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "tipo_movimentacao", nullable = false, length = 50)
+    private NaturezaFinanceira tipoMovimentacao;
+
+    @Column(name = "chave_sincronizacao", length = 64)
+    private String chaveSincronizacao;
+
+    @Column(name = "excluido", nullable = false)
+    private boolean excluido;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -51,34 +88,7 @@ public class Planejamento {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((id == null) ? 0 : id.hashCode());
-        return result;
-    }
-    
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-                return true;
-        if (obj == null)
-                return false;
-        if (getClass() != obj.getClass())
-                return false;
-        Planejamento other = (Planejamento) obj;
-        if (id == null) {
-                if (other.id != null)
-                        return false;
-        } else if (!id.equals(other.id))
-                return false;
-        return true;
-    }
-
-    @Override
-    public String toString() {
-        return "Planejamento [id=" + id + ", periodo=" + periodo + ", categoria=" + categoria + ", valorPlanejado="
-                + valorPlanejado + ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + "]";
+    public boolean isSincronizado() {
+        return chaveSincronizacao != null;
     }
 }

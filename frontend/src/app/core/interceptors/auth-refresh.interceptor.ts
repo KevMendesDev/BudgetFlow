@@ -5,6 +5,7 @@ import { catchError, finalize, Observable, shareReplay, switchMap, throwError } 
 
 import { API_BASE_URL } from '../config/api.config';
 import { RawHttpService } from '../services/raw-http.service';
+import { CsrfTokenService } from '../services/csrf-token.service';
 import { SessionService } from '../services/session.service';
 
 const AUTH_ROUTES_WITHOUT_REFRESH = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'];
@@ -14,6 +15,7 @@ let refreshInFlight$: Observable<void> | null = null;
 
 export const authRefreshInterceptor: HttpInterceptorFn = (req, next) => {
   const rawHttp = inject(RawHttpService);
+  const csrfTokenService = inject(CsrfTokenService);
   const session = inject(SessionService);
   const router = inject(Router);
 
@@ -27,14 +29,22 @@ export const authRefreshInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       if (!refreshInFlight$) {
-        refreshInFlight$ = rawHttp.http
-          .post<void>(`${API_BASE_URL}/api/auth/refresh`, {}, { withCredentials: true })
-          .pipe(
+        refreshInFlight$ = csrfTokenService.getToken().pipe(
+          switchMap(({ headerName, token }) =>
+            rawHttp.http.post<void>(
+              `${API_BASE_URL}/api/auth/refresh`,
+              {},
+              {
+                withCredentials: true,
+                headers: { [headerName]: token },
+              }
+            )
+          ),
             shareReplay(1),
             finalize(() => {
               refreshInFlight$ = null;
             })
-          );
+        );
       }
 
       return refreshInFlight$.pipe(

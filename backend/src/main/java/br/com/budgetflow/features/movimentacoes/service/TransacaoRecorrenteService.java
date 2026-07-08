@@ -18,13 +18,12 @@ import br.com.budgetflow.common.utils.DateRangeUtils;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.categorias.service.CategoriaService;
 import br.com.budgetflow.features.movimentacoes.criteria.TransacaoRecorrenteFilterCriteria;
-import br.com.budgetflow.features.movimentacoes.domain.Transacao;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoRecorrenteRequestDTO;
 import br.com.budgetflow.features.movimentacoes.dto.TransacaoRecorrenteResponseDTO;
 import br.com.budgetflow.features.movimentacoes.mapper.TransacaoRecorrenteMapper;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
-import br.com.budgetflow.features.movimentacoes.repository.TransacaoRepository;
+import br.com.budgetflow.features.movimentacoes.repository.projection.TransacaoRecorrenteUsageProjection;
 import br.com.budgetflow.features.movimentacoes.repository.specification.TransacaoRecorrenteSpecification;
 import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
 import br.com.budgetflow.features.periodos.service.PeriodoFinanceiroService;
@@ -40,7 +39,6 @@ public class TransacaoRecorrenteService {
     private final TransacaoRecorrenteMapper transacaoRecorrenteMapper;
     private final CategoriaService categoriaService;
     private final RelacionamentoChecker relacionamentoChecker;
-    private final TransacaoRepository transacaoRepository;
     private final PeriodoFinanceiroService periodoFinanceiroService;
 
     public TransacaoRecorrenteService(
@@ -49,7 +47,6 @@ public class TransacaoRecorrenteService {
             TransacaoRecorrenteMapper transacaoRecorrenteMapper,
             CategoriaService categoriaService,
             RelacionamentoChecker relacionamentoChecker,
-            TransacaoRepository transacaoRepository,
             PeriodoFinanceiroService periodoFinanceiroService
     ) {
         this.transacaoRecorrenteRepository = transacaoRecorrenteRepository;
@@ -57,7 +54,6 @@ public class TransacaoRecorrenteService {
         this.transacaoRecorrenteMapper = transacaoRecorrenteMapper;
         this.categoriaService = categoriaService;
         this.relacionamentoChecker = relacionamentoChecker;
-        this.transacaoRepository = transacaoRepository;
         this.periodoFinanceiroService = periodoFinanceiroService;
     }
 
@@ -78,7 +74,10 @@ public class TransacaoRecorrenteService {
         transacaoRecorrente.setValor(requestDTO.valorParcela());
         transacaoRecorrente.setDataFim(resolveDataFim(requestDTO));
 
-        return transacaoRecorrenteMapper.toResponseDTO(transacaoRecorrenteRepository.save(transacaoRecorrente));
+        return transacaoRecorrenteMapper.toResponseDTO(
+                transacaoRecorrenteRepository.save(transacaoRecorrente),
+                false
+        );
     }
 
     @Transactional(readOnly = true)
@@ -118,7 +117,8 @@ public class TransacaoRecorrenteService {
     public TransacaoRecorrenteResponseDTO findById(Long id) {
         Long userId = SecurityUtils.currentUserId();
         TransacaoRecorrente transacaoRecorrente = findByIdAndUserId(id, userId);
-        return transacaoRecorrenteMapper.toResponseDTO(transacaoRecorrente);
+        boolean possuiRelacionamentos = relacionamentoChecker.transacaoRecorrenteHasRelationships(id, userId);
+        return transacaoRecorrenteMapper.toResponseDTO(transacaoRecorrente, possuiRelacionamentos);
     }
 
     @Transactional(readOnly = true)
@@ -126,9 +126,12 @@ public class TransacaoRecorrenteService {
         Long userId = SecurityUtils.currentUserId();
         periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
 
-        return transacaoRecorrenteRepository.findAllByUserId(userId).stream()
-                .filter(recorrente -> podeSerLancada(recorrente, userId, data))
-                .map(transacaoRecorrenteMapper::toResponseDTO)
+        return transacaoRecorrenteRepository.findUsageByUserId(userId).stream()
+                .filter(usage -> podeSerLancada(usage, data))
+                .map(usage -> transacaoRecorrenteMapper.toResponseDTO(
+                        usage.getRecorrente(),
+                        usage.getParcelasLancadas() > 0
+                ))
                 .toList();
     }
 
@@ -148,7 +151,9 @@ public class TransacaoRecorrenteService {
         transacaoRecorrente.setValor(requestDTO.valorParcela());
         transacaoRecorrente.setDataFim(resolveDataFim(requestDTO));
 
-        return transacaoRecorrenteMapper.toResponseDTO(transacaoRecorrenteRepository.save(transacaoRecorrente));
+        TransacaoRecorrente updatedTransacaoRecorrente = transacaoRecorrenteRepository.save(transacaoRecorrente);
+        boolean possuiRelacionamentos = relacionamentoChecker.transacaoRecorrenteHasRelationships(id, userId);
+        return transacaoRecorrenteMapper.toResponseDTO(updatedTransacaoRecorrente, possuiRelacionamentos);
     }
 
     @Transactional
@@ -189,7 +194,8 @@ public class TransacaoRecorrenteService {
         }
     }
 
-    private boolean podeSerLancada(TransacaoRecorrente recorrente, Long userId, LocalDate data) {
+    private boolean podeSerLancada(TransacaoRecorrenteUsageProjection usage, LocalDate data) {
+        TransacaoRecorrente recorrente = usage.getRecorrente();
         if (data.isBefore(recorrente.getDataInicio())) {
             return false;
         }
@@ -198,15 +204,12 @@ public class TransacaoRecorrenteService {
             return false;
         }
 
-        long parcelasLancadas = transacaoRepository.countByTransacaoRecorrenteIdAndUserId(recorrente.getId(), userId);
+        long parcelasLancadas = usage.getParcelasLancadas();
         if (recorrente.getTotalParcelas() != null && parcelasLancadas >= recorrente.getTotalParcelas()) {
             return false;
         }
 
-        LocalDate ultimaData = transacaoRepository
-                .findFirstByTransacaoRecorrenteIdAndUserIdOrderByDataDescIdDesc(recorrente.getId(), userId)
-                .map(Transacao::getData)
-                .orElse(null);
+        LocalDate ultimaData = usage.getUltimaData();
 
         if (ultimaData == null) {
             return true;
