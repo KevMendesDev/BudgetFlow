@@ -5,7 +5,9 @@ import br.com.budgetflow.features.auth.domain.RefreshToken;
 import br.com.budgetflow.features.auth.repository.RefreshTokenRepository;
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +48,8 @@ class AuthServiceTest {
     private AuthThrottleService throttleService;
     @Mock
     private HttpServletResponse response;
+    @Mock
+    private HttpServletRequest request;
     @Mock
     private OidcUser oidcUser;
 
@@ -172,15 +176,18 @@ class AuthServiceTest {
     void logoutUsesRefreshCookieWhenAccessTokenIsUnavailable() {
         User user = mock(User.class);
         RefreshToken refreshToken = mock(RefreshToken.class);
+        HttpSession session = mock(HttpSession.class);
 
         when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(refreshToken));
         when(refreshToken.getUser()).thenReturn(user);
         when(user.getId()).thenReturn(1L);
+        when(request.getSession(false)).thenReturn(session);
 
-        authService.logout(null, "refresh-token", response);
+        authService.logout(null, "refresh-token", request, response);
 
         verify(refreshTokenRepository).deleteAllByUserId(1L);
         verify(cookieService).clearCookies(response);
+        verify(session).invalidate();
     }
 
     private void mockVerifiedGoogleUser(String subject, String email, String name) {

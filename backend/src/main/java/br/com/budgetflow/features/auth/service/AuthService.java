@@ -9,8 +9,11 @@ import br.com.budgetflow.features.auth.repository.RefreshTokenRepository;
 import br.com.budgetflow.features.users.domain.Role;
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
@@ -172,7 +175,12 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(Long userId, String rawRefreshToken, HttpServletResponse response) {
+    public void logout(
+            Long userId,
+            String rawRefreshToken,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
         if (userId == null && rawRefreshToken != null && !rawRefreshToken.isBlank()) {
             userId = refreshTokenRepository.findByTokenHash(hashToken(rawRefreshToken))
                     .map(token -> token.getUser().getId())
@@ -182,6 +190,7 @@ public class AuthService {
             refreshTokenRepository.deleteAllByUserId(userId);
         }
         cookieService.clearCookies(response);
+        invalidateHttpSession(request);
     }
 
     @Transactional(readOnly = true)
@@ -249,6 +258,14 @@ public class AuthService {
             return HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 not available", e);
+        }
+    }
+
+    private void invalidateHttpSession(HttpServletRequest request) {
+        SecurityContextHolder.clearContext();
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
         }
     }
 }
