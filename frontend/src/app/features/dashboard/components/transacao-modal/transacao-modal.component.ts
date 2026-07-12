@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, input, OnInit, output, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -20,12 +20,18 @@ import {
   TipoPagamento,
   TransacaoResponse,
 } from '../../../../core/models/transacao.models';
+import { CurrencyInputDirective } from '../../../../shared/directives/currency-input.directive';
 import { fieldError } from '../../../../shared/utils/form-error.util';
-import { formatDate, toIsoDate } from '../../../../shared/utils/format.util';
+import { formatDate, parseCurrencyInput, toCurrencyInputValue, toIsoDate } from '../../../../shared/utils/format.util';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
+import { currencyAmountValidator } from '../../../../shared/validators/br-validators';
+import { CategoriaModalComponent } from '../../../categorias/components/categoria-modal/categoria-modal.component';
+
+const CRIAR_NOVA_CATEGORIA = 'CRIAR_NOVA';
+
 @Component({
   selector: 'app-transacao-modal',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, CategoriaModalComponent, CurrencyInputDirective],
   templateUrl: './transacao-modal.component.html',
   styleUrl: './transacao-modal.component.scss',
 })
@@ -44,16 +50,20 @@ export class TransacaoModalComponent implements OnInit {
 
   readonly saved = output<void>();
   readonly closed = output<void>();
+  readonly categoriasChanged = output<CategoriaResponse>();
 
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
   readonly tiposPagamento = TIPOS_PAGAMENTO;
   readonly statusOptions = STATUS_TRANSACAO_OPTIONS;
   readonly classificacaoLabels = CLASSIFICACAO_LABELS;
   readonly fieldError = fieldError;
+  readonly criarNovaCategoriaValue = CRIAR_NOVA_CATEGORIA;
 
   readonly submitting = signal(false);
   readonly errorMessage = signal('');
   readonly editingId = computed(() => this.editingTransacao()?.id ?? null);
+  readonly categoriaModalOpen = signal(false);
+  readonly categoriasLocais = signal<CategoriaResponse[]>([]);
 
   readonly form = this.formBuilder.nonNullable.group({
     transacaoRecorrenteId: [''],
@@ -68,13 +78,19 @@ export class TransacaoModalComponent implements OnInit {
 
   readonly recorrentesDisponiveis = signal<TransacaoRecorrenteResponse[]>([]);
 
+  constructor() {
+    effect(() => {
+      this.categoriasLocais.set(this.categorias());
+    });
+  }
+
   categoriasDisponiveis(): CategoriaResponse[] {
     const tipoMovimentacao = this.form.controls.tipoMovimentacao.value;
     if (!tipoMovimentacao) {
       return [];
     }
 
-    return this.categorias().filter((categoria) => categoria.tipoCategoria === tipoMovimentacao);
+    return this.categoriasLocais().filter((categoria) => categoria.tipoCategoria === tipoMovimentacao);
   }
 
   ngOnInit(): void {
@@ -103,7 +119,7 @@ export class TransacaoModalComponent implements OnInit {
           return;
         }
 
-        const categoria = this.categorias().find((item) => item.id === categoriaId);
+        const categoria = this.categoriasLocais().find((item) => item.id === categoriaId);
         if (categoria && categoria.tipoCategoria !== tipoMovimentacao) {
           this.form.controls.categoriaId.setValue('');
         }
@@ -114,6 +130,33 @@ export class TransacaoModalComponent implements OnInit {
 
   isManualMode(): boolean {
     return !this.form.controls.transacaoRecorrenteId.value;
+  }
+
+  onCategoriaChange(rawValue: string): void {
+    if (rawValue !== CRIAR_NOVA_CATEGORIA) {
+      return;
+    }
+
+    this.form.controls.categoriaId.setValue('');
+    this.categoriaModalOpen.set(true);
+  }
+
+  closeCategoriaModal(): void {
+    this.categoriaModalOpen.set(false);
+  }
+
+  onCategoriaSaved(categoria: CategoriaResponse): void {
+    this.categoriasLocais.update((lista) =>
+      lista.some((item) => item.id === categoria.id) ? lista : [...lista, categoria]
+    );
+    this.form.controls.categoriaId.setValue(String(categoria.id));
+    this.categoriasChanged.emit(categoria);
+    this.closeCategoriaModal();
+  }
+
+  tipoCategoriaInicial(): NaturezaFinanceira | null {
+    const tipo = this.form.controls.tipoMovimentacao.value;
+    return tipo || null;
   }
 
   onRecorrenteChange(rawId: string): void {
@@ -135,7 +178,7 @@ export class TransacaoModalComponent implements OnInit {
     this.form.patchValue({
       categoriaId: String(recorrente.categoriaId),
       descricao: recorrente.descricao,
-      valor: recorrente.valorParcela == null ? '' : String(recorrente.valorParcela),
+      valor: toCurrencyInputValue(recorrente.valorParcela),
       tipoMovimentacao: recorrente.tipoMovimentacao,
       tipoPagamento: recorrente.tipoPagamento,
       status: 'EXECUTADO',
@@ -176,11 +219,12 @@ export class TransacaoModalComponent implements OnInit {
 
     const raw = this.form.getRawValue();
     const recorrenteId = raw.transacaoRecorrenteId ? Number(raw.transacaoRecorrenteId) : null;
+    const valor = parseCurrencyInput(raw.valor);
 
     const payload = {
       categoriaId: raw.categoriaId ? Number(raw.categoriaId) : null,
       descricao: raw.descricao.trim() || null,
-      valor: raw.valor === '' ? null : Number(raw.valor),
+      valor,
       tipoMovimentacao: raw.tipoMovimentacao as NaturezaFinanceira,
       tipoPagamento: raw.tipoPagamento as TipoPagamento,
       status: raw.status as StatusTransacao,
@@ -218,7 +262,7 @@ export class TransacaoModalComponent implements OnInit {
       transacaoRecorrenteId: tx.transacaoRecorrenteId ? String(tx.transacaoRecorrenteId) : '',
       categoriaId: String(tx.categoriaId),
       descricao: tx.descricao,
-      valor: String(tx.valor),
+      valor: toCurrencyInputValue(tx.valor),
       tipoMovimentacao: tx.tipoMovimentacao,
       tipoPagamento: tx.tipoPagamento,
       status: tx.status,
@@ -279,14 +323,14 @@ export class TransacaoModalComponent implements OnInit {
         c.updateValueAndValidity({ emitEvent: false });
       });
       this.form.controls.descricao.setValidators([Validators.required, Validators.maxLength(255)]);
-      this.form.controls.valor.setValidators([Validators.required, Validators.min(0.01)]);
+      this.form.controls.valor.setValidators([currencyAmountValidator(0.01)]);
     } else {
       manualControls.forEach((c) => {
         c.clearValidators();
         c.updateValueAndValidity({ emitEvent: false });
       });
       this.form.controls.descricao.setValidators([Validators.maxLength(255)]);
-      this.form.controls.valor.setValidators([Validators.required, Validators.min(0.01)]);
+      this.form.controls.valor.setValidators([currencyAmountValidator(0.01)]);
     }
 
     this.form.controls.descricao.updateValueAndValidity({ emitEvent: false });

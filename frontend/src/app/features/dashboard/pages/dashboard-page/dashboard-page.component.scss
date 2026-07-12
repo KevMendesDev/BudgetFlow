@@ -68,6 +68,34 @@
   font-size: 0.8rem;
   color: var(--muted-text);
   width: min(100%, 28rem);
+  flex: 1;
+}
+
+.periodo-selector {
+  display: flex;
+  align-items: end;
+  gap: 0.5rem;
+  min-width: 0;
+  width: min(100%, 28rem);
+}
+
+.btn-periodo-add {
+  flex-shrink: 0;
+  min-height: var(--control-height);
+  min-width: var(--control-height);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.btn-periodo-add:hover {
+  border-color: var(--brand-green);
 }
 
 .periodo-field select {
@@ -86,6 +114,7 @@
 .muted {
   margin: 0;
   color: var(--muted-text);
+  margin-top: 1rem;
 }
 
 .card {
@@ -133,7 +162,21 @@
     width: 100%;
   }
 
+  .periodo-selector {
+    width: 100%;
+  }
+
   .btn-sync-dashboard {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .periodo-add {
     width: 100%;
   }
 }

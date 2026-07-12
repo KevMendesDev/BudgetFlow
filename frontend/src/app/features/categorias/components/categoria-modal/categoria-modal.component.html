@@ -1,4 +1,9 @@
-<section class="modal-backdrop" (click)="close()" aria-label="Fechar modal">
+<section
+  class="modal-backdrop"
+  [class.modal-backdrop-nested]="nested()"
+  (click)="close()"
+  aria-label="Fechar modal"
+>
   <div class="modal-card bf-panel" (click)="$event.stopPropagation()">
     <div class="modal-head">
       <h2>{{ editingCategoria() ? 'Editar categoria' : 'Criar categoria' }}</h2>

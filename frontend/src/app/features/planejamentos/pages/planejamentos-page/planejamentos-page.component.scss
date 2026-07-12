@@ -107,6 +107,17 @@ span.receita, span.despesa { font-weight: 600; }
   padding: 1rem;
 }
 
+.btn-toggle {
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+  color: var(--text);
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) 0.9rem;
+  border-radius: var(--control-radius);
+  font-size: var(--control-font-size);
+  cursor: pointer;
+}
+
 .resumo h2,
 .transacoes h2 {
   margin: 0;
@@ -226,5 +237,13 @@ span.receita, span.despesa { font-weight: 600; }
 
   .row-buttons .btn-inline {
     flex: 1;
+  }
+}
+
+/* Mobile: empilha ações; tablet/desktop mantém row */
+@media (max-width: 640px) {
+  .topbar-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

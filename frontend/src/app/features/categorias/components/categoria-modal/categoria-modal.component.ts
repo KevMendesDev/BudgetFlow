@@ -26,8 +26,10 @@ export class CategoriaModalComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly editingCategoria = input<CategoriaResponse | null>(null);
+  readonly initialTipoCategoria = input<NaturezaFinanceira | null>(null);
+  readonly nested = input(false);
 
-  readonly saved = output<void>();
+  readonly saved = output<CategoriaResponse>();
   readonly closed = output<void>();
 
   readonly classificacoes = CLASSIFICACOES;
@@ -57,6 +59,20 @@ export class CategoriaModalComponent implements OnInit {
         tipoCategoria: categoria.tipoCategoria,
         classificacao: categoria.classificacao ?? '',
       });
+      return;
+    }
+
+    const tipoInicial = this.initialTipoCategoria();
+    if (tipoInicial) {
+      this.form.setValue({
+        nome: '',
+        tipoCategoria: tipoInicial,
+        classificacao: '',
+      });
+      this.configureClassificacaoValidator(tipoInicial);
+      this.form.markAsPristine();
+      this.form.markAsUntouched();
+      this.errorMessage.set('');
       return;
     }
 
@@ -92,10 +108,10 @@ export class CategoriaModalComponent implements OnInit {
       : this.categoriasApi.create(payload);
 
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
+      next: (categoria) => {
         this.submitting.set(false);
         this.toast.show(editingId ? 'Categoria atualizada.' : 'Categoria criada.', 'success');
-        this.saved.emit();
+        this.saved.emit(categoria);
       },
       error: (err) => {
         this.errorMessage.set(mapApiError(err));

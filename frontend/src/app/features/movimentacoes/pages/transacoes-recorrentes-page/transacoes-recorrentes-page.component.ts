@@ -112,6 +112,10 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
     this.loadRecorrencias(this.paginaAtual());
   }
 
+  onCategoriasChanged(): void {
+    this.loadCategorias();
+  }
+
   async deleteRecorrencia(item: TransacaoRecorrenteResponse): Promise<void> {
     if (this.deletingId()) {
       return;
