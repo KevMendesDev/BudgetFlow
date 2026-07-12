@@ -85,7 +85,7 @@ export class PeriodosFinanceirosPageComponent implements OnInit {
     this.editingPeriodo.set(null);
   }
 
-  onPeriodoSaved(): void {
+  onPeriodoSaved(_periodo?: PeriodoFinanceiroResponse): void {
     this.closeModal();
     this.loadPeriodos(this.paginaAtual());
   }

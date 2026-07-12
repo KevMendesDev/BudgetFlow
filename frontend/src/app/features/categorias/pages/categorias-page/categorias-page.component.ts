@@ -92,7 +92,7 @@ export class CategoriasPageComponent implements OnInit {
     this.editingCategoria.set(null);
   }
 
-  onCategoriaSaved(): void {
+  onCategoriaSaved(_categoria?: CategoriaResponse): void {
     this.closeModal();
     this.loadCategorias(this.paginaAtual());
   }

@@ -48,6 +48,7 @@ export class PlanejamentosPageComponent implements OnInit {
   readonly periodos = signal<PeriodoFinanceiro[]>([]);
   readonly categorias = signal<CategoriaResponse[]>([]);
   readonly planejamentos = signal<PlanejamentoResponse[]>([]);
+  readonly resumoAberto = signal(false);
   readonly recorrentes = signal<TransacaoRecorrenteResponse[]>([]);
   readonly selectedPeriodoId = signal<number | null>(null);
   readonly loading = signal(true);
@@ -118,6 +119,10 @@ export class PlanejamentosPageComponent implements OnInit {
     }
   }
 
+  toggleResumo(): void {
+    this.resumoAberto.update((aberto) => !aberto);
+  }
+
   openCreateModal(): void {
     if (!this.selectedPeriodo()) {
       return;
@@ -138,6 +143,10 @@ export class PlanejamentosPageComponent implements OnInit {
   onSaved(): void {
     this.modalOpen.set(false);
     this.reload();
+  }
+
+  onCategoriasChanged(): void {
+    this.loadCategorias();
   }
 
   sincronizar(): void {

@@ -45,6 +45,7 @@ export class DashboardTransacoesComponent {
   readonly selectedPeriodo = input<PeriodoFinanceiro | null>(null);
 
   readonly changed = output<void>();
+  readonly categoriasChanged = output<void>();
 
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
   readonly tiposPagamento = TIPOS_PAGAMENTO;
@@ -124,6 +125,10 @@ export class DashboardTransacoesComponent {
     if (!this.shouldUseClientPagination()) {
       this.loadPage(this.paginaAtual());
     }
+  }
+
+  onCategoriasChanged(): void {
+    this.categoriasChanged.emit();
   }
 
   async deleteTransacao(tx: TransacaoResponse): Promise<void> {

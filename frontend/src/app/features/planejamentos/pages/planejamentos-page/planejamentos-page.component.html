@@ -47,32 +47,40 @@
         <article class="card despesa"><p>Despesas</p><strong>{{ despesas() | currencyBRL }}</strong></article>
       </section>
 
-      <section class="resumo">
-        <div class="resumo-head">
-          <div>
-            <h2>Resumo do planejamento</h2>
-            <p class="muted">Despesas planejadas agrupadas no período.</p>
+      @if (planejamentos().length > 0) {
+        <section class="resumo">
+          <div class="resumo-head">
+            <div>
+              <h2>Resumo do planejamento</h2>
+              <p class="muted">Despesas planejadas agrupadas no período.</p>
+            </div>
+            <button type="button" class="btn-toggle" (click)="toggleResumo()">
+              {{ resumoAberto() ? 'Ocultar' : 'Mostrar' }}
+            </button>
           </div>
-        </div>
-        <div class="charts-grid">
-          <article class="chart-block">
-            <div class="chart-head"><h3>Despesas por categoria</h3></div>
-            @if (categoriaChartData().labels?.length) {
-              <div class="chart"><canvas baseChart [type]="chartType" [data]="categoriaChartData()" [options]="chartOptions()"></canvas></div>
-            } @else {
-              <p class="muted empty">Sem despesas planejadas.</p>
-            }
-          </article>
-          <article class="chart-block">
-            <div class="chart-head"><h3>Despesas por classificação</h3></div>
-            @if (classificacaoChartData().labels?.length) {
-              <div class="chart"><canvas baseChart [type]="chartType" [data]="classificacaoChartData()" [options]="chartOptions()"></canvas></div>
-            } @else {
-              <p class="muted empty">Sem classificações para exibir.</p>
-            }
-          </article>
-        </div>
-      </section>
+
+          @if (resumoAberto()) {
+            <div class="charts-grid">
+              <article class="chart-block">
+                <div class="chart-head"><h3>Despesas por categoria</h3></div>
+                @if (categoriaChartData().labels?.length) {
+                  <div class="chart"><canvas baseChart [type]="chartType" [data]="categoriaChartData()" [options]="chartOptions()"></canvas></div>
+                } @else {
+                  <p class="muted empty">Sem despesas planejadas.</p>
+                }
+              </article>
+              <article class="chart-block">
+                <div class="chart-head"><h3>Despesas por classificação</h3></div>
+                @if (classificacaoChartData().labels?.length) {
+                  <div class="chart"><canvas baseChart [type]="chartType" [data]="classificacaoChartData()" [options]="chartOptions()"></canvas></div>
+                } @else {
+                  <p class="muted empty">Sem classificações para exibir.</p>
+                }
+              </article>
+            </div>
+          }
+        </section>
+      }
 
       <section class="transacoes">
         <div class="recentes-head">
@@ -128,5 +136,6 @@
     [editingPlanejamento]="editingPlanejamento()"
     (saved)="onSaved()"
     (closed)="closeModal()"
+    (categoriasChanged)="onCategoriasChanged()"
   />
 }

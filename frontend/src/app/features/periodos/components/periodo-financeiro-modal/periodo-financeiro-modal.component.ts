@@ -22,7 +22,7 @@ export class PeriodoFinanceiroModalComponent {
 
   readonly editingPeriodo = input<PeriodoFinanceiroResponse | null>(null);
 
-  readonly saved = output<void>();
+  readonly saved = output<PeriodoFinanceiroResponse>();
   readonly closed = output<void>();
 
   readonly fieldError = fieldError;
@@ -43,7 +43,10 @@ export class PeriodoFinanceiroModalComponent {
         mes: String(periodo.mes),
         ano: String(periodo.ano),
       });
+      return;
     }
+
+    this.form.controls.ano.setValue(String(new Date().getFullYear()));
   }
 
   submit(): void {
@@ -64,10 +67,10 @@ export class PeriodoFinanceiroModalComponent {
       : this.periodosApi.create(payload);
 
     request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
+      next: (periodo) => {
         this.submitting.set(false);
         this.toast.show(editingId ? 'Período atualizado.' : 'Período criado.', 'success');
-        this.saved.emit();
+        this.saved.emit(periodo);
       },
       error: (err) => {
         this.errorMessage.set(mapApiError(err));
