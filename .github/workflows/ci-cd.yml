@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -85,15 +85,52 @@ jobs:
       - name: Run tests
         run: ./mvnw clean verify -DskipTests
 
+      # Renomeamos para app.jar para bater com o Systemd da VPS
       - name: Rename JAR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           JAR=$(find target -maxdepth 1 -name "*.jar" ! -name "*sources.jar" ! -name "*javadoc.jar" | head -n 1)
-          cp "$JAR" target/budgetflow.jar
+          cp "$JAR" target/app.jar
 
       - name: Upload JAR artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: budgetflow-backend
-          path: backend/target/budgetflow.jar
+          path: backend/target/app.jar
+          retention-days: 1
+
+  deploy-backend:
+    name: Deploy Backend VPS
+    needs: backend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: budgetflow-backend
+          path: backend/target
+
+      - name: Copy JAR to VPS (SCP)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          source: "backend/target/app.jar"
+          target: "/opt/budgetflow"
+          strip_components: 2
+
+      - name: Restart service on VPS (SSH)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            sudo systemctl restart budgetflow
+            sudo systemctl status budgetflow --no-pager
