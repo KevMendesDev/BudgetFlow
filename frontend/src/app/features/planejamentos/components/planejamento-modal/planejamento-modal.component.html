@@ -35,7 +35,15 @@
 
       <label class="bf-label md:col-span-6">
         Valor
-        <input class="bf-input" type="number" min="0.01" step="0.01" formControlName="valor" />
+        <input
+          class="bf-input"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="R$ 0,00"
+          formControlName="valor"
+          appCurrencyInput
+        />
         @if (fieldError(form.controls.valor, 'Valor')) {
           <small class="bf-error">{{ fieldError(form.controls.valor, 'Valor') }}</small>
         }
@@ -51,11 +59,19 @@
 
       <label class="bf-label md:col-span-6">
         Categoria
-        <select class="bf-input" formControlName="categoriaId" [disabled]="!tipoMovimentacaoSelecionado()">
+        <select
+          class="bf-input"
+          formControlName="categoriaId"
+          [disabled]="!tipoMovimentacaoSelecionado()"
+          (change)="onCategoriaChange($any($event.target).value)"
+        >
           <option value="">{{ tipoMovimentacaoSelecionado() ? 'Selecione' : 'Selecione o tipo' }}</option>
-          @for (categoria of categoriasDisponiveis(); track categoria.id) {
-            <option [value]="categoria.id">{{ categoriaLabel(categoria) }}</option>
-          }
+            @for (categoria of categoriasDisponiveis(); track categoria.id) {
+              <option [value]="categoria.id">{{ categoriaLabel(categoria) }}</option>
+            }
+            @if (tipoMovimentacaoSelecionado()) {
+              <option [value]="criarNovaCategoriaValue">+ Cadastrar nova categoria</option>
+            }
         </select>
         @if (fieldError(form.controls.categoriaId, 'Categoria')) {
           <small class="bf-error">{{ fieldError(form.controls.categoriaId, 'Categoria') }}</small>
@@ -70,3 +86,12 @@
     </form>
   </div>
 </section>
+
+@if (categoriaModalOpen()) {
+  <app-categoria-modal
+    [nested]="true"
+    [initialTipoCategoria]="tipoCategoriaInicial()"
+    (saved)="onCategoriaSaved($event)"
+    (closed)="closeCategoriaModal()"
+  />
+}
