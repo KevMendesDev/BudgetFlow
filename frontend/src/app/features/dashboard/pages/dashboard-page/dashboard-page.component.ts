@@ -1,25 +1,36 @@
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin } from 'rxjs';
 
 import { CategoriaResponse } from '../../../../core/models/categoria.models';
-import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
+import { PeriodoFinanceiro, PeriodoFinanceiroResponse } from '../../../../core/models/periodo-financeiro.models';
 import { TransacaoRecorrenteResponse } from '../../../../core/models/transacao-recorrente.models';
 import { SessionService } from '../../../../core/services/session.service';
 import { TransacaoResponse } from '../../../../core/models/transacao.models';
+import { PlanejamentoResponse } from '../../../../core/models/planejamento.models';
 import { CategoriasApiService } from '../../../../core/services/categorias-api.service';
 import { PeriodosApiService } from '../../../../core/services/periodos-api.service';
 import { TransacoesApiService } from '../../../../core/services/transacoes-api.service';
 import { TransacoesRecorrentesApiService } from '../../../../core/services/transacoes-recorrentes-api.service';
+import { PlanejamentosApiService } from '../../../../core/services/planejamentos-api.service';
 import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { formatMonthYear, toIsoDate } from '../../../../shared/utils/format.util';
 import { ToastService } from '../../../../core/services/toast.service';
 import { DashboardTransacoesComponent } from '../../components/dashboard-transacoes/dashboard-transacoes.component';
 import { DashboardResumoCategoriasComponent } from '../../components/dashboard-resumo-categorias/dashboard-resumo-categorias.component';
+import { DashboardPlanejamentoComparativoComponent } from '../../components/dashboard-planejamento-comparativo/dashboard-planejamento-comparativo.component';
+import { PeriodoFinanceiroModalComponent } from '../../../periodos/components/periodo-financeiro-modal/periodo-financeiro-modal.component';
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [CurrencyBRLPipe, DashboardResumoCategoriasComponent, DashboardTransacoesComponent],
+  imports: [
+    CurrencyBRLPipe,
+    DashboardResumoCategoriasComponent,
+    DashboardPlanejamentoComparativoComponent,
+    DashboardTransacoesComponent,
+    PeriodoFinanceiroModalComponent,
+  ],
   templateUrl: './dashboard-page.component.html',
   styleUrl: './dashboard-page.component.scss',
 })
@@ -29,6 +40,7 @@ export class DashboardPageComponent implements OnInit {
   private readonly session = inject(SessionService);
   private readonly transacoesApi = inject(TransacoesApiService);
   private readonly transacoesRecorrentesApi = inject(TransacoesRecorrentesApiService);
+  private readonly planejamentosApi = inject(PlanejamentosApiService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -43,6 +55,8 @@ export class DashboardPageComponent implements OnInit {
   readonly recorrentes = signal<TransacaoRecorrenteResponse[]>([]);
   readonly selectedPeriodoId = signal<number | null>(null);
   readonly transacoes = signal<TransacaoResponse[]>([]);
+  readonly planejamentos = signal<PlanejamentoResponse[]>([]);
+  readonly periodoModalOpen = signal(false);
 
   readonly skeletonCards = [1, 2, 3];
 
@@ -87,8 +101,43 @@ export class DashboardPageComponent implements OnInit {
     }
   }
 
+  openPeriodoModal(): void {
+    this.periodoModalOpen.set(true);
+  }
+
+  closePeriodoModal(): void {
+    this.periodoModalOpen.set(false);
+  }
+
+  onPeriodoSaved(periodo: PeriodoFinanceiroResponse): void {
+    this.closePeriodoModal();
+    this.loadingPeriodos.set(true);
+    this.errorMessage.set('');
+
+    this.periodosApi
+      .listAll()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          this.periodos.set(page.content);
+          this.loadingPeriodos.set(false);
+          this.selectedPeriodoId.set(periodo.id);
+          const selecionado = page.content.find((item) => item.id === periodo.id) ?? periodo;
+          this.loadResumoPorPeriodo(selecionado);
+        },
+        error: (err) => {
+          this.errorMessage.set(mapApiError(err));
+          this.loadingPeriodos.set(false);
+        },
+      });
+  }
+
   onTransacoesChanged(): void {
     this.reloadSelectedPeriodo();
+  }
+
+  onCategoriasChanged(): void {
+    this.loadCategorias();
   }
 
   onSincronizarRecorrentes(): void {
@@ -130,6 +179,7 @@ export class DashboardPageComponent implements OnInit {
           if (!periodoPadrao) {
             this.loadingResumo.set(false);
             this.transacoes.set([]);
+            this.planejamentos.set([]);
             return;
           }
 
@@ -148,12 +198,15 @@ export class DashboardPageComponent implements OnInit {
     this.loadingResumo.set(true);
     this.errorMessage.set('');
 
-    this.transacoesApi
-      .listByPeriodo(periodo.id, periodo.dataInicio, periodo.dataFim)
+    forkJoin({
+      transacoes: this.transacoesApi.listByPeriodo(periodo.id, periodo.dataInicio, periodo.dataFim),
+      planejamentos: this.planejamentosApi.listByPeriodo(periodo.id),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (page) => {
-          this.transacoes.set(page.content);
+        next: ({ transacoes, planejamentos }) => {
+          this.transacoes.set(transacoes.content);
+          this.planejamentos.set(planejamentos);
           this.loadingResumo.set(false);
         },
         error: (err) => {

@@ -87,6 +87,13 @@ export const routes: Routes = [
 					).then((m) => m.TransacoesRecorrentesPageComponent),
 			},
 			{
+				path: 'planejamentos',
+				loadComponent: () =>
+					import('./features/planejamentos/pages/planejamentos-page/planejamentos-page.component').then(
+						(m) => m.PlanejamentosPageComponent
+					),
+			},
+			{
 				path: 'periodos-financeiros',
 				loadComponent: () =>
 					import('./features/periodos/pages/periodos-financeiros-page/periodos-financeiros-page.component').then(

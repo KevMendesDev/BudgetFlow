@@ -87,7 +87,7 @@ public class AuthController {
                 // Invalid principals are treated as anonymous logout requests.
             }
         }
-        authService.logout(userId, cookieValue(request, "refresh_token"), response);
+        authService.logout(userId, cookieValue(request, "refresh_token"), request, response);
         return ResponseEntity.noContent().build();
     }
 

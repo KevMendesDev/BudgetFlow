@@ -33,6 +33,41 @@ export function formatMoney(value: number): string {
   return moneyFormatter.format(value);
 }
 
+export function formatCurrencyInput(value: string): string {
+  const digits = onlyDigits(value).slice(0, 15);
+  if (!digits) {
+    return '';
+  }
+
+  return formatMoney(Number(digits) / 100);
+}
+
+/** Converte "R$ 1.234,56" (ou número) em number; vazio → null. */
+export function parseCurrencyInput(value: string | number | null | undefined): number | null {
+  if (value == null || value === '') {
+    return null;
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  const digits = onlyDigits(value);
+  if (!digits) {
+    return null;
+  }
+
+  return Number(digits) / 100;
+}
+
+export function toCurrencyInputValue(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) {
+    return '';
+  }
+
+  return formatMoney(value);
+}
+
 export function formatDate(value: string): string {
   return new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR');
 }

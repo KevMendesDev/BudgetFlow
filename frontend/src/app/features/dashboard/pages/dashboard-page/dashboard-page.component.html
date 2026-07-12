@@ -13,19 +13,36 @@
         >
           Sincronizar recorrentes
         </button>
-        <label class="periodo-field grid gap-1" for="periodoSelect">
-          Período selecionado
-          <select
-            id="periodoSelect"
-            [value]="selectedPeriodoId() ?? ''"
-            [disabled]="loadingPeriodos() || periodos().length === 0"
-            (change)="onPeriodoChange($any($event.target).value)"
-          >
-            @for (periodo of periodos(); track periodo.id) {
-              <option [value]="periodo.id" [selected]="periodo.id === selectedPeriodoId()">{{ formatPeriodo(periodo) }}</option>
-            }
-          </select>
-        </label>
+        <div class="periodo-selector">
+          @if (periodos().length > 0) {
+            <label class="periodo-field grid gap-1" for="periodoSelect">
+              Período selecionado
+              <select
+                id="periodoSelect"
+                [value]="selectedPeriodoId() ?? ''"
+                [disabled]="loadingPeriodos()"
+                (change)="onPeriodoChange($any($event.target).value)"
+              >
+                @for (periodo of periodos(); track periodo.id) {
+                  <option [value]="periodo.id" [selected]="periodo.id === selectedPeriodoId()">{{ formatPeriodo(periodo) }}</option>
+                }
+              </select>
+            </label>
+            <button
+              type="button"
+              class="btn-periodo-add"
+              (click)="openPeriodoModal()"
+              title="Criar novo período"
+              aria-label="Criar novo período"
+            >
+              +
+            </button>
+          } @else if (!loadingPeriodos()) {
+            <button type="button" class="btn-create periodo-add" (click)="openPeriodoModal()">
+              Criar período
+            </button>
+          }
+        </div>
       </div>
     </header>
 
@@ -68,13 +85,29 @@
         [selectedPeriodo]="selectedPeriodo()"
       />
 
+      @if (planejamentos().length > 0) {
+        <app-dashboard-planejamento-comparativo
+          [planejamentos]="planejamentos()"
+          [transacoes]="transacoes()"
+        />
+      }
+
       <app-dashboard-transacoes
         [categorias]="categorias()"
         [recorrentes]="recorrentes()"
         [transacoes]="transacoes()"
         [selectedPeriodo]="selectedPeriodo()"
         (changed)="onTransacoesChanged()"
+        (categoriasChanged)="onCategoriasChanged()"
       />
     }
   </div>
 </main>
+
+@if (periodoModalOpen()) {
+  <app-periodo-financeiro-modal
+    [editingPeriodo]="null"
+    (saved)="onPeriodoSaved($event)"
+    (closed)="closePeriodoModal()"
+  />
+}

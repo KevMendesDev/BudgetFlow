@@ -23,7 +23,16 @@
 
       <label class="bf-label md:col-span-6">
         Valor
-        <input class="bf-input" type="number" min="0.01" step="0.01" formControlName="valor" [disabled]="!isManualMode()" />
+        <input
+          class="bf-input"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="R$ 0,00"
+          formControlName="valor"
+          appCurrencyInput
+          [disabled]="!isManualMode()"
+        />
         @if (fieldError(form.controls.valor, 'Valor')) {
           <small class="bf-error">{{ fieldError(form.controls.valor, 'Valor') }}</small>
         }
@@ -65,11 +74,15 @@
           class="bf-input"
           formControlName="categoriaId"
           [disabled]="!isManualMode() || !form.controls.tipoMovimentacao.value"
+          (change)="onCategoriaChange($any($event.target).value)"
         >
           <option value="">{{ form.controls.tipoMovimentacao.value ? 'Selecione' : 'Selecione o tipo de movimentação' }}</option>
-          @for (categoria of categoriasDisponiveis(); track categoria.id) {
-            <option [value]="categoria.id">{{ categoriaOptionLabel(categoria) }}</option>
-          }
+            @for (categoria of categoriasDisponiveis(); track categoria.id) {
+              <option [value]="categoria.id">{{ categoriaOptionLabel(categoria) }}</option>
+            }
+            @if (form.controls.tipoMovimentacao.value) {
+              <option [value]="criarNovaCategoriaValue">+ Cadastrar nova categoria</option>
+            }
         </select>
         @if (fieldError(form.controls.categoriaId, 'Categoria')) {
           <small class="bf-error">{{ fieldError(form.controls.categoriaId, 'Categoria') }}</small>
@@ -105,3 +118,12 @@
     </form>
   </div>
 </section>
+
+@if (categoriaModalOpen()) {
+  <app-categoria-modal
+    [nested]="true"
+    [initialTipoCategoria]="tipoCategoriaInicial()"
+    (saved)="onCategoriaSaved($event)"
+    (closed)="closeCategoriaModal()"
+  />
+}

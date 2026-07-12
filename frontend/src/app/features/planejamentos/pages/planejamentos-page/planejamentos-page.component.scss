@@ -1,0 +1,249 @@
+.dashboard-wrap {
+  min-height: 100dvh;
+  background: radial-gradient(60rem 30rem at 0 0, rgba(18, 201, 120, 0.14), transparent 55%), var(--bg);
+}
+
+.dashboard-container {
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.topbar,
+.topbar-actions,
+.recentes-head,
+.row-buttons,
+.resumo-head,
+.chart-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.topbar,
+.recentes-head,
+.resumo-head,
+.chart-head {
+  justify-content: space-between;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-family: var(--font-display);
+}
+
+.topbar-actions {
+  align-items: end;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.btn-sync-dashboard {
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) 1.1rem;
+  border: 0;
+  border-radius: var(--control-radius);
+  background: #0077ff;
+  color: #edf1f5;
+  font-size: var(--control-font-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.btn-sync-dashboard:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.periodo-field {
+  min-width: 0;
+  width: min(100%, 28rem);
+  font-size: 0.8rem;
+  color: var(--muted-text);
+}
+
+.periodo-field select {
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) var(--control-padding-x);
+  padding-right: 2.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background-color: var(--surface-2);
+  color: var(--text);
+  font-size: var(--control-font-size);
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 1rem;
+  background: var(--surface-2);
+}
+
+.card p,
+.muted {
+  margin: 0;
+  color: var(--muted-text);
+}
+
+.card p {
+  font-size: 0.84rem;
+}
+
+.card strong {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.saldo strong { color: var(--text); }
+.receita strong, span.receita { color: var(--success-text); }
+.despesa strong, span.despesa { color: var(--danger-text); }
+span.receita, span.despesa { font-weight: 600; }
+
+.resumo {
+  margin-top: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface-3);
+  padding: 1rem;
+}
+
+.btn-toggle {
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+  color: var(--text);
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) 0.9rem;
+  border-radius: var(--control-radius);
+  font-size: var(--control-font-size);
+  cursor: pointer;
+}
+
+.resumo h2,
+.transacoes h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.resumo .muted {
+  margin-top: 0.25rem;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.chart-block {
+  margin-top: 1.2rem;
+}
+
+.chart-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.chart {
+  height: 240px;
+  margin-top: 0.8rem;
+}
+
+.empty {
+  padding-block: 4rem;
+  text-align: center;
+}
+
+.transacoes {
+  margin-top: 1.2rem;
+}
+
+.recentes {
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--surface-3);
+  padding: 1rem;
+}
+
+.recentes ul {
+  padding: 0;
+  list-style: none;
+}
+
+.recentes li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--row-line);
+  border-radius: 0.8rem;
+  padding: 0.75rem;
+}
+
+.recentes small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted-text);
+}
+
+.row-buttons {
+  gap: 0.4rem;
+}
+
+.error,
+.loading {
+  margin-top: 1rem;
+}
+
+.error {
+  color: var(--danger-text);
+}
+
+@media (min-width: 1024px) {
+  .dashboard-container {
+    width: var(--content-width-desktop);
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 800px) {
+  .topbar,
+  .recentes-head,
+  .resumo-head,
+  .chart-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .topbar-actions,
+  .periodo-field,
+  .btn-sync-dashboard {
+    width: 100%;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recentes li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .row-buttons {
+    width: 100%;
+  }
+
+  .row-buttons .btn-inline {
+    flex: 1;
+  }
+}
+
+/* Mobile: empilha ações; tablet/desktop mantém row */
+@media (max-width: 640px) {
+  .topbar-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

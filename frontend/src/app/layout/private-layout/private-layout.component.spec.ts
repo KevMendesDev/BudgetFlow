@@ -40,6 +40,7 @@ describe('PrivateLayoutComponent', () => {
           { path: 'dashboard', component: DummyComponent },
           { path: 'categorias', component: DummyComponent },
           { path: 'transacoes-recorrentes', component: DummyComponent },
+          { path: 'planejamentos', component: DummyComponent },
           { path: 'periodos-financeiros', component: DummyComponent },
           { path: 'login', component: DummyComponent },
         ]),
