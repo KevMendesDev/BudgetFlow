@@ -1,0 +1,53 @@
+name: Deploy Backend to VPS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build project with Maven
+        run: |
+          cd backend
+          ./mvnw clean package
+          
+      - name: Rename JAR
+        run: mv backend/target/*.jar backend/target/app.jar
+
+      - name: Copy JAR to VPS (SCP)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          source: "backend/target/app.jar"
+          target: "/opt/budgetflow"
+          strip_components: 2
+
+      - name: Restart service on VPS (SSH)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            sudo systemctl restart budgetflow
+            sudo systemctl status budgetflow --no-pager
