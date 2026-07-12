@@ -75,7 +75,7 @@ public class AuthController {
 
             }
         }
-        authService.logout(userId, cookieValue(request, "refresh_token"), response);
+        authService.logout(userId, cookieValue(request, "refresh_token"), request, response);
         return ResponseEntity.noContent().build();
     }
 

@@ -31,6 +31,22 @@ public class AuthCookieService {
     public void clearCookies(HttpServletResponse response) {
         addCookie(response, "access_token", "", 0);
         addCookie(response, "refresh_token", "", 0);
+        clearHostOnlyCookie(response, "JSESSIONID", true);
+        clearHostOnlyCookie(response, "XSRF-TOKEN", false);
+    }
+
+    private void clearHostOnlyCookie(HttpServletResponse response, String name, boolean httpOnly) {
+        StringBuilder header = new StringBuilder(String.format(
+                "%s=; Path=/; Max-Age=0",
+                name));
+        if (httpOnly) {
+            header.append("; HttpOnly");
+        }
+        if (secure) {
+            header.append("; Secure");
+        }
+        header.append("; SameSite=").append(sameSite);
+        response.addHeader("Set-Cookie", header.toString());
     }
 
     private void addCookie(HttpServletResponse response, String name, String value, int maxAge) {
