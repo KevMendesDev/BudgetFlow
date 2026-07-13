@@ -42,7 +42,7 @@ export const routes: Routes = [
 					),
 			},
 			{
-				path: 'esqueci-senha',
+				path: 'forgot-password',
 				canActivate: [guestGuard],
 				loadComponent: () =>
 					import('./features/auth/pages/forgot-password-page/forgot-password-page.component').then(
