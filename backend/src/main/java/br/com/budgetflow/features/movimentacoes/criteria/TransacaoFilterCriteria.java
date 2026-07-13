@@ -2,6 +2,7 @@ package br.com.budgetflow.features.movimentacoes.criteria;
 
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.common.enums.NaturezaFinanceira;
+import br.com.budgetflow.common.enums.StatusTransacao;
 import br.com.budgetflow.common.enums.TipoPagamento;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -24,6 +25,7 @@ public class TransacaoFilterCriteria {
     private ClassificacaoCategoria classificacaoCategoria;
     private NaturezaFinanceira tipoMovimentacao;
     private TipoPagamento tipoPagamento;
+    private StatusTransacao status;
     private String query;
 
     public LocalDate getDataInicio() {
@@ -104,6 +106,14 @@ public class TransacaoFilterCriteria {
 
     public void setTipoPagamento(TipoPagamento tipoPagamento) {
         this.tipoPagamento = tipoPagamento;
+    }
+
+    public StatusTransacao getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusTransacao status) {
+        this.status = status;
     }
 
     public String getQuery() {

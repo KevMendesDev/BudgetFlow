@@ -1,5 +1,6 @@
-import { Component, computed, DestroyRef, effect, inject, input, output, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, DestroyRef, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { debounceTime, skip } from 'rxjs';
 
 import {
   CategoriaResponse,
@@ -10,6 +11,8 @@ import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.
 import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import {
   STATUS_TRANSACAO_LABELS,
+  STATUS_TRANSACAO_OPTIONS,
+  StatusTransacao,
   TIPOS_MOVIMENTACAO,
   TIPOS_PAGAMENTO,
   TipoPagamento,
@@ -50,6 +53,7 @@ export class DashboardTransacoesComponent {
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
   readonly tiposPagamento = TIPOS_PAGAMENTO;
   readonly classificacoes = CLASSIFICACOES;
+  readonly statusOptions = STATUS_TRANSACAO_OPTIONS;
   readonly statusLabels = STATUS_TRANSACAO_LABELS;
 
   readonly loading = signal(false);
@@ -58,7 +62,8 @@ export class DashboardTransacoesComponent {
   readonly modalOpen = signal(false);
   readonly editingTransacao = signal<TransacaoResponse | null>(null);
 
-  readonly filtroNomeCategoria = signal('');
+  readonly filtroQuery = signal('');
+  readonly filtroStatus = signal<StatusTransacao | ''>('');
   readonly filtroClassificacao = signal<ClassificacaoCategoria | ''>('');
   readonly filtroTipoMovimentacao = signal<NaturezaFinanceira | ''>('');
   readonly filtroTipoPagamento = signal<TipoPagamento | ''>('');
@@ -82,6 +87,15 @@ export class DashboardTransacoesComponent {
 
   readonly skeletonRows = [1, 2, 3, 4, 5];
 
+  private readonly filtrosSnapshot = computed(() => ({
+    query: this.filtroQuery(),
+    status: this.filtroStatus(),
+    classificacao: this.filtroClassificacao(),
+    tipoMovimentacao: this.filtroTipoMovimentacao(),
+    tipoPagamento: this.filtroTipoPagamento(),
+    recorrente: this.filtroRecorrente(),
+  }));
+
   constructor() {
     effect(() => {
       const periodo = this.selectedPeriodo();
@@ -93,13 +107,18 @@ export class DashboardTransacoesComponent {
 
       this.paginaAtual.set(0);
 
-      if (this.shouldUseClientPagination()) {
+      const useClientPagination = untracked(() => this.shouldUseClientPagination());
+      if (useClientPagination) {
         this.syncPageFromInputs(0, transacoes);
         return;
       }
 
       this.loadPage(0);
     });
+
+    toObservable(this.filtrosSnapshot)
+      .pipe(skip(1), debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.aplicarFiltros());
   }
 
   formatDate = formatDate;
@@ -180,13 +199,12 @@ export class DashboardTransacoesComponent {
   }
 
   limparFiltros(): void {
-    this.filtroNomeCategoria.set('');
+    this.filtroQuery.set('');
+    this.filtroStatus.set('');
     this.filtroClassificacao.set('');
     this.filtroTipoMovimentacao.set('');
     this.filtroTipoPagamento.set('');
     this.filtroRecorrente.set('all');
-    this.paginaAtual.set(0);
-    this.syncPageFromInputs(0);
   }
 
   goToPreviousPage(): void {
@@ -268,7 +286,8 @@ export class DashboardTransacoesComponent {
 
   private hasActiveFilters(): boolean {
     return !!(
-      this.filtroNomeCategoria().trim() ||
+      this.filtroQuery().trim() ||
+      this.filtroStatus() ||
       this.filtroClassificacao() ||
       this.filtroTipoMovimentacao() ||
       this.filtroTipoPagamento() ||
@@ -297,10 +316,11 @@ export class DashboardTransacoesComponent {
     dataFim: string;
     page: number;
     size: number;
-    nomeCategoria?: string;
+    query?: string;
     classificacaoCategoria?: ClassificacaoCategoria;
     tipoMovimentacao?: NaturezaFinanceira;
     tipoPagamento?: TipoPagamento;
+    status?: StatusTransacao;
     recorrente?: boolean;
   } | null {
     const periodo = this.selectedPeriodo();
@@ -308,7 +328,8 @@ export class DashboardTransacoesComponent {
       return null;
     }
 
-    const nomeCategoria = this.filtroNomeCategoria().trim();
+    const query = this.filtroQuery().trim();
+    const status = this.filtroStatus();
     const classificacao = this.filtroClassificacao();
     const tipoMovimentacao = this.filtroTipoMovimentacao();
     const tipoPagamento = this.filtroTipoPagamento();
@@ -320,7 +341,8 @@ export class DashboardTransacoesComponent {
       dataFim: periodo.dataFim,
       page,
       size: PageSize.DEFAULT,
-      nomeCategoria: nomeCategoria || undefined,
+      query: query || undefined,
+      status: status || undefined,
       classificacaoCategoria: classificacao || undefined,
       tipoMovimentacao: tipoMovimentacao || undefined,
       tipoPagamento: tipoPagamento || undefined,

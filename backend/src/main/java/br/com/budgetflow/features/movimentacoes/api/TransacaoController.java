@@ -47,7 +47,7 @@ public class TransacaoController {
     @PreAuthorize("hasAnyRole('USER')")
     public ResponseEntity<Page<TransacaoResponseDTO>> findAll(
             @Valid TransacaoFilterCriteria criteria,
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(sort = {"data", "createdAt"}, direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<TransacaoResponseDTO> transacoes = transacaoService.findAll(criteria, pageable);
         return ResponseEntity.ok(transacoes);
