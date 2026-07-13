@@ -89,6 +89,39 @@
   min-width: 0;
 }
 
+.datalist-field {
+  position: relative;
+  width: 100%;
+
+  .bf-input {
+    padding-right: 2.5rem;
+
+    &::-webkit-calendar-picker-indicator {
+      display: none !important;
+    }
+  }
+
+  .datalist-chevron {
+    position: absolute;
+    right: 0.85rem;
+    top: 50%;
+    width: 1.15rem;
+    height: 1.15rem;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    background: var(--field-bg);
+    color: #9ea8bb;
+    pointer-events: none;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+      display: block;
+    }
+  }
+}
+
 .muted {
   margin: 0.5rem 0 0;
   color: var(--muted-text);
