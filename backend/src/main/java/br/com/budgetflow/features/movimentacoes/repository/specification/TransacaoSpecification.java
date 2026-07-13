@@ -2,6 +2,7 @@ package br.com.budgetflow.features.movimentacoes.repository.specification;
 
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.common.enums.NaturezaFinanceira;
+import br.com.budgetflow.common.enums.StatusTransacao;
 import br.com.budgetflow.common.enums.TipoPagamento;
 import br.com.budgetflow.features.movimentacoes.criteria.TransacaoFilterCriteria;
 import br.com.budgetflow.features.movimentacoes.domain.Transacao;
@@ -30,6 +31,7 @@ public final class TransacaoSpecification {
             .and(TransacaoSpecification.hasClassificacaoCategoria(criteria.getClassificacaoCategoria()))
             .and(TransacaoSpecification.hasTipoMovimentacao(criteria.getTipoMovimentacao()))
             .and(TransacaoSpecification.hasTipoPagamento(criteria.getTipoPagamento()))
+            .and(TransacaoSpecification.hasStatus(criteria.getStatus()))
             .and(TransacaoSpecification.hasSearchTerm(criteria.getQuery()));
 
         return specification;
@@ -124,6 +126,12 @@ public final class TransacaoSpecification {
         return (root, query, cb) -> tipoPagamento == null
                 ? null
                 : cb.equal(root.get("tipoPagamento"), tipoPagamento);
+    }
+
+    private static Specification<Transacao> hasStatus(StatusTransacao status) {
+        return (root, query, cb) -> status == null
+                ? null
+                : cb.equal(root.get("status"), status);
     }
 
     private static Specification<Transacao> hasSearchTerm(String searchTerm) {
