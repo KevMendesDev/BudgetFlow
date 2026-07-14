@@ -4,7 +4,7 @@ import { catchError, throwError } from 'rxjs';
 
 import { ToastService } from '../services/toast.service';
 
-const AUTH_ENDPOINTS_WITH_LOCAL_HANDLING = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'];
+const AUTH_ENDPOINTS_WITH_LOCAL_HANDLING = ['/api/auth/'];
 
 export const globalErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const toastService = inject(ToastService);

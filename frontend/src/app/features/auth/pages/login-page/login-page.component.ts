@@ -23,11 +23,8 @@ export class LoginPageComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(false);
-  readonly errorMessage = signal(
-    this.route.snapshot.queryParamMap.get('googleError')
-      ? 'Não foi possível entrar com o Google.'
-      : ''
-  );
+  readonly unverifiedEmail = signal('');
+  readonly errorMessage = signal(this.initialMessage());
   readonly fieldError = fieldError;
   readonly googleLoginUrl = `${API_BASE_URL}/oauth2/authorization/google`;
 
@@ -43,15 +40,13 @@ export class LoginPageComponent {
     }
 
     this.errorMessage.set('');
+    this.unverifiedEmail.set('');
     this.loading.set(true);
-
     const formValue = this.form.getRawValue();
+    const email = formValue.email.trim().toLowerCase();
 
     this.authApi
-      .login({
-        email: formValue.email.trim().toLowerCase(),
-        senha: formValue.senha,
-      })
+      .login({ email, senha: formValue.senha })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (currentUser) => {
@@ -61,8 +56,17 @@ export class LoginPageComponent {
         },
         error: (err) => {
           this.errorMessage.set(mapApiError(err));
+          const payload = err?.error as { code?: string } | undefined;
+          this.unverifiedEmail.set(payload?.code === 'EMAIL_NOT_VERIFIED' ? email : '');
           this.loading.set(false);
         },
       });
+  }
+
+  private initialMessage(): string {
+    if (this.route.snapshot.queryParamMap.get('googleError')) {
+      return 'Não foi possível entrar com o Google.';
+    }
+    return this.route.snapshot.queryParamMap.get('message') ?? '';
   }
 }
