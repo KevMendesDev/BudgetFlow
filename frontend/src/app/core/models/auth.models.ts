@@ -17,7 +17,12 @@ export interface RegisterRequest {
   senha: string;
 }
 
+export interface MessageResponse {
+  message: string;
+}
+
 export interface ApiValidationError {
   errors?: Record<string, string>;
   error?: string;
+  code?: string;
 }

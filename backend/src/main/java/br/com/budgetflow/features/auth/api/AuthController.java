@@ -1,9 +1,6 @@
 package br.com.budgetflow.features.auth.api;
 
-import br.com.budgetflow.features.auth.dto.LoginRequestDTO;
-import br.com.budgetflow.features.auth.dto.CurrentUserResponseDTO;
-import br.com.budgetflow.features.auth.dto.RegisterRequestDTO;
-import br.com.budgetflow.features.auth.dto.CsrfTokenResponseDTO;
+import br.com.budgetflow.features.auth.dto.*;
 import br.com.budgetflow.features.auth.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,28 +22,51 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<CurrentUserResponseDTO> register(
+    public ResponseEntity<MessageResponseDTO> register(
             @Valid @RequestBody RegisterRequestDTO request,
-            HttpServletRequest httpRequest,
-            HttpServletResponse response
+            HttpServletRequest httpRequest
     ) {
-        CurrentUserResponseDTO createdUser = authService.register(request, httpRequest.getRemoteAddr(), response);
-        return ResponseEntity.ok(createdUser);
+        return ResponseEntity.ok(
+                new MessageResponseDTO(authService.register(request, httpRequest.getRemoteAddr())));
     }
 
     @PostMapping("/login")
     public ResponseEntity<CurrentUserResponseDTO> login(
             @Valid @RequestBody LoginRequestDTO request,
             HttpServletRequest httpRequest,
-            HttpServletResponse response
+            HttpServletResponse response) {
+        return ResponseEntity.ok(
+                authService.login(request.email(), request.senha(), httpRequest.getRemoteAddr(), response));
+    }
+
+    @PostMapping("/email-verification/confirm")
+    public ResponseEntity<MessageResponseDTO> confirmEmail(@Valid @RequestBody TokenRequestDTO request) {
+        authService.confirmEmail(request.token());
+        return ResponseEntity.ok(new MessageResponseDTO("Email confirmado. Você já pode entrar."));
+    }
+
+    @PostMapping("/email-verification/resend")
+    public ResponseEntity<MessageResponseDTO> resendVerification(
+            @Valid @RequestBody EmailRequestDTO request,
+            HttpServletRequest httpRequest
     ) {
-        CurrentUserResponseDTO loginUser = authService.login(
-                request.email(),
-                request.senha(),
-                httpRequest.getRemoteAddr(),
-                response
-        );
-        return ResponseEntity.ok(loginUser);
+        return ResponseEntity.ok(new MessageResponseDTO(
+                authService.resendVerification(request.email(), httpRequest.getRemoteAddr())));
+    }
+
+    @PostMapping("/password/forgot")
+    public ResponseEntity<MessageResponseDTO> forgotPassword(
+            @Valid @RequestBody EmailRequestDTO request,
+            HttpServletRequest httpRequest
+    ) {
+        return ResponseEntity.ok(new MessageResponseDTO(
+                authService.forgotPassword(request.email(), httpRequest.getRemoteAddr())));
+    }
+
+    @PostMapping("/password/reset")
+    public ResponseEntity<MessageResponseDTO> resetPassword(@Valid @RequestBody ResetPasswordRequestDTO request) {
+        authService.resetPassword(request.token(), request.senha());
+        return ResponseEntity.ok(new MessageResponseDTO("Senha alterada. Entre novamente."));
     }
 
     @GetMapping("/csrf")
@@ -72,7 +92,7 @@ public class AuthController {
             try {
                 userId = Long.valueOf(authentication.getName());
             } catch (NumberFormatException ignored) {
-
+                // Invalid principals are treated as anonymous logout requests.
             }
         }
         authService.logout(userId, cookieValue(request, "refresh_token"), request, response);
@@ -83,17 +103,19 @@ public class AuthController {
     public ResponseEntity<CurrentUserResponseDTO> me(Authentication authentication) {
         if (authentication == null || authentication.getName() == null) {
             return ResponseEntity.status(401).build();
-        }        
-        CurrentUserResponseDTO userResponse = authService.me(Long.valueOf(authentication.getName()));
-
-        return ResponseEntity.ok(userResponse);
+        }
+        return ResponseEntity.ok(authService.me(Long.valueOf(authentication.getName())));
     }
 
     private String cookieValue(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
-        if (cookies == null) return null;
+        if (cookies == null) {
+            return null;
+        }
         for (Cookie cookie : cookies) {
-            if (name.equals(cookie.getName())) return cookie.getValue();
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
         }
         return null;
     }

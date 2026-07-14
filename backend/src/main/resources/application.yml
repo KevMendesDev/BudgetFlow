@@ -29,6 +29,10 @@ server:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  email:
+    resend-api-key: ${RESEND_API_KEY:}
+    from: ${EMAIL_FROM:}
+    from-name: ${EMAIL_FROM_NAME:BudgetFlow}
   security:
     jwt:
       secret: ${JWT_SECRET}

@@ -4,7 +4,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthApiService } from '../../../../core/services/auth-api.service';
-import { SessionService } from '../../../../core/services/session.service';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { formatPhone, onlyDigits } from '../../../../shared/utils/format.util';
 import { fieldError } from '../../../../shared/utils/form-error.util';
@@ -18,7 +17,6 @@ import { strongPasswordValidator, telefoneValidator } from '../../../../shared/v
 export class RegisterPageComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly authApi = inject(AuthApiService);
-  private readonly session = inject(SessionService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -57,10 +55,11 @@ export class RegisterPageComponent {
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (currentUser) => {
-          this.session.setUser(currentUser);
+        next: () => {
           this.loading.set(false);
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(['/verificar-email'], {
+            queryParams: { email: formValue.email.trim().toLowerCase() },
+          });
         },
         error: (err) => {
           this.errorMessage.set(mapApiError(err));
