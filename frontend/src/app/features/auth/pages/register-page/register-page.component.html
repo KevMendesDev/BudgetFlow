@@ -1,7 +1,12 @@
 <div class="bf-auth-card">
   <p class="m-0 text-[0.78rem] uppercase tracking-[0.08em] text-[var(--brand-amber)]">Cadastro</p>
+<<<<<<< Updated upstream
   <h2 class="mt-1 font-[var(--font-display)] text-3xl">Criar tua conta</h2>
   <p class="mt-2 text-[var(--muted-text)]">Ao cadastrar, a sessao ja nasce ativa.</p>
+=======
+  <h2 class="mt-1 font-[var(--font-display)] text-3xl">Criar conta</h2>
+  <p class="mt-2 text-[var(--muted-text)]">Você receberá um email para confirmar a criação da conta.</p>
+>>>>>>> Stashed changes
 
   @if (errorMessage()) {
     <p class="auth-error mt-3 text-sm">{{ errorMessage() }}</p>
@@ -17,7 +22,7 @@
     </label>
 
     <label class="bf-label">
-      Email
+      E-mail
       <input class="bf-input" type="email" formControlName="email" placeholder="voce@email.com" />
       @if (fieldError(form.controls.email, 'Email')) {
         <small class="bf-error">{{ fieldError(form.controls.email, 'Email') }}</small>
@@ -42,7 +47,7 @@
 
     <label class="bf-label">
       Senha
-      <input class="bf-input" type="password" formControlName="senha" placeholder="minimo 8 chars" />
+      <input class="bf-input" type="password" formControlName="senha" placeholder="mínimo de 8 caracteres" />
       @if (fieldError(form.controls.senha, 'Senha')) {
         <small class="bf-error">{{ fieldError(form.controls.senha, 'Senha') }}</small>
       }

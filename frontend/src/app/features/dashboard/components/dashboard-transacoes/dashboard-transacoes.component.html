@@ -2,9 +2,6 @@
   <div class="recentes-head">
     <div>
       <h2>Transações do período</h2>
-      @if (totalElements() > 0) {
-        <small class="muted">{{ totalElements() }} transações</small>
-      }
     </div>
     <div class="head-actions">
       <button type="button" class="btn-icon" (click)="toggleFiltros()" [disabled]="!selectedPeriodo()">
@@ -171,7 +168,16 @@
 
     @if (paginaConteudo().length > 0) {
       <div class="list-header">
-        <h2>Lista de Transações</h2>
+        <div>
+          <h2>Lista de transações</h2>
+          @if (totalElements() > 0) {
+            @if (totalElements() === 1) {
+              <small class="muted">{{ totalElements() }} transação</small>
+            } @else {
+              <small class="muted">{{ totalElements() }} transações</small>
+            }
+          }
+        </div>
       </div>
       <ul class="mt-4 grid gap-2">
         @for (tx of paginaConteudo(); track tx.id) {
