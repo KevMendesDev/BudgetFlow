@@ -1,9 +1,8 @@
 <main class="crud-wrap">
   <div class="crud-container">
     <header>
-      <p class="eyebrow">CRUD</p>
       <h1>Categorias</h1>
-      <p class="muted">Gerencie suas categorias com criação, edição, listagem e exclusão.</p>
+      <p class="muted">Gerencie suas categorias de gastos ou receitas, crie e edite como quiser.</p>
     </header>
 
     @if (errorMessage()) {
@@ -67,7 +66,11 @@
         <div>
           <h2>Lista de categorias</h2>
           @if (totalElements() > 0) {
-            <small class="muted">{{ totalElements() }} categorias</small>
+            @if (totalElements() === 1) {
+              <small class="muted">{{ totalElements() }} categoria</small>
+            } @else {
+              <small class="muted">{{ totalElements() }} categorias</small>
+            }
           }
         </div>
       </div>

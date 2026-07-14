@@ -1,9 +1,8 @@
 <main class="crud-wrap">
   <div class="crud-container">
     <header>
-      <p class="eyebrow">CRUD</p>
       <h1>Transações recorrentes</h1>
-      <p class="muted">Gerencie recorrências com criação, edição, listagem e exclusão.</p>
+      <p class="muted">Gerencie transações recorrentes, crie e edite como quiser.</p>
     </header>
 
     @if (errorMessage()) {
@@ -64,8 +63,12 @@
       <div class="list-header">
         <div>
           <h2>Lista de recorrências</h2>
-          @if (totalElements() > 0) {
-            <small class="muted">{{ totalElements() }} recorrências</small>
+          @if (totalElements() > 0) { 
+            @if (totalElements() === 1) {
+              <small class="muted">{{ totalElements() }} recorrência</small>
+            } @else {
+              <small class="muted">{{ totalElements() }} recorrências</small>
+            }
           }
         </div>
       </div>

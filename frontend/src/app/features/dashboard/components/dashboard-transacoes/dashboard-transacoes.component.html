@@ -2,9 +2,6 @@
   <div class="recentes-head">
     <div>
       <h2>Transações do período</h2>
-      @if (totalElements() > 0) {
-        <small class="muted">{{ totalElements() }} transações</small>
-      }
     </div>
     <div class="head-actions">
       <button type="button" class="btn-icon" (click)="toggleFiltros()" [disabled]="!selectedPeriodo()">
@@ -31,24 +28,54 @@
     <section class="bf-panel filters-panel">
       <h2>Filtros</h2>
       <form
-        class="filters mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-[repeat(24,minmax(0,1fr))]"
+        class="filters mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12"
         (submit)="$event.preventDefault()"
       >
-      <label class="bf-label md:col-span-6">
-        Categoria
-        <input
+      <label class="bf-label md:col-span-5">
+        Busca
+        <div class="datalist-field">
+          <input
+            class="bf-input"
+            type="text"
+            list="categorias-list"
+            placeholder="Descrição ou categoria"
+            [value]="filtroQuery()"
+            (input)="filtroQuery.set($any($event.target).value)"
+          />
+          <span class="datalist-chevron" aria-hidden="true">
+            <svg viewBox="0 0 20 20">
+              <path
+                d="M6 8l4 4 4-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          <datalist id="categorias-list">
+            @for (nome of categoriasDistinct(); track nome) {
+              <option [value]="nome"></option>
+            }
+          </datalist>
+        </div>
+      </label>
+
+      <label class="bf-label md:col-span-3">
+        Status
+        <select
           class="bf-input"
-          type="text"
-          list="categorias-list"
-          placeholder="Selecione ou digite"
-          [value]="filtroNomeCategoria()"
-          (input)="filtroNomeCategoria.set($any($event.target).value)"
-        />
-        <datalist id="categorias-list">
-          @for (nome of categoriasDistinct(); track nome) {
-            <option [value]="nome"></option>
+          [value]="filtroStatus()"
+          (change)="filtroStatus.set($any($event.target).value)"
+        >
+          <option value="">Todas</option>
+          @for (status of statusOptions; track status.value) {
+            <option [value]="status.value">
+              {{ status.value === 'EXECUTADO' ? 'Executadas' : 'Não executadas' }}
+            </option>
           }
-        </datalist>
+        </select>
       </label>
 
       <label class="bf-label md:col-span-4">
@@ -65,7 +92,7 @@
         </select>
       </label>
 
-      <label class="bf-label md:col-span-4">
+      <label class="bf-label md:col-span-3">
         Tipo movimentação
         <select
           class="bf-input"
@@ -79,7 +106,7 @@
         </select>
       </label>
 
-      <label class="bf-label md:col-span-4">
+      <label class="bf-label md:col-span-3">
         Tipo pagamento
         <select
           class="bf-input"
@@ -93,7 +120,7 @@
         </select>
       </label>
 
-      <label class="bf-label md:col-span-4">
+      <label class="bf-label md:col-span-3">
         Recorrente
         <select
           class="bf-input"
@@ -106,7 +133,7 @@
         </select>
       </label>
 
-      <div class="flex w-full items-end md:col-span-2 md:justify-end">
+      <div class="flex w-full items-end md:col-span-3 md:justify-end">
         <button type="button" class="btn-secondary w-full md:w-auto" (click)="limparFiltros()">Limpar</button>
       </div>
       </form>
@@ -141,7 +168,16 @@
 
     @if (paginaConteudo().length > 0) {
       <div class="list-header">
-        <h2>Lista de Transações</h2>
+        <div>
+          <h2>Lista de transações</h2>
+          @if (totalElements() > 0) {
+            @if (totalElements() === 1) {
+              <small class="muted">{{ totalElements() }} transação</small>
+            } @else {
+              <small class="muted">{{ totalElements() }} transações</small>
+            }
+          }
+        </div>
       </div>
       <ul class="mt-4 grid gap-2">
         @for (tx of paginaConteudo(); track tx.id) {
