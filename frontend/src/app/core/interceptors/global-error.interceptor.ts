@@ -48,6 +48,10 @@ function mapHttpErrorToMessage(error: HttpErrorResponse): string {
     return 'Sessão expirada. Faça login novamente.';
   }
 
+  if (error.status === 403) {
+    return 'Não autorizado. Tente novamente.';
+  }
+
   return 'Não foi possível concluir a requisição.';
 }
 

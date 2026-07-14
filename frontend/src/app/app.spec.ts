@@ -1,10 +1,18 @@
 import { TestBed } from '@angular/core/testing';
+
 import { App } from './app';
+import { SessionResumeService } from './core/services/session-resume.service';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [
+        {
+          provide: SessionResumeService,
+          useValue: { start: () => undefined },
+        },
+      ],
     }).compileComponents();
   });
 
