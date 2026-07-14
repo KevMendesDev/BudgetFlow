@@ -35,21 +35,29 @@ public class ResendEmailService {
 
     public void sendVerification(User user, String token) {
         String url = frontendUrl + "/confirmar-email?token=" + token;
+        String title = "Confirme seu email";
+        String description = "Confirme seu cadastro para acessar o BudgetFlow.";
+        String button = "Confirmar email";
         send(
                 user,
                 "Confirme seu email no BudgetFlow",
-                html("Confirme seu email", "Confirme seu cadastro para acessar o BudgetFlow.", url, "Confirmar email"));
+                html(title, description, url, button),
+                text(title, description, url));
     }
 
     public void sendPasswordReset(User user, String token) {
         String url = frontendUrl + "/redefinir-senha?token=" + token;
+        String title = "Redefina sua senha";
+        String description = "Este link expira em 1 hora.";
+        String button = "Criar nova senha";
         send(
                 user,
                 "Redefina sua senha do BudgetFlow",
-                html("Redefina sua senha", "Este link expira em 1 hora.", url, "Criar nova senha"));
+                html(title, description, url, button),
+                text(title, description, url));
     }
 
-    private void send(User user, String subject, String htmlContent) {
+    private void send(User user, String subject, String htmlContent, String textContent) {
         if (apiKey.isBlank() || fromEmail.isBlank()) {
             throw new IllegalStateException("Configuração de email ausente");
         }
@@ -63,7 +71,8 @@ public class ResendEmailService {
                         "from", "%s <%s>".formatted(fromName, fromEmail),
                         "to", List.of(user.getEmail()),
                         "subject", subject,
-                        "html", htmlContent))
+                        "html", htmlContent,
+                        "text", textContent))
                 .retrieve()
                 .toBodilessEntity();
     }
@@ -72,40 +81,52 @@ public class ResendEmailService {
         return """
                 <!doctype html>
                 <html lang="pt-BR">
-                  <body style="margin:0;padding:0;background:#070a11;font-family:Arial,sans-serif;color:#f5f7fc">
-                    <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="background:#070a11">
+                  <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1">
+                    <meta name="color-scheme" content="dark">
+                    <meta name="supported-color-schemes" content="dark">
+                  </head>
+                  <body style="margin:0;padding:0;background-color:#0d121c">
+                    <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" bgcolor="#0d121c" style="background-color:#0d121c">
                       <tr>
-                        <td align="center" style="padding:40px 16px">
-                          <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;background:#0d121c;border:1px solid #293140;border-radius:16px">
+                        <td align="center" style="padding:24px 16px">
+                          <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" border="0" bgcolor="#0d121c" style="max-width:480px;background-color:#0d121c;font-family:Arial,Helvetica,sans-serif">
                             <tr>
-                              <td style="padding:32px">
-                                <div style="display:inline-block;padding:6px 12px;border:1px solid #293140;border-radius:999px;color:#f4a327;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase">
-                                  BudgetFlow
-                                </div>
-                                <h1 style="margin:24px 0 12px;font-size:30px;line-height:1.2;color:#f5f7fc">%s</h1>
-                                <p style="margin:0;color:#9ea8bb;font-size:16px;line-height:1.6">%s</p>
-                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:28px">
-                                  <tr>
-                                    <td style="border-radius:12px;background:#12c978">
-                                      <a href="%s" style="display:inline-block;padding:14px 22px;color:#06130c;font-size:15px;font-weight:700;text-decoration:none">%s</a>
-                                    </td>
-                                  </tr>
-                                </table>
-                                <div style="height:1px;background:#293140;margin:32px 0 20px"></div>
-                                <p style="margin:0;color:#727d91;font-size:13px;line-height:1.5">
-                                  Se você não solicitou esta ação, ignore este email com segurança.
-                                </p>
+                              <td style="padding-bottom:16px;color:#f4a327;font-size:14px;font-weight:bold">BudgetFlow</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size:22px;font-weight:bold;color:#f5f7fc;padding-bottom:12px">%s</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size:15px;line-height:1.5;color:#b3bccc;padding-bottom:24px">%s</td>
+                            </tr>
+                            <tr>
+                              <td style="padding-bottom:24px">
+                                <a href="%s" style="display:inline-block;padding:12px 20px;background-color:#12c978;color:#06130c;font-size:15px;font-weight:bold;text-decoration:none;border-radius:6px">%s</a>
                               </td>
                             </tr>
+                            <tr>
+                              <td style="font-size:13px;line-height:1.5;color:#727d91">Se você não solicitou esta ação, ignore este email.</td>
+                            </tr>
                           </table>
-                          <p style="margin:18px 0 0;color:#596477;font-size:12px">
-                            BudgetFlow · Controle teu dinheiro sem caos
-                          </p>
                         </td>
                       </tr>
                     </table>
                   </body>
                 </html>
                 """.formatted(title, description, url, button);
+    }
+
+    private String text(String title, String description, String url) {
+        return """
+                %s
+
+                %s
+
+                Acesse o link: %s
+
+                Se você não solicitou esta ação, ignore este email.
+                """.formatted(title, description, url);
     }
 }
