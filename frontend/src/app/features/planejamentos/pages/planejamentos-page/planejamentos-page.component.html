@@ -94,6 +94,14 @@
     }
 
     <section class="transacoes">
+      <div class="recentes-head">
+        <div>
+          <h2>Lançamentos planejados para o período</h2>
+        </div>
+        <button type="button" class="btn-create" (click)="openCreateModal()" [disabled]="!selectedPeriodo()">
+          Cadastrar planejamento
+        </button>
+      </div>
       <section class="recentes bf-panel">
         @if (planejamentos().length === 0 && selectedPeriodo()) {
         <p class="muted">Nenhum planejamento cadastrado para o período.</p>
