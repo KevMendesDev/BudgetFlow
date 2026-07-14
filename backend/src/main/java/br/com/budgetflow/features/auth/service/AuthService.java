@@ -172,7 +172,8 @@ public class AuthService {
     }
 
     @Transactional
-    public String resendVerification(String email) {
+    public String resendVerification(String email, String clientAddress) {
+        throttleService.check("email-resend:" + clientAddress);
         userRepository.findByEmail(normalizeEmail(email))
                 .filter(user -> user.getEmailVerifiedAt() == null)
                 .filter(user -> user.getSenha() != null)
@@ -183,7 +184,8 @@ public class AuthService {
     }
 
     @Transactional
-    public String forgotPassword(String email) {
+    public String forgotPassword(String email, String clientAddress) {
+        throttleService.check("password-forgot:" + clientAddress);
         userRepository.findByEmail(normalizeEmail(email))
                 .filter(user -> user.getEmailVerifiedAt() != null)
                 .filter(user -> user.getSenha() != null)

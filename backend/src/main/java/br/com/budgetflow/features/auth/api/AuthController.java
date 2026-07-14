@@ -46,13 +46,21 @@ public class AuthController {
     }
 
     @PostMapping("/email-verification/resend")
-    public ResponseEntity<MessageResponseDTO> resendVerification(@Valid @RequestBody EmailRequestDTO request) {
-        return ResponseEntity.ok(new MessageResponseDTO(authService.resendVerification(request.email())));
+    public ResponseEntity<MessageResponseDTO> resendVerification(
+            @Valid @RequestBody EmailRequestDTO request,
+            HttpServletRequest httpRequest
+    ) {
+        return ResponseEntity.ok(new MessageResponseDTO(
+                authService.resendVerification(request.email(), httpRequest.getRemoteAddr())));
     }
 
     @PostMapping("/password/forgot")
-    public ResponseEntity<MessageResponseDTO> forgotPassword(@Valid @RequestBody EmailRequestDTO request) {
-        return ResponseEntity.ok(new MessageResponseDTO(authService.forgotPassword(request.email())));
+    public ResponseEntity<MessageResponseDTO> forgotPassword(
+            @Valid @RequestBody EmailRequestDTO request,
+            HttpServletRequest httpRequest
+    ) {
+        return ResponseEntity.ok(new MessageResponseDTO(
+                authService.forgotPassword(request.email(), httpRequest.getRemoteAddr())));
     }
 
     @PostMapping("/password/reset")

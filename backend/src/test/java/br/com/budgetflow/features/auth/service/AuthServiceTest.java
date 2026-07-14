@@ -150,8 +150,9 @@ class AuthServiceTest {
         when(authTokenService.issuedWithin(
                 user, AuthTokenType.EMAIL_VERIFICATION, Duration.ofMinutes(1))).thenReturn(true);
 
-        authService.resendVerification("user@example.com");
+        authService.resendVerification("user@example.com", "127.0.0.1");
 
+        verify(throttleService).check("email-resend:127.0.0.1");
         verify(authTokenService, never()).issue(any(), any(), any());
         verifyNoInteractions(emailService);
     }
@@ -160,9 +161,10 @@ class AuthServiceTest {
     void forgotPasswordDoesNotRevealMissingAccount() {
         when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
 
-        String result = authService.forgotPassword("missing@example.com");
+        String result = authService.forgotPassword("missing@example.com", "127.0.0.1");
 
         assertTrue(result.contains("conta estiver apta"));
+        verify(throttleService).check("password-forgot:127.0.0.1");
         verifyNoInteractions(authTokenService, emailService);
     }
 
