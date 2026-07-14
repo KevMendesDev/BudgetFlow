@@ -63,8 +63,12 @@
       <div class="list-header">
         <div>
           <h2>Lista de recorrências</h2>
-          @if (totalElements() > 0) {
-            <small class="muted">{{ totalElements() }} recorrências</small>
+          @if (totalElements() > 0) { 
+            @if (totalElements() === 1) {
+              <small class="muted">{{ totalElements() }} recorrência</small>
+            } @else {
+              <small class="muted">{{ totalElements() }} recorrências</small>
+            }
           }
         </div>
       </div>

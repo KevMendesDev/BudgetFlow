@@ -56,7 +56,11 @@
         <div>
           <h2>Lista de períodos</h2>
           @if (totalElements() > 0) {
-            <small class="muted">{{ totalElements() }} períodos</small>
+            @if (totalElements() === 1) {
+              <small class="muted">{{ totalElements() }} período</small>
+            } @else {
+              <small class="muted">{{ totalElements() }} períodos</small>
+            }
           }
         </div>
       </div>
