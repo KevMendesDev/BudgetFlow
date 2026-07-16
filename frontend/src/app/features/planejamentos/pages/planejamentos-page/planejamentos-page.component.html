@@ -10,149 +10,274 @@
           [disabled]="!selectedPeriodo() || syncing()">
           {{ syncing() ? 'Sincronizando...' : 'Sincronizar recorrentes' }}
         </button>
-        <label class="periodo-field grid gap-1">
-          Período selecionado
-          <select [value]="selectedPeriodoId() ?? ''" [disabled]="periodos().length === 0"
-            (change)="onPeriodoChange($any($event.target).value)">
-            @for (periodo of periodos(); track periodo.id) {
-            <option [value]="periodo.id">{{ formatPeriodo(periodo) }}</option>
-            }
-          </select>
-        </label>
+        <div class="periodo-selector">
+          @if (periodos().length > 0) {
+            <label class="periodo-field grid gap-1" for="periodoSelectPlanejamentos">
+              Período selecionado
+              <select
+                id="periodoSelectPlanejamentos"
+                [value]="selectedPeriodoId() ?? ''"
+                [disabled]="loadingPeriodos()"
+                (change)="onPeriodoChange($any($event.target).value)"
+              >
+                @for (periodo of periodos(); track periodo.id) {
+                  <option [value]="periodo.id">{{ formatPeriodo(periodo) }}</option>
+                }
+              </select>
+            </label>
+            <button
+              type="button"
+              class="btn-periodo-add"
+              (click)="openPeriodoModal()"
+              title="Criar novo período"
+              aria-label="Criar novo período"
+            >
+              +
+            </button>
+          } @else if (!loadingPeriodos()) {
+            <button type="button" class="btn-create periodo-add" (click)="openPeriodoModal()">
+              Criar período
+            </button>
+          }
+        </div>
       </div>
     </header>
 
     @if (errorMessage()) {
-    <p class="error">{{ errorMessage() }}</p>
+      <p class="error">{{ errorMessage() }}</p>
     }
 
     @if (loading()) {
-    <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3" aria-label="Carregando cards de resumo">
-      @for (item of skeletonCards; track item) {
-      <article class="card">
-        <p class="bf-skeleton-line h-3 w-28"></p>
-        <strong class="bf-skeleton-line mt-3 block h-6 w-36"></strong>
-      </article>
-      }
-    </section>
-    } @else {
-    @if (!selectedPeriodo()) {
-    <p class="muted loading">Não existem períodos financeiros cadastrados.</p>
-    }
-
-    <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-      <article class="card saldo">
-        <p>Saldo previsto</p><strong>{{ saldo() | currencyBRL }}</strong>
-      </article>
-      <article class="card receita">
-        <p>Receitas</p><strong>{{ receitas() | currencyBRL }}</strong>
-      </article>
-      <article class="card despesa">
-        <p>Despesas</p><strong>{{ despesas() | currencyBRL }}</strong>
-      </article>
-    </section>
-
-    @if (planejamentos().length > 0) {
-    <section class="resumo">
-      <div class="resumo-head">
-        <div>
-          <h2>Resumo do planejamento</h2>
-          <p class="muted">Despesas planejadas agrupadas no período.</p>
-        </div>
-        <button type="button" class="btn-toggle" (click)="toggleResumo()">
-          {{ resumoAberto() ? 'Ocultar' : 'Mostrar' }}
-        </button>
-      </div>
-
-      @if (resumoAberto()) {
-      <div class="charts-grid">
-        <article class="chart-block">
-          <div class="chart-head">
-            <h3>Despesas por categoria</h3>
-          </div>
-          @if (categoriaChartData().labels?.length) {
-          <div class="chart"><canvas baseChart [type]="chartType" [data]="categoriaChartData()"
-              [options]="chartOptions()"></canvas></div>
-          } @else {
-          <p class="muted empty">Sem despesas planejadas.</p>
-          }
-        </article>
-        <article class="chart-block">
-          <div class="chart-head">
-            <h3>Despesas por classificação</h3>
-          </div>
-          @if (classificacaoChartData().labels?.length) {
-          <div class="chart"><canvas baseChart [type]="chartType" [data]="classificacaoChartData()"
-              [options]="chartOptions()"></canvas></div>
-          } @else {
-          <p class="muted empty">Sem classificações para exibir.</p>
-          }
-        </article>
-      </div>
-      }
-    </section>
-    }
-
-    <section class="transacoes">
-      <div class="recentes-head">
-        <div>
-          <h2>Lançamentos planejados para o período</h2>
-        </div>
-        <button type="button" class="btn-create" (click)="openCreateModal()" [disabled]="!selectedPeriodo()">
-          Cadastrar planejamento
-        </button>
-      </div>
-      <section class="recentes bf-panel">
-        @if (planejamentos().length === 0 && selectedPeriodo()) {
-        <p class="muted">Nenhum planejamento cadastrado para o período.</p>
-        } @else {
-        <div class="list-header">
-          <div>
-            <h2>Lista de planejamentos financeiros</h2>
-            @if (planejamentos().length > 0) {
-            @if (planejamentos().length === 1) {
-            <small class="muted">{{ planejamentos().length }} planejamento</small>
-            } @else {
-            <small class="muted">{{ planejamentos().length }} planejamentos</small>
-            }
-            }
-          </div>
-        </div>
-        <ul class="mt-4 grid gap-2">
-          @for (item of planejamentos(); track item.id) {
-          <li>
-            <div>
-              <strong>{{ item.descricao }}</strong>
-              <small>
-                {{ item.categoriaNome }}
-                @if (item.sincronizado) { · Sincronizado }
-              </small>
-            </div>
-            <div class="grid w-full justify-items-stretch gap-2 min-[801px]:w-auto min-[801px]:justify-items-end">
-              <span [class.receita]="item.tipoMovimentacao === 'RECEITA'"
-                [class.despesa]="item.tipoMovimentacao === 'DESPESA'">
-                {{ item.tipoMovimentacao === 'DESPESA' ? '-' : '+' }} {{ item.valor | currencyBRL }}
-              </span>
-              <div class="row-buttons">
-                <button type="button" class="btn-inline" (click)="startEdit(item)">Editar</button>
-                <button type="button" class="btn-inline danger" (click)="delete(item)"
-                  [disabled]="deletingId() === item.id">
-                  {{ deletingId() === item.id ? 'Excluindo...' : 'Excluir' }}
-                </button>
-              </div>
-            </div>
-          </li>
-          }
-        </ul>
+      <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3" aria-label="Carregando cards de resumo">
+        @for (item of skeletonCards; track item) {
+          <article class="card">
+            <p class="bf-skeleton-line h-3 w-28"></p>
+            <strong class="bf-skeleton-line mt-3 block h-6 w-36"></strong>
+          </article>
         }
       </section>
-    </section>
+    } @else {
+      @if (!selectedPeriodo()) {
+        <p class="muted loading">Não existem períodos financeiros cadastrados.</p>
+      }
+
+      <section class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <article class="card saldo">
+          <p>Saldo previsto</p><strong>{{ saldo() | currencyBRL }}</strong>
+        </article>
+        <article class="card receita">
+          <p>Receitas</p><strong>{{ receitas() | currencyBRL }}</strong>
+        </article>
+        <article class="card despesa">
+          <p>Despesas</p><strong>{{ despesas() | currencyBRL }}</strong>
+        </article>
+      </section>
+
+      @if (planejamentos().length > 0) {
+        <section class="resumo">
+          <div class="resumo-head">
+            <div>
+              <h2>Resumo do planejamento</h2>
+              <p class="muted">Despesas planejadas agrupadas no período.</p>
+            </div>
+            <button type="button" class="btn-toggle" (click)="toggleResumo()">
+              {{ resumoAberto() ? 'Ocultar' : 'Mostrar' }}
+            </button>
+          </div>
+
+          @if (resumoAberto()) {
+            <div class="charts-grid">
+              <article class="chart-block">
+                <div class="chart-head">
+                  <h3>Despesas por categoria</h3>
+                </div>
+                @if (categoriaChartData().labels?.length) {
+                  <div class="chart">
+                    <canvas baseChart [type]="chartType" [data]="categoriaChartData()" [options]="chartOptions()"></canvas>
+                  </div>
+                } @else {
+                  <p class="muted empty">Sem despesas planejadas.</p>
+                }
+              </article>
+              <article class="chart-block">
+                <div class="chart-head">
+                  <h3>Despesas por classificação</h3>
+                </div>
+                @if (classificacaoChartData().labels?.length) {
+                  <div class="chart">
+                    <canvas baseChart [type]="chartType" [data]="classificacaoChartData()" [options]="chartOptions()"></canvas>
+                  </div>
+                } @else {
+                  <p class="muted empty">Sem classificações para exibir.</p>
+                }
+              </article>
+            </div>
+          }
+        </section>
+      }
+
+      <section class="transacoes">
+        <div class="recentes-head">
+          <div>
+            <h2>Lançamentos planejados para o período</h2>
+          </div>
+          <div class="head-actions">
+            <button type="button" class="btn-icon" (click)="toggleFiltros()" [disabled]="!selectedPeriodo()">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 5h16M7 12h10M10 19h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              @if (filtrosAbertos()) {
+                <span>Esconder filtros</span>
+              }
+            </button>
+            <button
+              type="button"
+              class="btn-danger"
+              (click)="deleteAll()"
+              [disabled]="!selectedPeriodo() || deletingAll() || planejamentos().length === 0"
+            >
+              {{ deletingAll() ? 'Excluindo...' : 'Excluir todos' }}
+            </button>
+            <button type="button" class="btn-create" (click)="openCreateModal()" [disabled]="!selectedPeriodo()">
+              Cadastrar planejamento
+            </button>
+          </div>
+        </div>
+
+        @if (filtrosAbertos()) {
+          <section class="bf-panel filters-panel">
+            <h2>Filtros</h2>
+            <form [formGroup]="filtersForm" class="mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12" novalidate>
+              <label class="bf-label md:col-span-4">
+                Busca
+                <div class="datalist-field">
+                  <input
+                    class="bf-input"
+                    type="text"
+                    list="planejamentos-categorias-list"
+                    formControlName="query"
+                    placeholder="Descrição ou categoria"
+                  />
+                  <datalist id="planejamentos-categorias-list">
+                    @for (nome of categoriasDistinct(); track nome) {
+                      <option [value]="nome"></option>
+                    }
+                  </datalist>
+                </div>
+              </label>
+
+              <label class="bf-label md:col-span-3">
+                Tipo
+                <select class="bf-input" formControlName="tipoMovimentacao">
+                  <option value="">Todos</option>
+                  @for (item of tiposMovimentacao; track item.value) {
+                    <option [value]="item.value">{{ item.label }}</option>
+                  }
+                </select>
+              </label>
+
+              <label class="bf-label md:col-span-3">
+                Classificação
+                <select class="bf-input" formControlName="classificacaoCategoria">
+                  <option value="">Todas</option>
+                  @for (item of classificacoes; track item.value) {
+                    <option [value]="item.value">{{ item.label }}</option>
+                  }
+                </select>
+              </label>
+
+              <div class="flex md:col-span-2 md:justify-end">
+                <button class="btn-secondary w-full md:w-auto" type="button" (click)="clearFilters()">Limpar</button>
+              </div>
+            </form>
+          </section>
+        }
+
+        <section class="recentes bf-panel">
+          @if (listaPlanejamentos().length === 0 && selectedPeriodo()) {
+            <p class="muted">Nenhum planejamento encontrado com os filtros atuais.</p>
+          } @else {
+            <div class="list-header">
+              <div>
+                <h2>Lista de planejamentos financeiros</h2>
+                @if (totalElements() > 0) {
+                  @if (totalElements() === 1) {
+                    <small class="muted">{{ totalElements() }} planejamento</small>
+                  } @else {
+                    <small class="muted">{{ totalElements() }} planejamentos</small>
+                  }
+                }
+              </div>
+            </div>
+            <ul class="mt-4 grid gap-2">
+              @for (item of listaPlanejamentos(); track item.id) {
+                <li>
+                  <div>
+                    <strong>{{ item.descricao }}</strong>
+                    <small>
+                      {{ item.categoriaNome }}
+                      @if (item.sincronizado) { · Sincronizado }
+                    </small>
+                  </div>
+                  <div class="grid w-full justify-items-stretch gap-2 min-[801px]:w-auto min-[801px]:justify-items-end">
+                    <span
+                      [class.receita]="item.tipoMovimentacao === 'RECEITA'"
+                      [class.despesa]="item.tipoMovimentacao === 'DESPESA'"
+                    >
+                      {{ item.tipoMovimentacao === 'DESPESA' ? '-' : '+' }} {{ item.valor | currencyBRL }}
+                    </span>
+                    <div class="row-buttons">
+                      <button type="button" class="btn-inline" (click)="startEdit(item)">Editar</button>
+                      <button
+                        type="button"
+                        class="btn-inline danger"
+                        (click)="delete(item)"
+                        [disabled]="deletingId() === item.id"
+                      >
+                        {{ deletingId() === item.id ? 'Excluindo...' : 'Excluir' }}
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              }
+            </ul>
+
+            @if (totalPages() > 1) {
+              <div class="bf-pagination">
+                <button type="button" class="btn-inline" (click)="goToPreviousPage()" [disabled]="paginaAtual() === 0">
+                  Anterior
+                </button>
+                <span>Página {{ paginaAtual() + 1 }} de {{ totalPages() }}</span>
+                <button
+                  type="button"
+                  class="btn-inline"
+                  (click)="goToNextPage()"
+                  [disabled]="paginaAtual() + 1 >= totalPages()"
+                >
+                  Próxima
+                </button>
+              </div>
+            }
+          }
+        </section>
+      </section>
     }
   </div>
 </main>
 
 @if (modalOpen() && selectedPeriodo(); as periodo) {
-<app-planejamento-modal [categorias]="categorias()" [recorrentes]="recorrentes()" [selectedPeriodo]="periodo"
-  [editingPlanejamento]="editingPlanejamento()" (saved)="onSaved()" (closed)="closeModal()"
-  (categoriasChanged)="onCategoriasChanged()" />
+  <app-planejamento-modal
+    [categorias]="categorias()"
+    [recorrentes]="recorrentes()"
+    [planejamentos]="planejamentos()"
+    [selectedPeriodo]="periodo"
+    [editingPlanejamento]="editingPlanejamento()"
+    (saved)="onSaved()"
+    (closed)="closeModal()"
+    (categoriasChanged)="onCategoriasChanged()"
+  />
+}
+
+@if (periodoModalOpen()) {
+  <app-periodo-financeiro-modal (saved)="onPeriodoSaved($event)" (closed)="closePeriodoModal()" />
 }

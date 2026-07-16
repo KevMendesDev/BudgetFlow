@@ -7,12 +7,14 @@ import java.util.Set;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import br.com.budgetflow.features.planejamentos.domain.Planejamento;
 
-public interface PlanejamentoRepository extends JpaRepository<Planejamento, Long> {
+public interface PlanejamentoRepository extends JpaRepository<Planejamento, Long>, JpaSpecificationExecutor<Planejamento> {
 
     @EntityGraph(attributePaths = {"user", "categoria", "periodo"})
     List<Planejamento> findAllByPeriodoIdAndUserIdAndExcluidoFalseOrderByCreatedAtDescIdDesc(Long periodoId, Long userId);
@@ -35,6 +37,14 @@ public interface PlanejamentoRepository extends JpaRepository<Planejamento, Long
     boolean existsByCategoriaIdAndUserIdAndExcluidoFalse(Long categoriaId, Long userId);
 
     boolean existsByPeriodoIdAndUserIdAndExcluidoFalse(Long periodoId, Long userId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            delete from Planejamento p
+            where p.periodo.id = :periodoId
+              and p.user.id = :userId
+            """)
+    int deleteAllByPeriodoIdAndUserId(@Param("periodoId") Long periodoId, @Param("userId") Long userId);
 
     @Query("""
             select distinct p.categoria.id

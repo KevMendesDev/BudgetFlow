@@ -56,8 +56,36 @@
 .periodo-field {
   min-width: 0;
   width: min(100%, 28rem);
+  flex: 1;
   font-size: 0.8rem;
   color: var(--muted-text);
+}
+
+.periodo-selector {
+  display: flex;
+  align-items: end;
+  gap: 0.5rem;
+  min-width: 0;
+  width: min(100%, 28rem);
+}
+
+.btn-periodo-add {
+  flex-shrink: 0;
+  min-height: var(--control-height);
+  min-width: var(--control-height);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.btn-periodo-add:hover {
+  border-color: var(--brand-green);
 }
 
 .periodo-field select {
@@ -158,6 +186,46 @@ span.receita, span.despesa { font-weight: 600; }
   margin-top: 1.2rem;
 }
 
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--muted-text);
+  font-weight: 400;
+  min-height: var(--control-height);
+  padding: var(--control-padding-y) 0.8rem;
+  border-radius: var(--control-radius);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--text);
+    border-color: var(--line-strong);
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+.filters-panel {
+  margin-top: 1rem;
+}
+
+.datalist-field {
+  position: relative;
+}
+
 .recentes {
   margin-top: 1rem;
   border: 1px solid var(--line);
@@ -218,7 +286,17 @@ span.receita, span.despesa { font-weight: 600; }
 
   .topbar-actions,
   .periodo-field,
+  .periodo-selector,
   .btn-sync-dashboard {
+    width: 100%;
+  }
+
+  .periodo-selector {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .head-actions {
     width: 100%;
   }
 

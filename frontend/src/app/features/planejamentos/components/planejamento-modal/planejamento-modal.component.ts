@@ -38,6 +38,7 @@ export class PlanejamentoModalComponent implements OnInit {
 
   readonly categorias = input.required<CategoriaResponse[]>();
   readonly recorrentes = input.required<TransacaoRecorrenteResponse[]>();
+  readonly planejamentos = input.required<PlanejamentoResponse[]>();
   readonly selectedPeriodo = input.required<PeriodoFinanceiro>();
   readonly editingPlanejamento = input<PlanejamentoResponse | null>(null);
 
@@ -55,6 +56,15 @@ export class PlanejamentoModalComponent implements OnInit {
   readonly tipoMovimentacaoSelecionado = signal<'' | NaturezaFinanceira>('');
   readonly categoriaModalOpen = signal(false);
   readonly categoriasLocais = signal<CategoriaResponse[]>([]);
+
+  readonly recorrentesDisponiveis = computed(() => {
+    const descricoesLancadas = new Set(
+      this.planejamentos().map((item) => item.descricao.trim().toLowerCase())
+    );
+    return this.recorrentes().filter(
+      (recorrente) => !descricoesLancadas.has(recorrente.descricao.trim().toLowerCase())
+    );
+  });
 
   readonly form = this.formBuilder.nonNullable.group({
     transacaoRecorrenteId: [''],
@@ -131,7 +141,7 @@ export class PlanejamentoModalComponent implements OnInit {
   }
 
   onRecorrenteChange(rawId: string): void {
-    const recorrente = this.recorrentes().find((item) => item.id === Number(rawId));
+    const recorrente = this.recorrentesDisponiveis().find((item) => item.id === Number(rawId));
     if (!recorrente) {
       return;
     }
@@ -161,12 +171,14 @@ export class PlanejamentoModalComponent implements OnInit {
     }
 
     const raw = this.form.getRawValue();
+    const recorrenteId = raw.transacaoRecorrenteId ? Number(raw.transacaoRecorrenteId) : null;
     const payload = {
       categoriaId: Number(raw.categoriaId),
       periodoId: this.selectedPeriodo().id,
       descricao: raw.descricao.trim(),
       valor: parseCurrencyInput(raw.valor) ?? 0,
       tipoMovimentacao: raw.tipoMovimentacao as NaturezaFinanceira,
+      transacaoRecorrenteId: this.editingId() ? null : recorrenteId,
     };
     const editingId = this.editingId();
     const request$ = editingId

@@ -10,6 +10,9 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,12 +25,14 @@ import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRe
 import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.periodos.service.PeriodoFinanceiroService;
+import br.com.budgetflow.features.planejamentos.criteria.PlanejamentoFilterCriteria;
 import br.com.budgetflow.features.planejamentos.domain.Planejamento;
 import br.com.budgetflow.features.planejamentos.dto.PlanejamentoRequestDTO;
 import br.com.budgetflow.features.planejamentos.dto.PlanejamentoResponseDTO;
 import br.com.budgetflow.features.planejamentos.dto.SincronizacaoPlanejamentosResponseDTO;
 import br.com.budgetflow.features.planejamentos.mapper.PlanejamentoMapper;
 import br.com.budgetflow.features.planejamentos.repository.PlanejamentoRepository;
+import br.com.budgetflow.features.planejamentos.repository.specification.PlanejamentoSpecification;
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.service.UserService;
 import br.com.budgetflow.security.SecurityUtils;
@@ -59,14 +64,15 @@ public class PlanejamentoService {
     }
 
     @Transactional(readOnly = true)
-    public List<PlanejamentoResponseDTO> findAll(Long periodoId) {
+    public Page<PlanejamentoResponseDTO> findAll(PlanejamentoFilterCriteria criteria, Pageable pageable) {
         Long userId = SecurityUtils.currentUserId();
-        PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
-        return planejamentoRepository
-                .findAllByPeriodoIdAndUserIdAndExcluidoFalseOrderByCreatedAtDescIdDesc(periodo.getId(), userId)
-                .stream()
-                .map(planejamentoMapper::toResponseDTO)
-                .toList();
+        PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(criteria.getPeriodoId(), userId);
+
+        PlanejamentoFilterCriteria effective = criteria;
+        effective.setPeriodoId(periodo.getId());
+
+        Specification<Planejamento> specification = PlanejamentoSpecification.createSpecification(effective, userId);
+        return planejamentoRepository.findAll(specification, pageable).map(planejamentoMapper::toResponseDTO);
     }
 
     @Transactional
@@ -80,6 +86,10 @@ public class PlanejamentoService {
         planejamento.setUser(user);
         planejamento.setPeriodo(periodo);
         fillEditableFields(planejamento, request, categoria);
+
+        if (request.transacaoRecorrenteId() != null) {
+            applyRecorrenteSyncKey(planejamento, request.transacaoRecorrenteId(), periodo, userId);
+        }
 
         return planejamentoMapper.toResponseDTO(planejamentoRepository.save(planejamento));
     }
@@ -112,6 +122,13 @@ public class PlanejamentoService {
     }
 
     @Transactional
+    public void deleteAllByPeriodo(Long periodoId) {
+        Long userId = SecurityUtils.currentUserId();
+        PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
+        planejamentoRepository.deleteAllByPeriodoIdAndUserId(periodo.getId(), userId);
+    }
+
+    @Transactional
     public SincronizacaoPlanejamentosResponseDTO sincronizarRecorrentes(Long periodoId) {
         Long userId = SecurityUtils.currentUserId();
         PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
@@ -133,6 +150,61 @@ public class PlanejamentoService {
         String mensagem = "Sincronização concluída: " + novos.size()
                 + " planejamentos gerados e " + semValor + " recorrências sem valor.";
         return new SincronizacaoPlanejamentosResponseDTO(novos.size(), semValor, mensagem);
+    }
+
+    private void applyRecorrenteSyncKey(
+            Planejamento planejamento,
+            Long recorrenteId,
+            PeriodoFinanceiro periodo,
+            Long userId
+    ) {
+        TransacaoRecorrente recorrente = recorrenteRepository.findByIdAndUserId(recorrenteId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transação recorrente não encontrada"));
+
+        Set<String> chavesExistentes = planejamentoRepository.findChavesSincronizacaoByPeriodoIdAndUserId(
+                periodo.getId(),
+                userId
+        );
+        LocalDate dataOcorrencia = findFirstAvailableOccurrence(recorrente, periodo, userId, chavesExistentes);
+        if (dataOcorrencia == null) {
+            throw new BusinessRuleException(
+                    "Todas as ocorrências desta recorrência já foram lançadas neste período"
+            );
+        }
+
+        planejamento.setChaveSincronizacao(buildSyncKey(userId, recorrente.getId(), dataOcorrencia));
+    }
+
+    private LocalDate findFirstAvailableOccurrence(
+            TransacaoRecorrente recorrente,
+            PeriodoFinanceiro periodo,
+            Long userId,
+            Set<String> chavesExistentes
+    ) {
+        long indice = 0;
+        while (recorrente.getTotalParcelas() == null || indice < recorrente.getTotalParcelas()) {
+            LocalDate data = RecorrenciaUtils.calcularDataOcorrencia(
+                    recorrente.getDataInicio(),
+                    recorrente.getFrequencia(),
+                    indice
+            );
+
+            if (recorrente.getDataFim() != null && data.isAfter(recorrente.getDataFim())) {
+                break;
+            }
+            if (data.isAfter(periodo.getDataFim())) {
+                break;
+            }
+
+            if (!data.isBefore(periodo.getDataInicio())) {
+                String chave = buildSyncKey(userId, recorrente.getId(), data);
+                if (!chavesExistentes.contains(chave)) {
+                    return data;
+                }
+            }
+            indice++;
+        }
+        return null;
     }
 
     private void gerarOcorrenciasDoPeriodo(
