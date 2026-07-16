@@ -5,11 +5,13 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.common.exceptions.EntityHasRelationshipsException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
@@ -66,6 +68,7 @@ public class TransacaoRecorrenteService {
         DateRangeUtils.validateRange(requestDTO.dataInicio(), requestDTO.dataFim());
         validateCategoriaTipo(categoria, requestDTO.tipoMovimentacao().name());
         validateValorParcela(requestDTO.valorParcela());
+        StatusRecorrencia status = resolveStatusForWrite(requestDTO.status());
 
         TransacaoRecorrente transacaoRecorrente = transacaoRecorrenteMapper.toEntity(requestDTO);
         transacaoRecorrente.setUser(user);
@@ -73,6 +76,7 @@ public class TransacaoRecorrenteService {
         transacaoRecorrente.setDescricao(requestDTO.descricao().trim());
         transacaoRecorrente.setValor(requestDTO.valorParcela());
         transacaoRecorrente.setDataFim(resolveDataFim(requestDTO));
+        transacaoRecorrente.setStatus(status);
 
         return transacaoRecorrenteMapper.toResponseDTO(
                 transacaoRecorrenteRepository.save(transacaoRecorrente),
@@ -80,7 +84,7 @@ public class TransacaoRecorrenteService {
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<TransacaoRecorrenteResponseDTO> findAll(
             TransacaoRecorrenteFilterCriteria criteria,
             Pageable pageable
@@ -88,11 +92,13 @@ public class TransacaoRecorrenteService {
         DateRangeUtils.validateRange(criteria.getDataInicio(), criteria.getDataFim());
 
         Long userId = SecurityUtils.currentUserId();
+        finalizarExpiradas(userId);
 
         Specification<TransacaoRecorrente> specification = TransacaoRecorrenteSpecification
                 .createSpecification(criteria, userId);
 
-        Page<TransacaoRecorrente> transacoesPage = transacaoRecorrenteRepository.findAll(specification, pageable);
+        Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        Page<TransacaoRecorrente> transacoesPage = transacaoRecorrenteRepository.findAll(specification, unsorted);
         List<Long> transacaoRecorrenteIds = transacoesPage.getContent().stream()
                 .map(TransacaoRecorrente::getId)
                 .toList();
@@ -113,20 +119,22 @@ public class TransacaoRecorrenteService {
                 ));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TransacaoRecorrenteResponseDTO findById(Long id) {
         Long userId = SecurityUtils.currentUserId();
+        finalizarExpiradas(userId);
         TransacaoRecorrente transacaoRecorrente = findByIdAndUserId(id, userId);
         boolean possuiRelacionamentos = relacionamentoChecker.transacaoRecorrenteHasRelationships(id, userId);
         return transacaoRecorrenteMapper.toResponseDTO(transacaoRecorrente, possuiRelacionamentos);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<TransacaoRecorrenteResponseDTO> findDisponiveisParaLancamento(Long periodoId, LocalDate data) {
         Long userId = SecurityUtils.currentUserId();
         periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
+        finalizarExpiradas(userId);
 
-        return transacaoRecorrenteRepository.findUsageByUserId(userId).stream()
+        return transacaoRecorrenteRepository.findUsageByUserIdAndStatus(userId, StatusRecorrencia.ATIVA).stream()
                 .filter(usage -> podeSerLancada(usage, data))
                 .map(usage -> transacaoRecorrenteMapper.toResponseDTO(
                         usage.getRecorrente(),
@@ -138,18 +146,26 @@ public class TransacaoRecorrenteService {
     @Transactional
     public TransacaoRecorrenteResponseDTO update(Long id, TransacaoRecorrenteRequestDTO requestDTO) {
         Long userId = SecurityUtils.currentUserId();
+        finalizarExpiradas(userId);
         TransacaoRecorrente transacaoRecorrente = findByIdAndUserId(id, userId);
+
+        if (transacaoRecorrente.getStatus() == StatusRecorrencia.FINALIZADA) {
+            throw new BusinessRuleException("Recorrência finalizada não pode ser alterada");
+        }
+
         Categoria categoria = categoriaService.findEntityByIdAndUser(requestDTO.categoriaId(), userId);
 
         DateRangeUtils.validateRange(requestDTO.dataInicio(), requestDTO.dataFim());
         validateCategoriaTipo(categoria, requestDTO.tipoMovimentacao().name());
         validateValorParcela(requestDTO.valorParcela());
+        StatusRecorrencia status = resolveStatusForWrite(requestDTO.status());
 
         transacaoRecorrenteMapper.updateFromDto(requestDTO, transacaoRecorrente);
         transacaoRecorrente.setCategoria(categoria);
         transacaoRecorrente.setDescricao(requestDTO.descricao().trim());
         transacaoRecorrente.setValor(requestDTO.valorParcela());
         transacaoRecorrente.setDataFim(resolveDataFim(requestDTO));
+        transacaoRecorrente.setStatus(status);
 
         TransacaoRecorrente updatedTransacaoRecorrente = transacaoRecorrenteRepository.save(transacaoRecorrente);
         boolean possuiRelacionamentos = relacionamentoChecker.transacaoRecorrenteHasRelationships(id, userId);
@@ -175,11 +191,36 @@ public class TransacaoRecorrenteService {
         return findByIdAndUserId(id, userId);
     }
 
+    @Transactional
+    public void finalizarExpiradas(Long userId) {
+        List<TransacaoRecorrente> expiradas = transacaoRecorrenteRepository.findExpiradasNaoFinalizadas(
+                userId,
+                LocalDate.now(),
+                StatusRecorrencia.FINALIZADA
+        );
+        for (TransacaoRecorrente recorrente : expiradas) {
+            recorrente.setStatus(StatusRecorrencia.FINALIZADA);
+        }
+        if (!expiradas.isEmpty()) {
+            transacaoRecorrenteRepository.saveAll(expiradas);
+        }
+    }
+
     private LocalDate resolveDataFim(TransacaoRecorrenteRequestDTO requestDTO) {
         if (requestDTO.totalParcelas() != null) {
             return RecorrenciaUtils.calcularDataFim(requestDTO.dataInicio(), requestDTO.frequencia(), requestDTO.totalParcelas());
         }
         return requestDTO.dataFim();
+    }
+
+    private StatusRecorrencia resolveStatusForWrite(StatusRecorrencia status) {
+        if (status == null) {
+            return StatusRecorrencia.ATIVA;
+        }
+        if (status == StatusRecorrencia.FINALIZADA) {
+            throw new BusinessRuleException("O status FINALIZADA só pode ser definido pelo sistema");
+        }
+        return status;
     }
 
     private void validateCategoriaTipo(Categoria categoria, String tipoMovimentacao) {

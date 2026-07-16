@@ -3,6 +3,7 @@ package br.com.budgetflow.features.movimentacoes.criteria;
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.common.enums.Frequencia;
 import br.com.budgetflow.common.enums.NaturezaFinanceira;
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.common.enums.TipoPagamento;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -26,6 +27,7 @@ public class TransacaoRecorrenteFilterCriteria {
     private NaturezaFinanceira tipoMovimentacao;
     private TipoPagamento tipoPagamento;
     private String query;
+    private StatusRecorrencia status;
 
     public LocalDate getDataInicio() {
         return dataInicio;
@@ -113,5 +115,13 @@ public class TransacaoRecorrenteFilterCriteria {
 
     public void setQuery(String query) {
         this.query = query;
+    }
+
+    public StatusRecorrencia getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusRecorrencia status) {
+        this.status = status;
     }
 }

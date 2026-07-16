@@ -27,12 +27,12 @@
       <section class="bf-panel filters">
         <h2>Filtros</h2>
         <form [formGroup]="filtersForm" class="mt-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12" novalidate>
-          <label class="bf-label md:col-span-4">
+          <label class="bf-label md:col-span-3">
             Busca
             <input class="bf-input" type="text" formControlName="query" placeholder="Descrição ou categoria" />
           </label>
 
-          <label class="bf-label md:col-span-3">
+          <label class="bf-label md:col-span-2">
             Frequência
             <select class="bf-input" formControlName="frequencia">
               <option value="">Todas</option>
@@ -42,11 +42,21 @@
             </select>
           </label>
 
-          <label class="bf-label md:col-span-3">
+          <label class="bf-label md:col-span-2">
             Tipo
             <select class="bf-input" formControlName="tipoMovimentacao">
               <option value="">Todos</option>
               @for (item of tiposMovimentacao; track item.value) {
+                <option [value]="item.value">{{ item.label }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="bf-label md:col-span-3">
+            Status
+            <select class="bf-input" formControlName="status">
+              <option value="">Todas</option>
+              @for (item of statusRecorrencia; track item.value) {
                 <option [value]="item.value">{{ item.label }}</option>
               }
             </select>
@@ -63,7 +73,7 @@
       <div class="list-header">
         <div>
           <h2>Lista de recorrências</h2>
-          @if (totalElements() > 0) { 
+          @if (totalElements() > 0) {
             @if (totalElements() === 1) {
               <small class="muted">{{ totalElements() }} recorrência</small>
             } @else {
@@ -87,6 +97,7 @@
             <thead>
               <tr>
                 <th>Descrição</th>
+                <th>Status</th>
                 <th>Categoria</th>
                 <th>Valor</th>
                 <th>Frequência</th>
@@ -99,13 +110,24 @@
               @for (item of recorrencias(); track item.id) {
                 <tr>
                   <td>{{ item.descricao }}</td>
+                  <td>
+                    <span [class]="statusBadgeClass(item.status)">{{ statusLabel(item.status) }}</span>
+                  </td>
                   <td>{{ item.categoriaNome }}</td>
                   <td>{{ item.valorParcela == null ? '-' : (item.valorParcela | currencyBRL) }}</td>
                   <td>{{ frequenciaLabel(item.frequencia) }}</td>
                   <td>{{ item.dataInicio | dateBR }}</td>
                   <td>{{ item.dataFim | dateBR }}</td>
                   <td class="actions-col">
-                    <button type="button" class="btn-secondary" (click)="startEdit(item)">Editar</button>
+                    <button
+                      type="button"
+                      class="btn-secondary"
+                      (click)="startEdit(item)"
+                      [disabled]="item.status === 'FINALIZADA'"
+                      [title]="item.status === 'FINALIZADA' ? 'Recorrência finalizada não pode ser alterada' : ''"
+                    >
+                      Editar
+                    </button>
                     <button
                       type="button"
                       class="btn-danger"
@@ -126,7 +148,10 @@
           @for (item of recorrencias(); track item.id) {
             <li class="card-item">
               <div class="card-main">
-                <strong>{{ item.descricao }}</strong>
+                <div class="card-title-row">
+                  <strong>{{ item.descricao }}</strong>
+                  <span [class]="statusBadgeClass(item.status)">{{ statusLabel(item.status) }}</span>
+                </div>
                 <small class="card-muted">{{ item.categoriaNome }} • {{ frequenciaLabel(item.frequencia) }}</small>
                 <div class="card-row">
                   <span
@@ -140,7 +165,15 @@
                 </div>
               </div>
               <div class="card-actions">
-                <button type="button" class="btn-secondary" (click)="startEdit(item)">Editar</button>
+                <button
+                  type="button"
+                  class="btn-secondary"
+                  (click)="startEdit(item)"
+                  [disabled]="item.status === 'FINALIZADA'"
+                  [title]="item.status === 'FINALIZADA' ? 'Recorrência finalizada não pode ser alterada' : ''"
+                >
+                  Editar
+                </button>
                 <button
                   type="button"
                   class="btn-danger"

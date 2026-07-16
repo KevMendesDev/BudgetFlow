@@ -13,6 +13,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.features.categorias.domain.Categoria;
@@ -115,13 +116,14 @@ public class PlanejamentoService {
     public SincronizacaoPlanejamentosResponseDTO sincronizarRecorrentes(Long periodoId) {
         Long userId = SecurityUtils.currentUserId();
         PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
+        finalizarExpiradas(userId);
         List<Planejamento> novos = new ArrayList<>();
         Set<String> chavesSincronizadas = new HashSet<>(
                 planejamentoRepository.findChavesSincronizacaoByPeriodoIdAndUserId(periodo.getId(), userId)
         );
         int semValor = 0;
 
-        for (TransacaoRecorrente recorrente : recorrenteRepository.findAllByUserId(userId)) {
+        for (TransacaoRecorrente recorrente : recorrenteRepository.findAllByUserIdAndStatus(userId, StatusRecorrencia.ATIVA)) {
             if (recorrente.getValor() == null) {
                 semValor++;
                 continue;
@@ -208,6 +210,20 @@ public class PlanejamentoService {
             return HexFormat.of().formatHex(digest.digest(source.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("SHA-256 indisponível", ex);
+        }
+    }
+
+    private void finalizarExpiradas(Long userId) {
+        List<TransacaoRecorrente> expiradas = recorrenteRepository.findExpiradasNaoFinalizadas(
+                userId,
+                LocalDate.now(),
+                StatusRecorrencia.FINALIZADA
+        );
+        for (TransacaoRecorrente recorrente : expiradas) {
+            recorrente.setStatus(StatusRecorrencia.FINALIZADA);
+        }
+        if (!expiradas.isEmpty()) {
+            recorrenteRepository.saveAll(expiradas);
         }
     }
 }

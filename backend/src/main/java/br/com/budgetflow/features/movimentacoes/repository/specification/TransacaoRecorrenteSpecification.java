@@ -3,6 +3,7 @@ package br.com.budgetflow.features.movimentacoes.repository.specification;
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.common.enums.Frequencia;
 import br.com.budgetflow.common.enums.NaturezaFinanceira;
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.common.enums.TipoPagamento;
 import br.com.budgetflow.features.movimentacoes.criteria.TransacaoRecorrenteFilterCriteria;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
@@ -18,7 +19,7 @@ public final class TransacaoRecorrenteSpecification {
     }
 
     public static Specification<TransacaoRecorrente> createSpecification(TransacaoRecorrenteFilterCriteria criteria, Long userId) {
-        Specification<TransacaoRecorrente> specification = Specification
+        return Specification
             .where(TransacaoRecorrenteSpecification.fetchAssociations())
             .and(TransacaoRecorrenteSpecification.hasUserId(userId))
             .and(TransacaoRecorrenteSpecification.hasDataInicioFrom(criteria.getDataInicio()))
@@ -31,8 +32,9 @@ public final class TransacaoRecorrenteSpecification {
             .and(TransacaoRecorrenteSpecification.hasClassificacaoCategoria(criteria.getClassificacaoCategoria()))
             .and(TransacaoRecorrenteSpecification.hasTipoMovimentacao(criteria.getTipoMovimentacao()))
             .and(TransacaoRecorrenteSpecification.hasTipoPagamento(criteria.getTipoPagamento()))
-            .and(TransacaoRecorrenteSpecification.hasSearchTerm(criteria.getQuery()));
-        return specification;
+            .and(TransacaoRecorrenteSpecification.hasStatus(criteria.getStatus()))
+            .and(TransacaoRecorrenteSpecification.hasSearchTerm(criteria.getQuery()))
+            .and(TransacaoRecorrenteSpecification.orderByStatusThenCreatedAt());
     }
 
     private static Specification<TransacaoRecorrente> fetchAssociations() {
@@ -119,6 +121,12 @@ public final class TransacaoRecorrenteSpecification {
                 : cb.equal(root.get("tipoPagamento"), tipoPagamento);
     }
 
+    private static Specification<TransacaoRecorrente> hasStatus(StatusRecorrencia status) {
+        return (root, query, cb) -> status == null
+                ? null
+                : cb.equal(root.get("status"), status);
+    }
+
     private static Specification<TransacaoRecorrente> hasSearchTerm(String searchTerm) {
         return (root, query, cb) -> {
             if (searchTerm == null || searchTerm.isBlank()) {
@@ -129,6 +137,20 @@ public final class TransacaoRecorrenteSpecification {
                     cb.like(cb.lower(root.get("descricao")), normalized),
                     cb.like(cb.lower(root.join("categoria", JoinType.INNER).get("nome")), normalized)
             );
+        };
+    }
+
+    private static Specification<TransacaoRecorrente> orderByStatusThenCreatedAt() {
+        return (root, query, cb) -> {
+            if (!isCountQuery(query)) {
+                var statusOrder = cb.selectCase(root.get("status"))
+                        .when(StatusRecorrencia.ATIVA, 1)
+                        .when(StatusRecorrencia.INATIVA, 2)
+                        .when(StatusRecorrencia.FINALIZADA, 3)
+                        .otherwise(4);
+                query.orderBy(cb.asc(statusOrder), cb.desc(root.get("createdAt")));
+            }
+            return null;
         };
     }
 }

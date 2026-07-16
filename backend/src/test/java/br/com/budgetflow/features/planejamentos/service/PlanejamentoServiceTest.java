@@ -30,6 +30,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import br.com.budgetflow.common.enums.Frequencia;
 import br.com.budgetflow.common.enums.NaturezaFinanceira;
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.features.categorias.repository.CategoriaRepository;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
@@ -92,7 +93,8 @@ class PlanejamentoServiceTest {
 
         TransacaoRecorrente mensal = recorrente(20L, user, LocalDate.of(2026, 5, 10), BigDecimal.TEN);
         TransacaoRecorrente semValor = recorrente(21L, user, LocalDate.of(2026, 6, 15), null);
-        when(recorrenteRepository.findAllByUserId(1L)).thenReturn(List.of(mensal, semValor));
+        when(recorrenteRepository.findAllByUserIdAndStatus(1L, StatusRecorrencia.ATIVA)).thenReturn(List.of(mensal, semValor));
+        when(recorrenteRepository.findExpiradasNaoFinalizadas(any(), any(), any())).thenReturn(List.of());
 
         Set<String> chavesPersistidas = new HashSet<>();
         when(planejamentoRepository.findChavesSincronizacaoByPeriodoIdAndUserId(10L, 1L))

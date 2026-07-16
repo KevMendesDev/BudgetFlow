@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.common.enums.StatusTransacao;
 import br.com.budgetflow.features.movimentacoes.domain.Transacao;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
@@ -33,7 +34,11 @@ public class GeracaoTransacoesDoPeriodoService {
     @Transactional
     public SincronizacaoRecorrentesResponseDTO gerarParaPeriodo(PeriodoFinanceiro periodo) {
         Long userId = periodo.getUser().getId();
-        List<TransacaoRecorrenteUsageProjection> recorrentes = recorrenteRepository.findUsageByUserId(userId);
+        finalizarExpiradas(userId);
+        List<TransacaoRecorrenteUsageProjection> recorrentes = recorrenteRepository.findUsageByUserIdAndStatus(
+                userId,
+                StatusRecorrencia.ATIVA
+        );
         List<Transacao> transacoesPendentes = new ArrayList<>();
         List<String> recorrentesPendentes = new ArrayList<>();
         int ignoradasSemValor = 0;
@@ -123,5 +128,19 @@ public class GeracaoTransacoesDoPeriodoService {
     }
 
     private record ResultadoCalculo(List<LocalDate> datas, boolean pendenteEmPeriodoAnterior) {
+    }
+
+    private void finalizarExpiradas(Long userId) {
+        List<TransacaoRecorrente> expiradas = recorrenteRepository.findExpiradasNaoFinalizadas(
+                userId,
+                LocalDate.now(),
+                StatusRecorrencia.FINALIZADA
+        );
+        for (TransacaoRecorrente recorrente : expiradas) {
+            recorrente.setStatus(StatusRecorrencia.FINALIZADA);
+        }
+        if (!expiradas.isEmpty()) {
+            recorrenteRepository.saveAll(expiradas);
+        }
     }
 }

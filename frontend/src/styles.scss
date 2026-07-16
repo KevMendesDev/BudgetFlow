@@ -580,6 +580,32 @@ h1 {
 	font-size: 0.75rem;
 }
 
+.crud-wrap .card-badge--ativa {
+	background: var(--success-ring);
+	border-color: rgba(18, 201, 120, 0.35);
+	color: var(--success-text);
+}
+
+.crud-wrap .card-badge--inativa {
+	background: var(--danger-surface);
+	border-color: var(--danger-border);
+	color: var(--danger-text-soft);
+}
+
+.crud-wrap .card-badge--finalizada {
+	background: var(--surface-2);
+	border-color: var(--line);
+	color: var(--muted-text);
+}
+
+.crud-wrap .card-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.6rem;
+	flex-wrap: wrap;
+}
+
 .crud-wrap .card-muted,
 .crud-wrap .card-dates {
 	color: var(--muted-text);
