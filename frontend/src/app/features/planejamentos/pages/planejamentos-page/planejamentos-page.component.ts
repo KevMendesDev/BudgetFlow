@@ -20,6 +20,7 @@ import { ThemeService } from '../../../../core/services/theme.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
 import { ConfirmDialogService } from '../../../../shared/services/confirm-dialog.service';
+import { currencyTooltipLabel } from '../../../../shared/utils/chart-tooltip.util';
 import { mapApiError } from '../../../../shared/utils/error-message.util';
 import { formatMonthYear, toIsoDate } from '../../../../shared/utils/format.util';
 import { PlanejamentoModalComponent } from '../../components/planejamento-modal/planejamento-modal.component';
@@ -93,6 +94,10 @@ export class PlanejamentosPageComponent implements OnInit {
       cutout: '62%',
       plugins: {
         legend: { position: 'bottom', labels: { color: this.cssVar('--muted-text') } },
+        tooltip: {
+          enabled: true,
+          callbacks: { label: currencyTooltipLabel },
+        },
         datalabels: {
           color: this.cssVar('--text'),
           font: { weight: 600 },

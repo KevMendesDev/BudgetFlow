@@ -13,28 +13,18 @@
     @if (resumoCategorias().length === 0) {
       <p class="muted">Sem despesas no período selecionado.</p>
     } @else {
-      <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        @for (item of resumoCategorias(); track item.nome + item.classificacao) {
-          <article class="categoria-card">
-            <header>
-              <div>
-                <strong>{{ item.nome }}</strong>
-                <small>{{ classificacaoLabels[item.classificacao] }}</small>
-              </div>
-              <span>{{ item.total | currencyBRL }}</span>
-            </header>
-            <div class="categoria-chart">
-              <canvas
-                baseChart
-                [type]="categoriaChartType"
-                [data]="categoriaChartData(item)"
-                [options]="categoriaChartOptions()"
-              ></canvas>
-              <span class="categoria-percent flex items-center justify-center">{{ item.percentualLucro | number: '1.0-0' }}%</span>
-            </div>
-            <small>Percentual do lucro gasto</small>
-          </article>
-        }
+      <div class="chart-block">
+        <div class="chart-head">
+          <h3>Gastos por categoria</h3>
+        </div>
+        <div class="categorias-chart">
+          <canvas
+            baseChart
+            [type]="doughnutChartType"
+            [data]="categoriasChartData()"
+            [options]="categoriasChartOptions()"
+          ></canvas>
+        </div>
       </div>
     }
 

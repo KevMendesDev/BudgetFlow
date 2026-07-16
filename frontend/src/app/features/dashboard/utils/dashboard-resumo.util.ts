@@ -140,21 +140,16 @@ export function buildClassificacaoChartData(
   };
 }
 
-export function buildCategoriaChartData(
-  totalCategoria: number,
-  totalReceitas: number,
-  itemColor: string,
-  trackColor: string
+/** Doughnut único com distribuição dos totais por categoria. */
+export function buildCategoriasDistribuicaoChartData(
+  resumoCategorias: CategoriaResumo[]
 ): ChartData<'doughnut'> {
-  const receitas = Math.max(1, totalReceitas);
-  const restante = Math.max(0, receitas - totalCategoria);
-
   return {
-    labels: ['Gasto', 'Restante'],
+    labels: resumoCategorias.map((item) => item.nome),
     datasets: [
       {
-        data: [totalCategoria, restante],
-        backgroundColor: [itemColor, trackColor],
+        data: resumoCategorias.map((item) => item.total),
+        backgroundColor: resumoCategorias.map((item) => item.color),
         borderWidth: 0,
       },
     ],

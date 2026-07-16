@@ -32,58 +32,9 @@
   cursor: pointer;
 }
 
-.categoria-card {
-  border: 1px solid var(--row-line);
-  border-radius: 0.9rem;
-  padding: 0.75rem;
-  background: var(--surface-1);
-
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.8rem;
-  }
-
-  strong {
-    display: block;
-    font-weight: 600;
-  }
-
-  small {
-    color: var(--muted-text);
-  }
-}
-
-.categoria-bar {
-  margin-top: 0.6rem;
-  height: 0.5rem;
-  border-radius: 999px;
-  background: var(--chart-track);
-  overflow: hidden;
-}
-
-.categoria-bar-fill {
-  height: 100%;
-  border-radius: inherit;
-}
-
-.categoria-chart {
-  margin-top: 0.6rem;
-  height: 70px;
-  position: relative;
-}
-
-.categoria-chart canvas {
-  height: 100% !important;
-}
-
-.categoria-percent {
-  position: absolute;
-  inset: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text);
+.categorias-chart {
+  margin-top: 0.8rem;
+  height: 260px;
 }
 
 .chart-block {

@@ -1,4 +1,5 @@
 import {
+  buildCategoriasDistribuicaoChartData,
   buildDailyChartData,
   buildResumoCategorias,
   buildResumoClassificacao,
@@ -42,6 +43,17 @@ describe('dashboard-resumo.util', () => {
 
     expect(resumoCategorias.map((item) => item.nome)).toEqual(['Moradia', 'Mercado']);
     expect(resumoClassificacao[0]).toMatchObject({ classificacao: 'ESSENCIAL', total: 150 });
+  });
+
+  it('monta doughnut único de distribuição por categoria', () => {
+    const despesas = filterDespesas(transacoes);
+    const receitas = sumValores(transacoes.filter((tx) => tx.tipoMovimentacao === 'RECEITA'));
+    const saldo = receitas - sumValores(despesas);
+    const resumo = buildResumoCategorias(despesas, saldo, receitas, (key) => `color-${key}`);
+    const chart = buildCategoriasDistribuicaoChartData(resumo);
+
+    expect(chart.labels).toEqual(['Moradia', 'Mercado']);
+    expect(chart.datasets[0].data).toEqual([100, 50]);
   });
 
   it('monta dados do gráfico diário', () => {

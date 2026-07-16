@@ -1,22 +1,20 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { Chart, ChartData, ChartOptions } from 'chart.js';
 import { NgChartsModule } from 'ng2-charts';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 import {
   CategoriaResponse,
-  ClassificacaoCategoria,
   CLASSIFICACAO_LABELS,
 } from '../../../../core/models/categoria.models';
 import { PeriodoFinanceiro } from '../../../../core/models/periodo-financeiro.models';
 import { TransacaoResponse } from '../../../../core/models/transacao.models';
-import { CurrencyBRLPipe } from '../../../../shared/pipes/currency-brl.pipe';
-import { formatDate } from '../../../../shared/utils/format.util';
 import { ThemeService } from '../../../../core/services/theme.service';
+import { currencyTooltipLabel } from '../../../../shared/utils/chart-tooltip.util';
+import { formatDate } from '../../../../shared/utils/format.util';
 import {
-  buildCategoriaChartData,
+  buildCategoriasDistribuicaoChartData,
   buildCategoriasLegenda,
   buildClassificacaoChartData,
   buildColorMap,
@@ -31,7 +29,7 @@ import {
 
 @Component({
   selector: 'app-dashboard-resumo-categorias',
-  imports: [CurrencyBRLPipe, DecimalPipe, NgChartsModule],
+  imports: [NgChartsModule],
   templateUrl: './dashboard-resumo-categorias.component.html',
   styleUrl: './dashboard-resumo-categorias.component.scss',
 })
@@ -50,7 +48,6 @@ export class DashboardResumoCategoriasComponent {
   readonly classificacaoLabels = CLASSIFICACAO_LABELS;
   readonly barChartType: 'bar' = 'bar';
   readonly doughnutChartType: 'doughnut' = 'doughnut';
-  readonly categoriaChartType: 'doughnut' = 'doughnut';
 
   readonly despesas = computed(() => filterDespesas(this.transacoes()));
 
@@ -70,7 +67,10 @@ export class DashboardResumoCategoriasComponent {
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { enabled: true },
+        tooltip: {
+          enabled: true,
+          callbacks: { label: currencyTooltipLabel },
+        },
         datalabels: { display: false },
       },
       scales: {
@@ -97,6 +97,10 @@ export class DashboardResumoCategoriasComponent {
       maintainAspectRatio: false,
       plugins: {
         legend: { position: 'bottom', labels: { color: this.cssVar('--muted-text') } },
+        tooltip: {
+          enabled: true,
+          callbacks: { label: currencyTooltipLabel },
+        },
         datalabels: {
           color: this.cssVar('--text'),
           font: { weight: 600 },
@@ -110,18 +114,29 @@ export class DashboardResumoCategoriasComponent {
     };
   });
 
-  readonly categoriaChartOptions = computed<ChartOptions<'doughnut'>>(() => {
+  readonly categoriasChartOptions = computed<ChartOptions<'doughnut'>>(() => {
     this.theme.effectiveTheme();
+    const totalDespesas = Math.max(1, sumValores(this.despesas()));
 
     return {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
-        tooltip: { enabled: false },
-        datalabels: { display: false },
+        legend: { position: 'bottom', labels: { color: this.cssVar('--muted-text') } },
+        tooltip: {
+          enabled: true,
+          callbacks: { label: currencyTooltipLabel },
+        },
+        datalabels: {
+          color: this.cssVar('--text'),
+          font: { weight: 600 },
+          formatter: (value) => {
+            const percent = (Number(value) / totalDespesas) * 100;
+            return percent >= 1 ? `${Math.round(percent)}%` : '';
+          },
+        },
       },
-      cutout: '70%',
+      cutout: '68%',
     };
   });
 
@@ -150,15 +165,15 @@ export class DashboardResumoCategoriasComponent {
     );
   });
 
+  readonly categoriasChartData = computed<ChartData<'doughnut'>>(() => {
+    this.theme.effectiveTheme();
+    return buildCategoriasDistribuicaoChartData(this.resumoCategorias());
+  });
+
   readonly resumoClassificacao = computed<ClassificacaoResumo[]>(() => buildResumoClassificacao(this.despesas()));
 
   toggle(): void {
     this.aberto.update((value) => !value);
-  }
-
-  categoriaChartData(item: CategoriaResumo): ChartData<'doughnut'> {
-    this.theme.effectiveTheme();
-    return buildCategoriaChartData(item.total, this.totalReceitas(), item.color, this.cssVar('--chart-track'));
   }
 
   formatDate = formatDate;
