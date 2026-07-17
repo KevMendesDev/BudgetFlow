@@ -140,7 +140,6 @@ export function buildClassificacaoChartData(
   };
 }
 
-/** Doughnut único com distribuição dos totais por categoria. */
 export function buildCategoriasDistribuicaoChartData(
   resumoCategorias: CategoriaResumo[]
 ): ChartData<'doughnut'> {

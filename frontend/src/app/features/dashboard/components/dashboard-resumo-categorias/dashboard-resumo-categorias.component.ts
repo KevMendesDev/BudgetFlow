@@ -130,13 +130,17 @@ export class DashboardResumoCategoriasComponent {
         datalabels: {
           color: this.cssVar('--text'),
           font: { weight: 600 },
+          display: (context) => {
+            const value = Number(context.dataset.data[context.dataIndex] ?? 0);
+            return (value / totalDespesas) * 100 >= 5;
+          },
           formatter: (value) => {
             const percent = (Number(value) / totalDespesas) * 100;
-            return percent >= 1 ? `${Math.round(percent)}%` : '';
+            return `${Math.round(percent)}%`;
           },
         },
       },
-      cutout: '68%',
+      cutout: '48%',
     };
   });
 

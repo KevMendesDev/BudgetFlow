@@ -31,14 +31,6 @@
     <div class="chart-block">
       <div class="chart-head">
         <h3>Gastos por dia</h3>
-        <div class="legend">
-          @for (item of categoriasLegenda(); track item.nome) {
-            <span class="legend-item">
-              <i [style.background]="item.color"></i>
-              {{ item.nome }}
-            </span>
-          }
-        </div>
       </div>
       <div class="daily-chart">
         <canvas
@@ -47,6 +39,14 @@
           [data]="dailyChartData()"
           [options]="dailyChartOptions()"
         ></canvas>
+      </div>
+      <div class="legend">
+        @for (item of categoriasLegenda(); track item.nome) {
+          <span class="legend-item">
+            <i [style.background]="item.color"></i>
+            {{ item.nome }}
+          </span>
+        }
       </div>
     </div>
 
