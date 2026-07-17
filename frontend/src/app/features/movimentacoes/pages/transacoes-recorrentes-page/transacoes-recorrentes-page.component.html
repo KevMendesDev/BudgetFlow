@@ -97,12 +97,12 @@
             <thead>
               <tr>
                 <th>Descrição</th>
-                <th>Status</th>
                 <th>Categoria</th>
                 <th>Valor</th>
                 <th>Frequência</th>
                 <th>Início</th>
                 <th>Fim</th>
+                <th>Status</th>
                 <th class="actions-col">Ações</th>
               </tr>
             </thead>
@@ -110,14 +110,14 @@
               @for (item of recorrencias(); track item.id) {
                 <tr>
                   <td>{{ item.descricao }}</td>
-                  <td>
-                    <span [class]="statusBadgeClass(item.status)">{{ statusLabel(item.status) }}</span>
-                  </td>
                   <td>{{ item.categoriaNome }}</td>
                   <td>{{ item.valorParcela == null ? '-' : (item.valorParcela | currencyBRL) }}</td>
                   <td>{{ frequenciaLabel(item.frequencia) }}</td>
                   <td>{{ item.dataInicio | dateBR }}</td>
                   <td>{{ item.dataFim | dateBR }}</td>
+                  <td>
+                    <span [class]="statusBadgeClass(item.status)">{{ statusLabel(item.status) }}</span>
+                  </td>
                   <td class="actions-col">
                     <button
                       type="button"
@@ -150,7 +150,6 @@
               <div class="card-main">
                 <div class="card-title-row">
                   <strong>{{ item.descricao }}</strong>
-                  <span [class]="statusBadgeClass(item.status)">{{ statusLabel(item.status) }}</span>
                 </div>
                 <small class="card-muted">{{ item.categoriaNome }} • {{ frequenciaLabel(item.frequencia) }}</small>
                 <div class="card-row">
@@ -163,6 +162,7 @@
                   </span>
                   <span class="card-dates">{{ item.dataInicio | dateBR }}{{ item.dataFim ? ' → ' + (item.dataFim | dateBR) : '' }}</span>
                 </div>
+                <span [class]="statusBadgeClass(item.status)">{{ statusLabel(item.status) }}</span>
               </div>
               <div class="card-actions">
                 <button

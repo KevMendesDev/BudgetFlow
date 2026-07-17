@@ -19,7 +19,8 @@ import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.categorias.repository.CategoriaRepository;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
-import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
+import br.com.budgetflow.features.movimentacoes.service.FinalizacaoRecorrenciaService;
+import br.com.budgetflow.features.movimentacoes.service.TransacaoRecorrenteService;
 import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.periodos.service.PeriodoFinanceiroService;
@@ -37,7 +38,8 @@ import br.com.budgetflow.security.SecurityUtils;
 public class PlanejamentoService {
 
     private final PlanejamentoRepository planejamentoRepository;
-    private final TransacaoRecorrenteRepository recorrenteRepository;
+    private final TransacaoRecorrenteService transacaoRecorrenteService;
+    private final FinalizacaoRecorrenciaService finalizacaoRecorrenciaService;
     private final CategoriaRepository categoriaRepository;
     private final PeriodoFinanceiroService periodoFinanceiroService;
     private final UserService userService;
@@ -45,14 +47,16 @@ public class PlanejamentoService {
 
     public PlanejamentoService(
             PlanejamentoRepository planejamentoRepository,
-            TransacaoRecorrenteRepository recorrenteRepository,
+            TransacaoRecorrenteService transacaoRecorrenteService,
+            FinalizacaoRecorrenciaService finalizacaoRecorrenciaService,
             CategoriaRepository categoriaRepository,
             PeriodoFinanceiroService periodoFinanceiroService,
             UserService userService,
             PlanejamentoMapper planejamentoMapper
     ) {
         this.planejamentoRepository = planejamentoRepository;
-        this.recorrenteRepository = recorrenteRepository;
+        this.transacaoRecorrenteService = transacaoRecorrenteService;
+        this.finalizacaoRecorrenciaService = finalizacaoRecorrenciaService;
         this.categoriaRepository = categoriaRepository;
         this.periodoFinanceiroService = periodoFinanceiroService;
         this.userService = userService;
@@ -116,14 +120,17 @@ public class PlanejamentoService {
     public SincronizacaoPlanejamentosResponseDTO sincronizarRecorrentes(Long periodoId) {
         Long userId = SecurityUtils.currentUserId();
         PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
-        finalizarExpiradas(userId);
+        finalizacaoRecorrenciaService.finalizarExpiradas(userId);
         List<Planejamento> novos = new ArrayList<>();
         Set<String> chavesSincronizadas = new HashSet<>(
                 planejamentoRepository.findChavesSincronizacaoByPeriodoIdAndUserId(periodo.getId(), userId)
         );
         int semValor = 0;
 
-        for (TransacaoRecorrente recorrente : recorrenteRepository.findAllByUserIdAndStatus(userId, StatusRecorrencia.ATIVA)) {
+        for (TransacaoRecorrente recorrente : transacaoRecorrenteService.findAllByUserIdAndStatus(
+                userId,
+                StatusRecorrencia.ATIVA
+        )) {
             if (recorrente.getValor() == null) {
                 semValor++;
                 continue;
@@ -210,20 +217,6 @@ public class PlanejamentoService {
             return HexFormat.of().formatHex(digest.digest(source.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("SHA-256 indisponível", ex);
-        }
-    }
-
-    private void finalizarExpiradas(Long userId) {
-        List<TransacaoRecorrente> expiradas = recorrenteRepository.findExpiradasNaoFinalizadas(
-                userId,
-                LocalDate.now(),
-                StatusRecorrencia.FINALIZADA
-        );
-        for (TransacaoRecorrente recorrente : expiradas) {
-            recorrente.setStatus(StatusRecorrencia.FINALIZADA);
-        }
-        if (!expiradas.isEmpty()) {
-            recorrenteRepository.saveAll(expiradas);
         }
     }
 }

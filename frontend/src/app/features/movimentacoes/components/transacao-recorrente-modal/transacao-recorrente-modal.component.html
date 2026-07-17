@@ -108,6 +108,14 @@
       </label>
 
       <label class="bf-label md:col-span-6">
+        Total de parcelas (opcional)
+        <input class="bf-input" type="number" min="1" step="1" formControlName="totalParcelas" placeholder="Ex: 12" />
+        @if (fieldError(form.controls.totalParcelas, 'Total de parcelas')) {
+          <small class="bf-error">{{ fieldError(form.controls.totalParcelas, 'Total de parcelas') }}</small>
+        }
+      </label>
+
+      <label class="bf-label md:col-span-6">
         Status
         <select class="bf-input" formControlName="status">
           @for (item of statusEditaveis; track item.value) {
@@ -116,14 +124,6 @@
         </select>
         @if (fieldError(form.controls.status, 'Status')) {
           <small class="bf-error">{{ fieldError(form.controls.status, 'Status') }}</small>
-        }
-      </label>
-
-      <label class="bf-label md:col-span-6">
-        Total de parcelas (opcional)
-        <input class="bf-input" type="number" min="1" step="1" formControlName="totalParcelas" placeholder="Ex: 12" />
-        @if (fieldError(form.controls.totalParcelas, 'Total de parcelas')) {
-          <small class="bf-error">{{ fieldError(form.controls.totalParcelas, 'Total de parcelas') }}</small>
         }
       </label>
 

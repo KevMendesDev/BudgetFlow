@@ -107,7 +107,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
 
   startEdit(item: TransacaoRecorrenteResponse): void {
     if (item.status === 'FINALIZADA') {
-      this.toast.show('Recorrência finalizada não pode ser alterada.', 'error');
+      this.toast.show('A recorrência está finalizada então ela não pode ser alterada.', 'error');
       return;
     }
     this.editingRecorrencia.set(item);

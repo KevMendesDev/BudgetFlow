@@ -42,7 +42,6 @@ public final class TransacaoRecorrenteSpecification {
             if (!isCountQuery(query)) {
                 root.fetch("categoria", JoinType.LEFT);
                 root.fetch("user", JoinType.LEFT);
-                query.distinct(true);
             }
             return null;
         };
@@ -99,14 +98,14 @@ public final class TransacaoRecorrenteSpecification {
                 return null;
             }
             String normalized = "%" + nomeCategoria.trim().toLowerCase() + "%";
-            return cb.like(cb.lower(root.join("categoria", JoinType.INNER).get("nome")), normalized);
+            return cb.like(cb.lower(root.get("categoria").get("nome")), normalized);
         };
     }
 
     private static Specification<TransacaoRecorrente> hasClassificacaoCategoria(ClassificacaoCategoria classificacao) {
         return (root, query, cb) -> classificacao == null
                 ? null
-                : cb.equal(root.join("categoria", JoinType.INNER).get("classificacao"), classificacao);
+                : cb.equal(root.get("categoria").get("classificacao"), classificacao);
     }
 
     private static Specification<TransacaoRecorrente> hasTipoMovimentacao(NaturezaFinanceira tipoMovimentacao) {
@@ -135,7 +134,7 @@ public final class TransacaoRecorrenteSpecification {
             String normalized = "%" + searchTerm.trim().toLowerCase() + "%";
             return cb.or(
                     cb.like(cb.lower(root.get("descricao")), normalized),
-                    cb.like(cb.lower(root.join("categoria", JoinType.INNER).get("nome")), normalized)
+                    cb.like(cb.lower(root.get("categoria").get("nome")), normalized)
             );
         };
     }

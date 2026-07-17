@@ -23,18 +23,21 @@ public class GeracaoTransacoesDoPeriodoService {
 
     private final TransacaoRecorrenteRepository recorrenteRepository;
     private final TransacaoRepository transacaoRepository;
+    private final FinalizacaoRecorrenciaService finalizacaoRecorrenciaService;
 
     public GeracaoTransacoesDoPeriodoService(
             TransacaoRecorrenteRepository recorrenteRepository,
-            TransacaoRepository transacaoRepository) {
+            TransacaoRepository transacaoRepository,
+            FinalizacaoRecorrenciaService finalizacaoRecorrenciaService) {
         this.recorrenteRepository = recorrenteRepository;
         this.transacaoRepository = transacaoRepository;
+        this.finalizacaoRecorrenciaService = finalizacaoRecorrenciaService;
     }
 
     @Transactional
     public SincronizacaoRecorrentesResponseDTO gerarParaPeriodo(PeriodoFinanceiro periodo) {
         Long userId = periodo.getUser().getId();
-        finalizarExpiradas(userId);
+        finalizacaoRecorrenciaService.finalizarExpiradas(userId);
         List<TransacaoRecorrenteUsageProjection> recorrentes = recorrenteRepository.findUsageByUserIdAndStatus(
                 userId,
                 StatusRecorrencia.ATIVA
@@ -128,19 +131,5 @@ public class GeracaoTransacoesDoPeriodoService {
     }
 
     private record ResultadoCalculo(List<LocalDate> datas, boolean pendenteEmPeriodoAnterior) {
-    }
-
-    private void finalizarExpiradas(Long userId) {
-        List<TransacaoRecorrente> expiradas = recorrenteRepository.findExpiradasNaoFinalizadas(
-                userId,
-                LocalDate.now(),
-                StatusRecorrencia.FINALIZADA
-        );
-        for (TransacaoRecorrente recorrente : expiradas) {
-            recorrente.setStatus(StatusRecorrencia.FINALIZADA);
-        }
-        if (!expiradas.isEmpty()) {
-            recorrenteRepository.saveAll(expiradas);
-        }
     }
 }

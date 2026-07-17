@@ -33,7 +33,8 @@ import br.com.budgetflow.common.enums.NaturezaFinanceira;
 import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.features.categorias.repository.CategoriaRepository;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
-import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
+import br.com.budgetflow.features.movimentacoes.service.FinalizacaoRecorrenciaService;
+import br.com.budgetflow.features.movimentacoes.service.TransacaoRecorrenteService;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.periodos.service.PeriodoFinanceiroService;
 import br.com.budgetflow.features.planejamentos.domain.Planejamento;
@@ -49,7 +50,9 @@ class PlanejamentoServiceTest {
     @Mock
     private PlanejamentoRepository planejamentoRepository;
     @Mock
-    private TransacaoRecorrenteRepository recorrenteRepository;
+    private TransacaoRecorrenteService transacaoRecorrenteService;
+    @Mock
+    private FinalizacaoRecorrenciaService finalizacaoRecorrenciaService;
     @Mock
     private CategoriaRepository categoriaRepository;
     @Mock
@@ -68,7 +71,8 @@ class PlanejamentoServiceTest {
         );
         service = new PlanejamentoService(
                 planejamentoRepository,
-                recorrenteRepository,
+                transacaoRecorrenteService,
+                finalizacaoRecorrenciaService,
                 categoriaRepository,
                 periodoFinanceiroService,
                 userService,
@@ -93,8 +97,8 @@ class PlanejamentoServiceTest {
 
         TransacaoRecorrente mensal = recorrente(20L, user, LocalDate.of(2026, 5, 10), BigDecimal.TEN);
         TransacaoRecorrente semValor = recorrente(21L, user, LocalDate.of(2026, 6, 15), null);
-        when(recorrenteRepository.findAllByUserIdAndStatus(1L, StatusRecorrencia.ATIVA)).thenReturn(List.of(mensal, semValor));
-        when(recorrenteRepository.findExpiradasNaoFinalizadas(any(), any(), any())).thenReturn(List.of());
+        when(transacaoRecorrenteService.findAllByUserIdAndStatus(1L, StatusRecorrencia.ATIVA))
+                .thenReturn(List.of(mensal, semValor));
 
         Set<String> chavesPersistidas = new HashSet<>();
         when(planejamentoRepository.findChavesSincronizacaoByPeriodoIdAndUserId(10L, 1L))
@@ -116,6 +120,7 @@ class PlanejamentoServiceTest {
         verify(planejamentoRepository, times(2)).saveAll(captor.capture());
         verify(planejamentoRepository, times(2))
                 .findChavesSincronizacaoByPeriodoIdAndUserId(10L, 1L);
+        verify(finalizacaoRecorrenciaService, times(2)).finalizarExpiradas(1L);
         Planejamento gerado = captor.getAllValues().getFirst().iterator().next();
         assertTrue(gerado.isSincronizado());
     }

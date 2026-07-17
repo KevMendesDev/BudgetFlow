@@ -37,6 +37,7 @@ import br.com.budgetflow.security.SecurityUtils;
 public class TransacaoRecorrenteService {
 
     private final TransacaoRecorrenteRepository transacaoRecorrenteRepository;
+    private final FinalizacaoRecorrenciaService finalizacaoRecorrenciaService;
     private final UserService userService;
     private final TransacaoRecorrenteMapper transacaoRecorrenteMapper;
     private final CategoriaService categoriaService;
@@ -45,6 +46,7 @@ public class TransacaoRecorrenteService {
 
     public TransacaoRecorrenteService(
             TransacaoRecorrenteRepository transacaoRecorrenteRepository,
+            FinalizacaoRecorrenciaService finalizacaoRecorrenciaService,
             UserService userService,
             TransacaoRecorrenteMapper transacaoRecorrenteMapper,
             CategoriaService categoriaService,
@@ -52,6 +54,7 @@ public class TransacaoRecorrenteService {
             PeriodoFinanceiroService periodoFinanceiroService
     ) {
         this.transacaoRecorrenteRepository = transacaoRecorrenteRepository;
+        this.finalizacaoRecorrenciaService = finalizacaoRecorrenciaService;
         this.userService = userService;
         this.transacaoRecorrenteMapper = transacaoRecorrenteMapper;
         this.categoriaService = categoriaService;
@@ -92,13 +95,13 @@ public class TransacaoRecorrenteService {
         DateRangeUtils.validateRange(criteria.getDataInicio(), criteria.getDataFim());
 
         Long userId = SecurityUtils.currentUserId();
-        finalizarExpiradas(userId);
+        finalizacaoRecorrenciaService.finalizarExpiradas(userId);
 
         Specification<TransacaoRecorrente> specification = TransacaoRecorrenteSpecification
                 .createSpecification(criteria, userId);
 
-        Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
-        Page<TransacaoRecorrente> transacoesPage = transacaoRecorrenteRepository.findAll(specification, unsorted);
+        Pageable recorrencias = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        Page<TransacaoRecorrente> transacoesPage = transacaoRecorrenteRepository.findAll(specification, recorrencias);
         List<Long> transacaoRecorrenteIds = transacoesPage.getContent().stream()
                 .map(TransacaoRecorrente::getId)
                 .toList();
@@ -122,7 +125,6 @@ public class TransacaoRecorrenteService {
     @Transactional
     public TransacaoRecorrenteResponseDTO findById(Long id) {
         Long userId = SecurityUtils.currentUserId();
-        finalizarExpiradas(userId);
         TransacaoRecorrente transacaoRecorrente = findByIdAndUserId(id, userId);
         boolean possuiRelacionamentos = relacionamentoChecker.transacaoRecorrenteHasRelationships(id, userId);
         return transacaoRecorrenteMapper.toResponseDTO(transacaoRecorrente, possuiRelacionamentos);
@@ -132,7 +134,7 @@ public class TransacaoRecorrenteService {
     public List<TransacaoRecorrenteResponseDTO> findDisponiveisParaLancamento(Long periodoId, LocalDate data) {
         Long userId = SecurityUtils.currentUserId();
         periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
-        finalizarExpiradas(userId);
+        finalizacaoRecorrenciaService.finalizarExpiradas(userId);
 
         return transacaoRecorrenteRepository.findUsageByUserIdAndStatus(userId, StatusRecorrencia.ATIVA).stream()
                 .filter(usage -> podeSerLancada(usage, data))
@@ -146,7 +148,6 @@ public class TransacaoRecorrenteService {
     @Transactional
     public TransacaoRecorrenteResponseDTO update(Long id, TransacaoRecorrenteRequestDTO requestDTO) {
         Long userId = SecurityUtils.currentUserId();
-        finalizarExpiradas(userId);
         TransacaoRecorrente transacaoRecorrente = findByIdAndUserId(id, userId);
 
         if (transacaoRecorrente.getStatus() == StatusRecorrencia.FINALIZADA) {
@@ -191,19 +192,9 @@ public class TransacaoRecorrenteService {
         return findByIdAndUserId(id, userId);
     }
 
-    @Transactional
-    public void finalizarExpiradas(Long userId) {
-        List<TransacaoRecorrente> expiradas = transacaoRecorrenteRepository.findExpiradasNaoFinalizadas(
-                userId,
-                LocalDate.now(),
-                StatusRecorrencia.FINALIZADA
-        );
-        for (TransacaoRecorrente recorrente : expiradas) {
-            recorrente.setStatus(StatusRecorrencia.FINALIZADA);
-        }
-        if (!expiradas.isEmpty()) {
-            transacaoRecorrenteRepository.saveAll(expiradas);
-        }
+    @Transactional(readOnly = true)
+    public List<TransacaoRecorrente> findAllByUserIdAndStatus(Long userId, StatusRecorrencia status) {
+        return transacaoRecorrenteRepository.findAllByUserIdAndStatus(userId, status);
     }
 
     private LocalDate resolveDataFim(TransacaoRecorrenteRequestDTO requestDTO) {
