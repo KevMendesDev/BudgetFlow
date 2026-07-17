@@ -21,7 +21,7 @@
                 (change)="onPeriodoChange($any($event.target).value)"
               >
                 @for (periodo of periodos(); track periodo.id) {
-                  <option [value]="periodo.id">{{ formatPeriodo(periodo) }}</option>
+                  <option [value]="periodo.id" [selected]="periodo.id === selectedPeriodoId()">{{ formatPeriodo(periodo) }}</option>
                 }
               </select>
             </label>
@@ -130,14 +130,14 @@
                 <span>Esconder filtros</span>
               }
             </button>
-            <button
+            <!-- <button
               type="button"
               class="btn-danger"
               (click)="deleteAll()"
               [disabled]="!selectedPeriodo() || deletingAll() || planejamentos().length === 0"
             >
               {{ deletingAll() ? 'Excluindo...' : 'Excluir todos' }}
-            </button>
+            </button> -->
             <button type="button" class="btn-create" (click)="openCreateModal()" [disabled]="!selectedPeriodo()">
               Cadastrar planejamento
             </button>
@@ -197,7 +197,7 @@
           @if (listaPlanejamentos().length === 0 && selectedPeriodo()) {
             <p class="muted">Nenhum planejamento encontrado com os filtros atuais.</p>
           } @else {
-            <div class="list-header">
+            <div class="list-header flex justify-between items-center">
               <div>
                 <h2>Lista de planejamentos financeiros</h2>
                 @if (totalElements() > 0) {
@@ -207,6 +207,16 @@
                     <small class="muted">{{ totalElements() }} planejamentos</small>
                   }
                 }
+              </div>
+              <div>
+                <button
+                type="button"
+                class="btn-danger"
+                (click)="deleteAll()"
+                [disabled]="!selectedPeriodo() || deletingAll() || planejamentos().length === 0"
+              >
+                {{ deletingAll() ? 'Excluindo...' : 'Excluir todos' }}
+              </button>
               </div>
             </div>
             <ul class="mt-4 grid gap-2">

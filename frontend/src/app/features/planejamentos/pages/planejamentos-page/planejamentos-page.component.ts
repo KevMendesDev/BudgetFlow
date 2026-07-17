@@ -473,8 +473,18 @@ export class PlanejamentosPageComponent implements OnInit {
   }
 
   private findPeriodoAtual(periodos: PeriodoFinanceiro[]): PeriodoFinanceiro | null {
-    const hoje = toIsoDate(new Date());
-    return periodos.find((item) => hoje >= item.dataInicio && hoje <= item.dataFim) ?? null;
+    const now = new Date();
+    const mes = now.getMonth() + 1;
+    const ano = now.getFullYear();
+    const porMesAno = periodos.find((item) => item.mes === mes && item.ano === ano);
+    if (porMesAno) {
+      return porMesAno;
+    }
+
+    const nowIso = toIsoDate(now);
+    return (
+      periodos.find((item) => nowIso >= item.dataInicio && nowIso <= item.dataFim) ?? null
+    );
   }
 
   private cssVar(name: string): string {

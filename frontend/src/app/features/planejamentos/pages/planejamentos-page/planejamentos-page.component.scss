@@ -190,8 +190,6 @@ span.receita, span.despesa { font-weight: 600; }
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
 .btn-icon {
@@ -220,6 +218,7 @@ span.receita, span.despesa { font-weight: 600; }
 
 .filters-panel {
   margin-top: 1rem;
+  padding: 1rem;
 }
 
 .datalist-field {
@@ -281,23 +280,29 @@ span.receita, span.despesa { font-weight: 600; }
   .resumo-head,
   .chart-head {
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
   }
 
-  .topbar-actions,
+  .topbar-actions {
+    width: 100%;
+  }
+
   .periodo-field,
-  .periodo-selector,
+  .periodo-selector {
+    width: 100%;
+  }
+
   .btn-sync-dashboard {
     width: 100%;
   }
 
-  .periodo-selector {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .head-actions {
     width: 100%;
+    justify-content: space-between;
+  }
+
+  .btn-icon {
+    justify-content: center;
   }
 
   .charts-grid {
@@ -318,10 +323,13 @@ span.receita, span.despesa { font-weight: 600; }
   }
 }
 
-/* Mobile: empilha ações; tablet/desktop mantém row */
 @media (max-width: 640px) {
   .topbar-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .periodo-add {
+    width: 100%;
   }
 }
