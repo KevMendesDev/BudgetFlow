@@ -10,15 +10,17 @@
     }
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-12" novalidate>
-      <label class="bf-label md:col-span-12">
-        Transação recorrente (opcional)
-        <select class="bf-input" formControlName="transacaoRecorrenteId" (change)="onRecorrenteChange($any($event.target).value)">
-          <option value="">Manual</option>
-          @for (recorrente of recorrentes(); track recorrente.id) {
-            <option [value]="recorrente.id">{{ recorrenteLabel(recorrente) }}</option>
-          }
-        </select>
-      </label>
+      @if (!editingId()) {
+        <label class="bf-label md:col-span-12">
+          Transação recorrente (opcional)
+          <select class="bf-input" formControlName="transacaoRecorrenteId" (change)="onRecorrenteChange($any($event.target).value)">
+            <option value="">Manual</option>
+            @for (recorrente of recorrentesDisponiveis(); track recorrente.id) {
+              <option [value]="recorrente.id">{{ recorrenteLabel(recorrente) }}</option>
+            }
+          </select>
+        </label>
+      }
 
       <label class="bf-label md:col-span-6">
         Tipo de movimentação

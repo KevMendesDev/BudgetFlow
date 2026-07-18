@@ -1,35 +1,26 @@
 package br.com.budgetflow.features.planejamentos.service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.HexFormat;
-import java.util.List;
-import java.util.Set;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.categorias.repository.CategoriaRepository;
-import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.service.FinalizacaoRecorrenciaService;
-import br.com.budgetflow.features.movimentacoes.service.TransacaoRecorrenteService;
-import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.periodos.service.PeriodoFinanceiroService;
+import br.com.budgetflow.features.planejamentos.criteria.PlanejamentoFilterCriteria;
 import br.com.budgetflow.features.planejamentos.domain.Planejamento;
 import br.com.budgetflow.features.planejamentos.dto.PlanejamentoRequestDTO;
 import br.com.budgetflow.features.planejamentos.dto.PlanejamentoResponseDTO;
 import br.com.budgetflow.features.planejamentos.dto.SincronizacaoPlanejamentosResponseDTO;
 import br.com.budgetflow.features.planejamentos.mapper.PlanejamentoMapper;
 import br.com.budgetflow.features.planejamentos.repository.PlanejamentoRepository;
+import br.com.budgetflow.features.planejamentos.repository.specification.PlanejamentoSpecification;
 import br.com.budgetflow.features.users.domain.User;
 import br.com.budgetflow.features.users.service.UserService;
 import br.com.budgetflow.security.SecurityUtils;
@@ -38,40 +29,44 @@ import br.com.budgetflow.security.SecurityUtils;
 public class PlanejamentoService {
 
     private final PlanejamentoRepository planejamentoRepository;
-    private final TransacaoRecorrenteService transacaoRecorrenteService;
     private final FinalizacaoRecorrenciaService finalizacaoRecorrenciaService;
     private final CategoriaRepository categoriaRepository;
     private final PeriodoFinanceiroService periodoFinanceiroService;
     private final UserService userService;
     private final PlanejamentoMapper planejamentoMapper;
+    private final PlanejamentoRecorrenteVinculoService recorrenteVinculoService;
+    private final GeracaoPlanejamentosRecorrentesService geracaoPlanejamentosRecorrentesService;
 
     public PlanejamentoService(
             PlanejamentoRepository planejamentoRepository,
-            TransacaoRecorrenteService transacaoRecorrenteService,
             FinalizacaoRecorrenciaService finalizacaoRecorrenciaService,
             CategoriaRepository categoriaRepository,
             PeriodoFinanceiroService periodoFinanceiroService,
             UserService userService,
-            PlanejamentoMapper planejamentoMapper
+            PlanejamentoMapper planejamentoMapper,
+            PlanejamentoRecorrenteVinculoService recorrenteVinculoService,
+            GeracaoPlanejamentosRecorrentesService geracaoPlanejamentosRecorrentesService
     ) {
         this.planejamentoRepository = planejamentoRepository;
-        this.transacaoRecorrenteService = transacaoRecorrenteService;
         this.finalizacaoRecorrenciaService = finalizacaoRecorrenciaService;
         this.categoriaRepository = categoriaRepository;
         this.periodoFinanceiroService = periodoFinanceiroService;
         this.userService = userService;
         this.planejamentoMapper = planejamentoMapper;
+        this.recorrenteVinculoService = recorrenteVinculoService;
+        this.geracaoPlanejamentosRecorrentesService = geracaoPlanejamentosRecorrentesService;
     }
 
     @Transactional(readOnly = true)
-    public List<PlanejamentoResponseDTO> findAll(Long periodoId) {
+    public Page<PlanejamentoResponseDTO> findAll(PlanejamentoFilterCriteria criteria, Pageable pageable) {
         Long userId = SecurityUtils.currentUserId();
-        PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
-        return planejamentoRepository
-                .findAllByPeriodoIdAndUserIdAndExcluidoFalseOrderByCreatedAtDescIdDesc(periodo.getId(), userId)
-                .stream()
-                .map(planejamentoMapper::toResponseDTO)
-                .toList();
+        PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(criteria.getPeriodoId(), userId);
+
+        PlanejamentoFilterCriteria planejamentos = criteria;
+        planejamentos.setPeriodoId(periodo.getId());
+
+        Specification<Planejamento> specification = PlanejamentoSpecification.createSpecification(planejamentos, userId);
+        return planejamentoRepository.findAll(specification, pageable).map(planejamentoMapper::toResponseDTO);
     }
 
     @Transactional
@@ -85,6 +80,15 @@ public class PlanejamentoService {
         planejamento.setUser(user);
         planejamento.setPeriodo(periodo);
         fillEditableFields(planejamento, request, categoria);
+
+        if (request.transacaoRecorrenteId() != null) {
+            String chaveSincronizacao = recorrenteVinculoService.resolverChaveSincronizacao(
+                    request.transacaoRecorrenteId(),
+                    periodo,
+                    userId
+            );
+            planejamento.setChaveSincronizacao(chaveSincronizacao);
+        }
 
         return planejamentoMapper.toResponseDTO(planejamentoRepository.save(planejamento));
     }
@@ -117,71 +121,18 @@ public class PlanejamentoService {
     }
 
     @Transactional
+    public void deleteAllByPeriodo(Long periodoId) {
+        Long userId = SecurityUtils.currentUserId();
+        PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
+        planejamentoRepository.deleteAllByPeriodoIdAndUserId(periodo.getId(), userId);
+    }
+
+    @Transactional
     public SincronizacaoPlanejamentosResponseDTO sincronizarRecorrentes(Long periodoId) {
         Long userId = SecurityUtils.currentUserId();
         PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
         finalizacaoRecorrenciaService.finalizarExpiradas(userId);
-        List<Planejamento> novos = new ArrayList<>();
-        Set<String> chavesSincronizadas = new HashSet<>(
-                planejamentoRepository.findChavesSincronizacaoByPeriodoIdAndUserId(periodo.getId(), userId)
-        );
-        int semValor = 0;
-
-        for (TransacaoRecorrente recorrente : transacaoRecorrenteService.findAllByUserIdAndStatus(
-                userId,
-                StatusRecorrencia.ATIVA
-        )) {
-            if (recorrente.getValor() == null) {
-                semValor++;
-                continue;
-            }
-            gerarOcorrenciasDoPeriodo(recorrente, periodo, userId, chavesSincronizadas, novos);
-        }
-
-        planejamentoRepository.saveAll(novos);
-        String mensagem = "Sincronização concluída: " + novos.size()
-                + " planejamentos gerados e " + semValor + " recorrências sem valor.";
-        return new SincronizacaoPlanejamentosResponseDTO(novos.size(), semValor, mensagem);
-    }
-
-    private void gerarOcorrenciasDoPeriodo(
-            TransacaoRecorrente recorrente,
-            PeriodoFinanceiro periodo,
-            Long userId,
-            Set<String> chavesSincronizadas,
-            List<Planejamento> novos
-    ) {
-        long indice = 0;
-        while (recorrente.getTotalParcelas() == null || indice < recorrente.getTotalParcelas()) {
-            LocalDate data = RecorrenciaUtils.calcularDataOcorrencia(
-                    recorrente.getDataInicio(),
-                    recorrente.getFrequencia(),
-                    indice
-            );
-
-            if (recorrente.getDataFim() != null && data.isAfter(recorrente.getDataFim())) {
-                break;
-            }
-            if (data.isAfter(periodo.getDataFim())) {
-                break;
-            }
-
-            if (!data.isBefore(periodo.getDataInicio())) {
-                String chave = buildSyncKey(userId, recorrente.getId(), data);
-                if (chavesSincronizadas.add(chave)) {
-                    Planejamento planejamento = new Planejamento();
-                    planejamento.setUser(recorrente.getUser());
-                    planejamento.setPeriodo(periodo);
-                    planejamento.setCategoria(recorrente.getCategoria());
-                    planejamento.setDescricao(recorrente.getDescricao());
-                    planejamento.setValor(recorrente.getValor());
-                    planejamento.setTipoMovimentacao(recorrente.getTipoMovimentacao());
-                    planejamento.setChaveSincronizacao(chave);
-                    novos.add(planejamento);
-                }
-            }
-            indice++;
-        }
+        return geracaoPlanejamentosRecorrentesService.sincronizar(periodo, userId);
     }
 
     private Categoria resolveCategoria(PlanejamentoRequestDTO request, Long userId) {
@@ -208,15 +159,5 @@ public class PlanejamentoService {
     private Planejamento findEntity(Long id, Long userId) {
         return planejamentoRepository.findByIdAndUserIdAndExcluidoFalse(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Planejamento não encontrado"));
-    }
-
-    private String buildSyncKey(Long userId, Long recorrenteId, LocalDate data) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            String source = userId + ":" + recorrenteId + ":" + data;
-            return HexFormat.of().formatHex(digest.digest(source.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException("SHA-256 indisponível", ex);
-        }
     }
 }
