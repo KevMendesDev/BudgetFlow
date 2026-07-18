@@ -2,6 +2,7 @@ package br.com.budgetflow.features.movimentacoes.dto;
 
 import br.com.budgetflow.common.enums.Frequencia;
 import br.com.budgetflow.common.enums.NaturezaFinanceira;
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.common.enums.TipoPagamento;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -38,6 +39,8 @@ public record TransacaoRecorrenteRequestDTO(
         LocalDate dataFim,
 
         @Positive(message = "O total de parcelas deve ser maior que zero")
-        Integer totalParcelas
+        Integer totalParcelas,
+
+        StatusRecorrencia status
 ) {
 }

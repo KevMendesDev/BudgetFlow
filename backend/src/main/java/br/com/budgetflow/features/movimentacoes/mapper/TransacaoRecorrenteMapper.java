@@ -43,7 +43,7 @@ public abstract class TransacaoRecorrenteMapper {
                 transacaoBase.classificacaoCategoria(), transacaoBase.descricao(), transacaoBase.valorParcela(), transacaoBase.valorTotal(),
                 transacaoBase.tipoMovimentacao(), transacaoBase.tipoPagamento(), transacaoBase.frequencia(),
                 transacaoBase.dataInicio(), transacaoBase.dataFim(), transacaoBase.totalParcelas(),
-                transacaoBase.createdAt(), transacaoBase.updatedAt(), possuiRelacionamentos
+                transacaoBase.status(), transacaoBase.createdAt(), transacaoBase.updatedAt(), possuiRelacionamentos
         );
     }
 }

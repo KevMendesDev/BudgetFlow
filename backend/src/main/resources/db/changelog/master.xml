@@ -11,4 +11,5 @@
     <include file="classpath:db/changelog/0004-periodos-transacoes-recorrencias.xml"/>
     <include file="classpath:db/changelog/0005-add-login-email-google.xml"/>
     <include file="classpath:db/changelog/0006-email-verification-password-reset.xml"/>
+    <include file="classpath:db/changelog/0007-status-recorrencias.xml"/>
 </databaseChangeLog>

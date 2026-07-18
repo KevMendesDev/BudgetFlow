@@ -24,6 +24,8 @@ public record PlanejamentoRequestDTO(
         BigDecimal valor,
 
         @NotNull(message = "O tipo da movimentação é obrigatório")
-        NaturezaFinanceira tipoMovimentacao
+        NaturezaFinanceira tipoMovimentacao,
+
+        Long transacaoRecorrenteId
 ) {
 }

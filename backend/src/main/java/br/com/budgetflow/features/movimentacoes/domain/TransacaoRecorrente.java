@@ -1,6 +1,7 @@
 package br.com.budgetflow.features.movimentacoes.domain;
 
 import br.com.budgetflow.common.enums.Frequencia;
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -39,6 +40,10 @@ public class TransacaoRecorrente extends Movimentacao {
 
     @Column(name = "total_parcelas")
     private Integer totalParcelas;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private StatusRecorrencia status = StatusRecorrencia.ATIVA;
 
     @Override
     public int hashCode() {

@@ -6,6 +6,7 @@ import { NgChartsModule } from 'ng2-charts';
 import { PlanejamentoResponse } from '../../../../core/models/planejamento.models';
 import { TransacaoResponse } from '../../../../core/models/transacao.models';
 import { ThemeService } from '../../../../core/services/theme.service';
+import { currencyTooltipLabel } from '../../../../shared/utils/chart-tooltip.util';
 import {
   buildCategoriaComparativoChartData,
   buildComparativoPlanejamento,
@@ -43,6 +44,10 @@ export class DashboardPlanejamentoComparativoComponent {
       maintainAspectRatio: false,
       plugins: {
         legend: { position: 'bottom', labels: { color: this.cssVar('--muted-text') } },
+        tooltip: {
+          enabled: true,
+          callbacks: { label: currencyTooltipLabel },
+        },
         datalabels: { display: false },
       },
       scales: {

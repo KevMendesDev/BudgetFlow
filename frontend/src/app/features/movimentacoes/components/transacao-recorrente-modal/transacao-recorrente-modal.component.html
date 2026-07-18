@@ -115,8 +115,24 @@
         }
       </label>
 
+      <label class="bf-label md:col-span-6">
+        Status
+        <select class="bf-input" formControlName="status">
+          @for (item of statusEditaveis; track item.value) {
+            <option [value]="item.value">{{ item.label }}</option>
+          }
+        </select>
+        @if (fieldError(form.controls.status, 'Status')) {
+          <small class="bf-error">{{ fieldError(form.controls.status, 'Status') }}</small>
+        }
+      </label>
+
       <div class="modal-actions md:col-span-12">
-        <button class="btn-create" type="submit" [disabled]="submitting() || loadingCategorias()">
+        <button
+          class="btn-create"
+          type="submit"
+          [disabled]="submitting() || loadingCategorias() || editingRecorrencia()?.status === 'FINALIZADA'"
+        >
           {{ submitting() ? 'Salvando...' : editingRecorrencia() ? 'Salvar alterações' : 'Criar recorrência' }}
         </button>
       </div>

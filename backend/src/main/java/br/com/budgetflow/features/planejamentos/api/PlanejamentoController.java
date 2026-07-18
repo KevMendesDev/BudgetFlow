@@ -1,8 +1,11 @@
 package br.com.budgetflow.features.planejamentos.api;
 
 import java.net.URI;
-import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.budgetflow.features.planejamentos.criteria.PlanejamentoFilterCriteria;
 import br.com.budgetflow.features.planejamentos.dto.PlanejamentoRequestDTO;
 import br.com.budgetflow.features.planejamentos.dto.PlanejamentoResponseDTO;
 import br.com.budgetflow.features.planejamentos.dto.SincronizacaoPlanejamentosResponseDTO;
@@ -33,8 +37,11 @@ public class PlanejamentoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PlanejamentoResponseDTO>> findAll(@RequestParam Long periodoId) {
-        return ResponseEntity.ok(planejamentoService.findAll(periodoId));
+    public ResponseEntity<Page<PlanejamentoResponseDTO>> findAll(
+            @Valid PlanejamentoFilterCriteria criteria,
+            @PageableDefault(sort = {"createdAt", "id"}, direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(planejamentoService.findAll(criteria, pageable));
     }
 
     @PostMapping
@@ -49,6 +56,12 @@ public class PlanejamentoController {
             @Valid @RequestBody PlanejamentoRequestDTO request
     ) {
         return ResponseEntity.ok(planejamentoService.update(id, request));
+    }
+
+    @DeleteMapping("/periodo/{periodoId}")
+    public ResponseEntity<Void> deleteAllByPeriodo(@PathVariable Long periodoId) {
+        planejamentoService.deleteAllByPeriodo(periodoId);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

@@ -7,6 +7,7 @@ export { NaturezaFinanceira };
 export type { TipoPagamento };
 
 export type Frequencia = 'SEMANAL' | 'MENSAL' | 'ANUAL';
+export type StatusRecorrencia = 'ATIVA' | 'INATIVA' | 'FINALIZADA';
 
 export const FREQUENCIAS: Array<{ value: Frequencia; label: string }> = [
   { value: 'SEMANAL', label: 'Semanal' },
@@ -14,9 +15,24 @@ export const FREQUENCIAS: Array<{ value: Frequencia; label: string }> = [
   { value: 'ANUAL', label: 'Anual' },
 ];
 
+export const STATUS_RECORRENCIA: Array<{ value: StatusRecorrencia; label: string }> = [
+  { value: 'ATIVA', label: 'Ativa' },
+  { value: 'INATIVA', label: 'Inativa' },
+  { value: 'FINALIZADA', label: 'Finalizada' },
+];
+
+export const STATUS_RECORRENCIA_EDITAVEIS: Array<{ value: StatusRecorrencia; label: string }> = [
+  { value: 'ATIVA', label: 'Ativa' },
+  { value: 'INATIVA', label: 'Inativa' },
+];
+
 export const FREQUENCIA_LABELS = Object.fromEntries(
   FREQUENCIAS.map(({ value, label }) => [value, label])
 ) as Record<Frequencia, string>;
+
+export const STATUS_RECORRENCIA_LABELS = Object.fromEntries(
+  STATUS_RECORRENCIA.map(({ value, label }) => [value, label])
+) as Record<StatusRecorrencia, string>;
 
 export interface TransacaoRecorrenteRequest {
   categoriaId: number;
@@ -28,6 +44,7 @@ export interface TransacaoRecorrenteRequest {
   dataInicio: string;
   dataFim: string | null;
   totalParcelas: number | null;
+  status: StatusRecorrencia;
 }
 
 export interface TransacaoRecorrenteResponse {
@@ -45,6 +62,7 @@ export interface TransacaoRecorrenteResponse {
   dataInicio: string;
   dataFim: string | null;
   totalParcelas: number | null;
+  status: StatusRecorrencia;
   createdAt: string;
   updatedAt: string;
   possuiRelacionamentos: boolean;
