@@ -12,6 +12,9 @@ import {
   FREQUENCIA_LABELS,
   FREQUENCIAS,
   Frequencia,
+  STATUS_RECORRENCIA,
+  STATUS_RECORRENCIA_LABELS,
+  StatusRecorrencia,
   TransacaoRecorrenteResponse,
 } from '../../../../core/models/transacao-recorrente.models';
 import {
@@ -58,11 +61,13 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   readonly totalElements = signal(0);
 
   readonly frequencias = FREQUENCIAS;
+  readonly statusRecorrencia = STATUS_RECORRENCIA;
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
   readonly filtersForm = this.formBuilder.nonNullable.group({
     query: [''],
     frequencia: ['' as '' | Frequencia],
     tipoMovimentacao: ['' as '' | NaturezaFinanceira],
+    status: ['' as '' | StatusRecorrencia],
   });
 
   ngOnInit(): void {
@@ -88,7 +93,10 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   }
 
   clearFilters(): void {
-    this.filtersForm.setValue({ query: '', frequencia: '', tipoMovimentacao: '' }, { emitEvent: false });
+    this.filtersForm.setValue(
+      { query: '', frequencia: '', tipoMovimentacao: '', status: '' },
+      { emitEvent: false }
+    );
     this.loadRecorrencias(0);
   }
 
@@ -98,6 +106,10 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   }
 
   startEdit(item: TransacaoRecorrenteResponse): void {
+    if (item.status === 'FINALIZADA') {
+      this.toast.show('A recorrência está finalizada então ela não pode ser alterada.', 'error');
+      return;
+    }
     this.editingRecorrencia.set(item);
     this.modalOpen.set(true);
   }
@@ -156,6 +168,24 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
   tipoPagamentoLabel(value: TipoPagamento): string {
     return TIPO_PAGAMENTO_LABELS[value] ?? value;
   }
+
+  statusLabel(value: StatusRecorrencia): string {
+    return STATUS_RECORRENCIA_LABELS[value] ?? value;
+  }
+
+  statusBadgeClass(value: StatusRecorrencia): string {
+    switch (value) {
+      case 'ATIVA':
+        return 'card-badge card-badge--ativa';
+      case 'INATIVA':
+        return 'card-badge card-badge--inativa';
+      case 'FINALIZADA':
+        return 'card-badge card-badge--finalizada';
+      default:
+        return 'card-badge';
+    }
+  }
+
   goToPreviousPage(): void {
     const atual = this.paginaAtual();
     if (atual > 0) {
@@ -201,6 +231,7 @@ export class TransacoesRecorrentesPageComponent implements OnInit {
         query: filters.query,
         frequencia: filters.frequencia,
         tipoMovimentacao: filters.tipoMovimentacao,
+        status: filters.status,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

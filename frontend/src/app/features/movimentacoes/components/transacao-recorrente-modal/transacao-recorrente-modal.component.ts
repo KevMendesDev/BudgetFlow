@@ -7,6 +7,8 @@ import { NaturezaFinanceira } from '../../../../core/models/natureza-financeira.
 import {
   FREQUENCIAS,
   Frequencia,
+  STATUS_RECORRENCIA_EDITAVEIS,
+  StatusRecorrencia,
   TransacaoRecorrenteResponse,
 } from '../../../../core/models/transacao-recorrente.models';
 import {
@@ -45,6 +47,7 @@ export class TransacaoRecorrenteModalComponent implements OnInit {
   readonly categoriasChanged = output<CategoriaResponse>();
 
   readonly frequencias = FREQUENCIAS;
+  readonly statusEditaveis = STATUS_RECORRENCIA_EDITAVEIS;
   readonly tiposMovimentacao = TIPOS_MOVIMENTACAO;
   readonly tiposPagamento = TIPOS_PAGAMENTO;
   readonly fieldError = fieldError;
@@ -66,6 +69,7 @@ export class TransacaoRecorrenteModalComponent implements OnInit {
     dataInicio: ['', [Validators.required]],
     dataFim: [''],
     totalParcelas: ['', [Validators.min(1)]],
+    status: ['ATIVA' as StatusRecorrencia, [Validators.required]],
   });
 
   constructor() {
@@ -88,7 +92,13 @@ export class TransacaoRecorrenteModalComponent implements OnInit {
         dataInicio: item.dataInicio,
         dataFim: item.dataFim ?? '',
         totalParcelas: item.totalParcelas ? String(item.totalParcelas) : '',
+        status: item.status === 'FINALIZADA' ? 'ATIVA' : item.status,
       });
+
+      if (item.status === 'FINALIZADA') {
+        this.form.disable();
+        this.errorMessage.set('Recorrência finalizada não pode ser alterada.');
+      }
     }
 
     this.syncCategoriasDisponiveis();
@@ -147,6 +157,11 @@ export class TransacaoRecorrenteModalComponent implements OnInit {
   }
 
   submit(): void {
+    if (this.editingRecorrencia()?.status === 'FINALIZADA') {
+      this.errorMessage.set('Recorrência finalizada não pode ser alterada.');
+      return;
+    }
+
     if (this.form.invalid || this.submitting()) {
       this.form.markAllAsTouched();
       return;
@@ -167,6 +182,7 @@ export class TransacaoRecorrenteModalComponent implements OnInit {
       dataInicio: raw.dataInicio,
       dataFim: raw.dataFim || null,
       totalParcelas: raw.totalParcelas ? Number(raw.totalParcelas) : null,
+      status: raw.status as StatusRecorrencia,
     };
 
     const editingId = this.editingRecorrencia()?.id;

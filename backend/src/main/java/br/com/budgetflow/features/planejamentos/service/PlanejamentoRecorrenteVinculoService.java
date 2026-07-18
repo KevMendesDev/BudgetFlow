@@ -5,10 +5,12 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
+import br.com.budgetflow.features.movimentacoes.service.FinalizacaoRecorrenciaService;
 import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.planejamentos.repository.PlanejamentoRepository;
@@ -19,18 +21,27 @@ public class PlanejamentoRecorrenteVinculoService {
 
     private final TransacaoRecorrenteRepository recorrenteRepository;
     private final PlanejamentoRepository planejamentoRepository;
+    private final FinalizacaoRecorrenciaService finalizacaoRecorrenciaService;
 
     public PlanejamentoRecorrenteVinculoService(
             TransacaoRecorrenteRepository recorrenteRepository,
-            PlanejamentoRepository planejamentoRepository
+            PlanejamentoRepository planejamentoRepository,
+            FinalizacaoRecorrenciaService finalizacaoRecorrenciaService
     ) {
         this.recorrenteRepository = recorrenteRepository;
         this.planejamentoRepository = planejamentoRepository;
+        this.finalizacaoRecorrenciaService = finalizacaoRecorrenciaService;
     }
 
     public String resolverChaveSincronizacao(Long recorrenteId, PeriodoFinanceiro periodo, Long userId) {
+        finalizacaoRecorrenciaService.finalizarExpiradas(userId);
+
         TransacaoRecorrente recorrente = recorrenteRepository.findByIdAndUserId(recorrenteId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transação recorrente não encontrada"));
+
+        if (recorrente.getStatus() != StatusRecorrencia.ATIVA) {
+            throw new BusinessRuleException("Apenas recorrências ativas podem ser adicionadas ao planejamento");
+        }
 
         Set<String> chavesExistentes = planejamentoRepository.findChavesSincronizacaoByPeriodoIdAndUserId(
                 periodo.getId(),

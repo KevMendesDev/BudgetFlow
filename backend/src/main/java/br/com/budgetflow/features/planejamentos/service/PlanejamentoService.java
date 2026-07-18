@@ -10,6 +10,7 @@ import br.com.budgetflow.common.exceptions.BusinessRuleException;
 import br.com.budgetflow.common.exceptions.ResourceNotFoundException;
 import br.com.budgetflow.features.categorias.domain.Categoria;
 import br.com.budgetflow.features.categorias.repository.CategoriaRepository;
+import br.com.budgetflow.features.movimentacoes.service.FinalizacaoRecorrenciaService;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
 import br.com.budgetflow.features.periodos.service.PeriodoFinanceiroService;
 import br.com.budgetflow.features.planejamentos.criteria.PlanejamentoFilterCriteria;
@@ -28,6 +29,7 @@ import br.com.budgetflow.security.SecurityUtils;
 public class PlanejamentoService {
 
     private final PlanejamentoRepository planejamentoRepository;
+    private final FinalizacaoRecorrenciaService finalizacaoRecorrenciaService;
     private final CategoriaRepository categoriaRepository;
     private final PeriodoFinanceiroService periodoFinanceiroService;
     private final UserService userService;
@@ -37,6 +39,7 @@ public class PlanejamentoService {
 
     public PlanejamentoService(
             PlanejamentoRepository planejamentoRepository,
+            FinalizacaoRecorrenciaService finalizacaoRecorrenciaService,
             CategoriaRepository categoriaRepository,
             PeriodoFinanceiroService periodoFinanceiroService,
             UserService userService,
@@ -45,6 +48,7 @@ public class PlanejamentoService {
             GeracaoPlanejamentosRecorrentesService geracaoPlanejamentosRecorrentesService
     ) {
         this.planejamentoRepository = planejamentoRepository;
+        this.finalizacaoRecorrenciaService = finalizacaoRecorrenciaService;
         this.categoriaRepository = categoriaRepository;
         this.periodoFinanceiroService = periodoFinanceiroService;
         this.userService = userService;
@@ -127,6 +131,7 @@ public class PlanejamentoService {
     public SincronizacaoPlanejamentosResponseDTO sincronizarRecorrentes(Long periodoId) {
         Long userId = SecurityUtils.currentUserId();
         PeriodoFinanceiro periodo = periodoFinanceiroService.resolvePeriodoToTransacao(periodoId, userId);
+        finalizacaoRecorrenciaService.finalizarExpiradas(userId);
         return geracaoPlanejamentosRecorrentesService.sincronizar(periodo, userId);
     }
 

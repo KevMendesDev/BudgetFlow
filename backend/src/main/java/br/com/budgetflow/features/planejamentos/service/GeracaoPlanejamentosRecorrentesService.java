@@ -9,6 +9,7 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
 import br.com.budgetflow.features.movimentacoes.service.support.RecorrenciaUtils;
@@ -40,7 +41,10 @@ public class GeracaoPlanejamentosRecorrentesService {
         );
         int semValor = 0;
 
-        for (TransacaoRecorrente recorrente : recorrenteRepository.findAllByUserId(userId)) {
+        for (TransacaoRecorrente recorrente : recorrenteRepository.findAllByUserIdAndStatus(
+                userId,
+                StatusRecorrencia.ATIVA
+        )) {
             if (recorrente.getValor() == null) {
                 semValor++;
                 continue;

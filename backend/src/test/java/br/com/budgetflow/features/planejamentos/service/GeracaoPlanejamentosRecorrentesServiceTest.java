@@ -25,6 +25,7 @@ import org.mockito.quality.Strictness;
 
 import br.com.budgetflow.common.enums.Frequencia;
 import br.com.budgetflow.common.enums.NaturezaFinanceira;
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.features.movimentacoes.domain.TransacaoRecorrente;
 import br.com.budgetflow.features.movimentacoes.repository.TransacaoRecorrenteRepository;
 import br.com.budgetflow.features.periodos.domain.PeriodoFinanceiro;
@@ -59,7 +60,8 @@ class GeracaoPlanejamentosRecorrentesServiceTest {
 
         TransacaoRecorrente mensal = recorrente(20L, user, LocalDate.of(2026, 5, 10), BigDecimal.TEN);
         TransacaoRecorrente semValor = recorrente(21L, user, LocalDate.of(2026, 6, 15), null);
-        when(recorrenteRepository.findAllByUserId(1L)).thenReturn(List.of(mensal, semValor));
+        when(recorrenteRepository.findAllByUserIdAndStatus(1L, StatusRecorrencia.ATIVA))
+                .thenReturn(List.of(mensal, semValor));
 
         Set<String> chavesPersistidas = new HashSet<>();
         when(planejamentoRepository.findChavesSincronizacaoByPeriodoIdAndUserId(10L, 1L))
@@ -81,6 +83,8 @@ class GeracaoPlanejamentosRecorrentesServiceTest {
         verify(planejamentoRepository, times(2)).saveAll(captor.capture());
         verify(planejamentoRepository, times(2))
                 .findChavesSincronizacaoByPeriodoIdAndUserId(10L, 1L);
+        verify(recorrenteRepository, times(2))
+                .findAllByUserIdAndStatus(1L, StatusRecorrencia.ATIVA);
         Planejamento gerado = captor.getAllValues().getFirst().iterator().next();
         assertTrue(gerado.isSincronizado());
     }

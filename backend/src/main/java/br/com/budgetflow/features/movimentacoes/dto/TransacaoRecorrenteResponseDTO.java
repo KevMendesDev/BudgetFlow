@@ -3,6 +3,7 @@ package br.com.budgetflow.features.movimentacoes.dto;
 import br.com.budgetflow.common.enums.ClassificacaoCategoria;
 import br.com.budgetflow.common.enums.Frequencia;
 import br.com.budgetflow.common.enums.NaturezaFinanceira;
+import br.com.budgetflow.common.enums.StatusRecorrencia;
 import br.com.budgetflow.common.enums.TipoPagamento;
 
 import java.math.BigDecimal;
@@ -24,6 +25,7 @@ public record TransacaoRecorrenteResponseDTO(
         LocalDate dataInicio,
         LocalDate dataFim,
         Integer totalParcelas,
+        StatusRecorrencia status,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         boolean possuiRelacionamentos

@@ -214,6 +214,7 @@ export class PlanejamentosPageComponent implements OnInit {
     if (!this.selectedPeriodo()) {
       return;
     }
+    this.loadRecorrentes();
     this.editingPlanejamento.set(null);
     this.modalOpen.set(true);
   }
@@ -365,7 +366,7 @@ export class PlanejamentosPageComponent implements OnInit {
 
   private loadRecorrentes(): void {
     this.recorrentesApi
-      .listAll()
+      .listAll({ status: 'ATIVA' })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => this.recorrentes.set(response.content),

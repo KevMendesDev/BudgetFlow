@@ -7,6 +7,7 @@ import { NaturezaFinanceira } from '../models/natureza-financeira.models';
 import { PageSize } from '../models/pagination.models';
 import {
   Frequencia,
+  StatusRecorrencia,
   TransacaoRecorrentePageResponse,
   TransacaoRecorrenteRequest,
   TransacaoRecorrenteResponse,
@@ -22,12 +23,12 @@ export class TransacoesRecorrentesApiService {
     query?: string;
     frequencia?: Frequencia | '';
     tipoMovimentacao?: NaturezaFinanceira | '';
+    status?: StatusRecorrencia | '';
   }): Observable<TransacaoRecorrentePageResponse> {
     let params = new HttpParams({
       fromObject: {
         page: String(filters?.page ?? 0),
         size: String(filters?.size ?? PageSize.LARGE),
-        sort: 'createdAt,desc',
       },
     });
 
@@ -42,6 +43,10 @@ export class TransacoesRecorrentesApiService {
 
     if (filters?.tipoMovimentacao) {
       params = params.set('tipoMovimentacao', filters.tipoMovimentacao);
+    }
+
+    if (filters?.status) {
+      params = params.set('status', filters.status);
     }
 
     return this.http.get<TransacaoRecorrentePageResponse>(`${API_BASE_URL}/api/transacoes-recorrentes`, { params });
