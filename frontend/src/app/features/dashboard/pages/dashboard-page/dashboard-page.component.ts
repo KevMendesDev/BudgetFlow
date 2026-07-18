@@ -206,7 +206,7 @@ export class DashboardPageComponent implements OnInit {
       .subscribe({
         next: ({ transacoes, planejamentos }) => {
           this.transacoes.set(transacoes.content);
-          this.planejamentos.set(planejamentos);
+          this.planejamentos.set(planejamentos.content);
           this.loadingResumo.set(false);
         },
         error: (err) => {

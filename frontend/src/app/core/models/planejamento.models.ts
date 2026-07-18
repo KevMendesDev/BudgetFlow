@@ -1,5 +1,6 @@
 import { ClassificacaoCategoria } from './categoria.models';
 import { NaturezaFinanceira } from './natureza-financeira.models';
+import { PageResponse } from './pagination.models';
 
 export interface PlanejamentoResponse {
   id: number;
@@ -22,6 +23,7 @@ export interface PlanejamentoRequest {
   descricao: string;
   valor: number;
   tipoMovimentacao: NaturezaFinanceira;
+  transacaoRecorrenteId?: number | null;
 }
 
 export interface SincronizacaoPlanejamentosResponse {
@@ -29,3 +31,5 @@ export interface SincronizacaoPlanejamentosResponse {
   recorrenciasSemValor: number;
   mensagem: string;
 }
+
+export type PlanejamentoPageResponse = PageResponse<PlanejamentoResponse>;
